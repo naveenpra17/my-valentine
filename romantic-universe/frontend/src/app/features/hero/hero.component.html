@@ -1,0 +1,28 @@
+<section class="hero section" #section>
+  <div class="hero__inner">
+    <div class="hero__photo-wrap" #photoWrap>
+      @if (!imageError()) {
+        <img
+          class="hero__photo"
+          [src]="imageUrl()"
+          [alt]="'Photo of ' + herName()"
+          loading="lazy"
+          (error)="onImageError()"
+        />
+      } @else {
+        <div class="hero__photo hero__photo--placeholder" aria-hidden="true">
+          <span class="hero__placeholder-icon">💗</span>
+        </div>
+      }
+      <div class="hero__photo-glow"></div>
+    </div>
+
+    <div class="hero__text" #textBlock>
+      <p class="hero__chapter">Chapter 3</p>
+      <h2 class="hero__title">Look at This Beautiful Human</h2>
+      <blockquote class="hero__quote">{{ line1() }}</blockquote>
+      <p class="hero__line2">{{ line2() }}</p>
+      <p class="hero__name">— for {{ herName() }}</p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,97 @@
+.love-bomb {
+  position: relative;
+  background: linear-gradient(180deg, var(--blush) 0%, #f5dce8 40%, var(--cream) 100%);
+  overflow: hidden;
+  text-align: center;
+}
+
+.love-bomb__burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.love-bomb__chapter {
+  position: relative;
+  z-index: 2;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--rose-deep);
+  margin-bottom: 0.5rem;
+}
+
+.love-bomb__arena {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.love-bomb__btn {
+  padding: 1.25rem 2.5rem;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, var(--rose), #f0a0c0, var(--lavender));
+  color: var(--burgundy);
+  font-weight: 500;
+  font-size: clamp(1rem, 2.5vw, 1.15rem);
+  box-shadow: 0 0 40px var(--glow-rose), 0 8px 32px rgba(92, 26, 46, 0.15);
+  transition: transform var(--transition), box-shadow var(--transition);
+  animation: bomb-glow 2.5s ease-in-out infinite;
+
+  &:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 0 60px var(--glow-rose), 0 12px 40px rgba(92, 26, 46, 0.2);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: wait;
+  }
+}
+
+.love-bomb__message {
+  max-width: 480px;
+  width: 100%;
+  padding: 2rem 1.5rem;
+  background: rgba(255, 248, 240, 0.85);
+  color: var(--burgundy);
+  margin: 0;
+
+  p {
+    font-family: var(--font-quote);
+    font-size: clamp(1.15rem, 3vw, 1.4rem);
+    font-style: italic;
+    line-height: 1.6;
+  }
+}
+
+.love-bomb__error {
+  color: #c44;
+  font-size: 0.9rem;
+}
+
+.love-bomb__counter {
+  font-size: 0.8rem;
+  color: var(--rose-deep);
+  opacity: 0.7;
+}
+
+@keyframes bomb-glow {
+  0%, 100% { box-shadow: 0 0 30px var(--glow-rose); }
+  50% { box-shadow: 0 0 55px var(--glow-rose), 0 0 80px rgba(212, 184, 232, 0.25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .love-bomb__btn {
+    animation: none;
+  }
+}

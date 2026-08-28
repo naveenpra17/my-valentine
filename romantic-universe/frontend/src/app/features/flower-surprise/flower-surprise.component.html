@@ -1,0 +1,38 @@
+<section class="flower section" id="flower">
+  <p class="flower__chapter">Chapter 10</p>
+  <h2 class="section-title">A Little Surprise</h2>
+  <p class="section-subtitle">A flower for my favourite person 🌷</p>
+
+  <div class="flower__stage">
+    <button
+      class="flower__plant"
+      [class.flower__plant--bloomed]="bloomed()"
+      (click)="bloom()"
+      [attr.aria-label]="bloomed() ? 'Flower bloomed' : 'Tap the flower to make it bloom'"
+      [disabled]="bloomed()"
+    >
+      <div class="flower__stem"></div>
+      <div class="flower__leaves">
+        <span class="flower__leaf flower__leaf--left"></span>
+        <span class="flower__leaf flower__leaf--right"></span>
+      </div>
+      <div class="flower__bloom">
+        <span class="flower__petal flower__petal--1"></span>
+        <span class="flower__petal flower__petal--2"></span>
+        <span class="flower__petal flower__petal--3"></span>
+        <span class="flower__petal flower__petal--4"></span>
+        <span class="flower__petal flower__petal--5"></span>
+        <span class="flower__center"></span>
+      </div>
+      @if (!bloomed()) {
+        <span class="flower__tap-hint">tap me</span>
+      }
+    </button>
+
+    @if (showMessage()) {
+      <div class="flower__message glass-card">
+        <p>{{ flowerMessage() }}</p>
+      </div>
+    }
+  </div>
+</section>

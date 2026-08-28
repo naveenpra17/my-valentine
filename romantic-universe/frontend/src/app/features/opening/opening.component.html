@@ -1,0 +1,19 @@
+<div class="opening" #container [class.exiting]="exiting()">
+  <app-starfield [density]="140" />
+
+  <div class="opening__content">
+    <p class="opening__line" #line1El>{{ line1() }}</p>
+    <p class="opening__line opening__line--secondary" #line2El>{{ line2() }}</p>
+
+    <button
+      class="opening__cta btn-primary"
+      #ctaEl
+      (click)="onEnter()"
+      [disabled]="exiting() || !showCta()"
+      [class.visible]="showCta()"
+      aria-label="Enter our little world"
+    >
+      Enter Our Little World ✨
+    </button>
+  </div>
+</div>

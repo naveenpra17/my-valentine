@@ -1,0 +1,58 @@
+.loading-screen,
+.error-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, var(--night), #3d1f2e);
+  color: var(--cream);
+}
+
+.loading-heart {
+  font-size: 3rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+.experience-main {
+  position: relative;
+}
+
+.section-skeleton {
+  min-height: 400px;
+  margin: 2rem 1.5rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    90deg,
+    rgba(232, 160, 191, 0.08) 0%,
+    rgba(232, 160, 191, 0.15) 50%,
+    rgba(232, 160, 191, 0.08) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+
+  &--short { min-height: 280px; }
+  &--tall { min-height: 500px; }
+  &--finale { min-height: 100vh; }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-heart {
+    animation: none;
+  }
+
+  .section-skeleton {
+    animation: none;
+  }
+}

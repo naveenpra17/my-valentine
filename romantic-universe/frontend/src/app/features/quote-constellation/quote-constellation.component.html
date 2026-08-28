@@ -1,0 +1,27 @@
+<section class="constellation section" #section id="constellation">
+  <p class="constellation__chapter">Chapter 9</p>
+  <h2 class="section-title">Messages Written in Stars</h2>
+  <p class="section-subtitle">Tap a star to reveal its secret</p>
+
+  @if (loading()) {
+    <div class="constellation__state">Mapping the stars...</div>
+  } @else if (error()) {
+    <div class="constellation__state constellation__state--error">{{ error() }}</div>
+  } @else {
+    <div class="constellation__canvas-wrap">
+      <canvas #canvas class="constellation__canvas" aria-label="Interactive quote constellation"></canvas>
+
+      @if (selectedQuote(); as quote) {
+        <div class="constellation__quote glass-card" #quotePanel>
+          <button class="constellation__close" (click)="closeQuote()" aria-label="Close quote">✕</button>
+          <blockquote class="constellation__text">"{{ quote.text }}"</blockquote>
+          @if (quote.author) {
+            <cite class="constellation__author">— {{ quote.author }}</cite>
+          }
+        </div>
+      } @else {
+        <p class="constellation__hint">✦ tap a glowing star ✦</p>
+      }
+    </div>
+  }
+</section>

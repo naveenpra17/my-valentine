@@ -1,0 +1,37 @@
+<section class="open-when section" #section id="open-when">
+  <p class="open-when__chapter">Chapter 7</p>
+  <h2 class="section-title">Messages for Different Days</h2>
+  <p class="section-subtitle">Open one whenever you need it</p>
+
+  @if (loading()) {
+    <div class="open-when__state">Preparing envelopes...</div>
+  } @else if (error()) {
+    <div class="open-when__state open-when__state--error">{{ error() }}</div>
+  } @else {
+    <div class="open-when__grid">
+      @for (msg of messages(); track msg.id) {
+        <div
+          class="envelope-wrap"
+          [class.envelope-wrap--open]="isOpen(msg.id)"
+          #envelope
+        >
+          <button
+            class="envelope"
+            (click)="openEnvelope(msg.id)"
+            [attr.aria-expanded]="isOpen(msg.id)"
+            [attr.aria-label]="'Open envelope: ' + msg.envelopeLabel"
+          >
+            <div class="envelope__flap"></div>
+            <div class="envelope__body">
+              <span class="envelope__seal">💌</span>
+              <span class="envelope__label">{{ msg.envelopeLabel }}</span>
+            </div>
+            <div class="envelope__letter">
+              <p class="envelope__message">{{ msg.message }}</p>
+            </div>
+          </button>
+        </div>
+      }
+    </div>
+  }
+</section>

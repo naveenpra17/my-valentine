@@ -1,0 +1,36 @@
+<section class="love-bomb section" #section id="love-bombs">
+  <canvas class="love-bomb__burst" #burstCanvas aria-hidden="true"></canvas>
+
+  <p class="love-bomb__chapter">Chapter 6</p>
+  <h2 class="section-title">Love Bomb Attack</h2>
+  <p class="section-subtitle">Warning: may cause uncontrollable smiling</p>
+
+  <div class="love-bomb__arena">
+    <button
+      class="love-bomb__btn"
+      (click)="dropBomb()"
+      [disabled]="loading()"
+      aria-label="Tap for a love bomb"
+    >
+      @if (loading()) {
+        <span class="love-bomb__btn-text">Loading...</span>
+      } @else {
+        <span class="love-bomb__btn-text">Tap for a Love Bomb 💗</span>
+      }
+    </button>
+
+    @if (showMessage() && currentBomb(); as bomb) {
+      <blockquote class="love-bomb__message glass-card" #messageEl>
+        <p>{{ bomb.message }}</p>
+      </blockquote>
+    }
+
+    @if (error()) {
+      <p class="love-bomb__error" role="alert">{{ error() }}</p>
+    }
+
+    @if (totalBombs() > 0) {
+      <p class="love-bomb__counter">{{ totalBombs() }} love bomb{{ totalBombs() === 1 ? '' : 's' }} dropped this visit</p>
+    }
+  </div>
+</section>

@@ -1,0 +1,51 @@
+<div class="music-player" [class.expanded]="expanded">
+  <button
+    class="music-player__fab"
+    (click)="expanded = !expanded"
+    [attr.aria-label]="audio.playing() ? 'Music controls' : 'Open music controls'"
+    [attr.aria-expanded]="expanded"
+  >
+  @if (audio.playing()) {
+    <span class="music-player__icon music-player__icon--playing">♪</span>
+  } @else {
+    <span class="music-player__icon">♫</span>
+  }
+  </button>
+
+  @if (expanded) {
+    <div class="music-player__panel glass-card" role="region" aria-label="Music player">
+      <p class="music-player__label">Our soundtrack</p>
+
+      <div class="music-player__controls">
+        <button
+          class="music-player__btn"
+          (click)="togglePlay()"
+          [attr.aria-label]="audio.playing() ? 'Pause music' : 'Play music'"
+        >
+          {{ audio.playing() ? '⏸' : '▶' }}
+        </button>
+
+        <button
+          class="music-player__btn"
+          (click)="toggleMute()"
+          [attr.aria-label]="audio.muted() ? 'Unmute' : 'Mute'"
+        >
+          {{ audio.muted() ? '🔇' : '🔊' }}
+        </button>
+
+        <input
+          type="range"
+          class="music-player__volume"
+          min="0"
+          max="1"
+          step="0.05"
+          [value]="audio.volume()"
+          (input)="onVolumeChange($event)"
+          aria-label="Volume"
+        />
+      </div>
+
+      <p class="music-player__hint">Tap play when you're ready 🎵</p>
+    </div>
+  }
+</div>

@@ -1,0 +1,132 @@
+.reasons {
+  background: linear-gradient(180deg, var(--cream) 0%, #fdf0f5 50%, var(--blush) 100%);
+}
+
+.reasons__chapter {
+  text-align: center;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--rose-deep);
+  margin-bottom: 0.5rem;
+}
+
+.reasons__state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--rose-deep);
+
+  &--error {
+    color: #c44;
+  }
+}
+
+.reasons__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.25rem;
+  max-width: 900px;
+  margin: 0 auto;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+.reason-card {
+  perspective: 800px;
+  cursor: pointer;
+  min-height: 180px;
+
+  &:focus-visible {
+    outline: 2px solid var(--rose);
+    outline-offset: 4px;
+    border-radius: var(--radius-lg);
+  }
+}
+
+.reason-card__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 248, 240, 0.7);
+  color: var(--burgundy);
+  padding: 1.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.reason-card--expanded .reason-card__inner {
+  transform: rotateY(180deg);
+}
+
+.reason-card__front,
+.reason-card__back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.reason-card__back {
+  transform: rotateY(180deg);
+}
+
+.reason-card__icon {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.reason-card__label {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin-bottom: 0.5rem;
+}
+
+.reason-card__hint {
+  font-size: 0.7rem;
+  color: var(--rose-deep);
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.reason-card__message {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  font-family: var(--font-quote);
+  font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reason-card__inner {
+    transition: none;
+  }
+
+  .reason-card:not(.reason-card--expanded) .reason-card__back {
+    display: none;
+  }
+
+  .reason-card--expanded .reason-card__front {
+    display: none;
+  }
+
+  .reason-card--expanded .reason-card__inner {
+    transform: none;
+  }
+
+  .reason-card__back {
+    transform: none;
+    position: static;
+  }
+}

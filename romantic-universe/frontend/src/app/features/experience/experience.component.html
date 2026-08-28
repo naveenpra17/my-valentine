@@ -1,0 +1,98 @@
+<app-particle-burst [active]="burstActive()" />
+
+@if (config.loading()) {
+  <div class="loading-screen">
+    <div class="loading-heart">❤️</div>
+    <p>Preparing something special...</p>
+  </div>
+} @else if (config.error()) {
+  <div class="error-screen">
+    <p>{{ config.error() }}</p>
+    <button class="btn-primary" (click)="retry()">Try again</button>
+  </div>
+} @else {
+  @if (showEntryLock()) {
+    <app-entry-lock
+      [question]="config.get('ENTRY_LOCK_QUESTION')"
+      (unlocked)="onUnlocked()"
+    />
+  }
+
+  @if (showOpening()) {
+    <app-opening
+      [line1]="config.get('OPENING_LINE_1', 'Hey beautiful... ❤️')"
+      [line2]="config.get('OPENING_LINE_2', 'I made a little universe for you.')"
+      (enter)="onOpeningEnter()"
+    />
+  }
+
+  @if (showMain()) {
+    <main class="experience-main">
+      <app-love-universe />
+      <app-hero
+        [herName]="config.get('HER_NAME', 'Beautiful')"
+        [line1]="config.get('HERO_LINE_1')"
+        [line2]="config.get('HERO_LINE_2')"
+        [imageUrl]="config.get('HERO_IMAGE_URL', '/assets/images/hero/hero.jpg')"
+      />
+
+      @defer (on viewport; prefetch on idle) {
+        <app-memory-timeline />
+      } @placeholder {
+        <div class="section-skeleton" aria-hidden="true"></div>
+      }
+
+      @defer (on viewport; prefetch on idle) {
+        <app-reasons />
+      } @placeholder {
+        <div class="section-skeleton" aria-hidden="true"></div>
+      }
+
+      @defer (on viewport; prefetch on idle) {
+        <app-love-bomb />
+      } @placeholder {
+        <div class="section-skeleton section-skeleton--short" aria-hidden="true"></div>
+      }
+
+      @defer (on viewport; prefetch on idle) {
+        <app-open-when />
+      } @placeholder {
+        <div class="section-skeleton" aria-hidden="true"></div>
+      }
+
+      @defer (on viewport; prefetch on idle) {
+        <app-photo-gallery />
+      } @placeholder {
+        <div class="section-skeleton section-skeleton--tall" aria-hidden="true"></div>
+      }
+
+      @defer (on viewport; prefetch on idle) {
+        <app-quote-constellation />
+      } @placeholder {
+        <div class="section-skeleton section-skeleton--tall" aria-hidden="true"></div>
+      }
+
+      @defer (on viewport; prefetch on idle) {
+        <app-flower-surprise [flowerMessage]="config.get('FLOWER_MESSAGE')" />
+      } @placeholder {
+        <div class="section-skeleton section-skeleton--short" aria-hidden="true"></div>
+      }
+
+      @defer (on viewport; prefetch on idle) {
+        <app-finale
+          [line1]="config.get('FINAL_LINE_1')"
+          [line2]="config.get('FINAL_LINE_2')"
+          [line3]="config.get('FINAL_LINE_3')"
+          [line4]="config.get('FINAL_LINE_4')"
+          [finalMessage]="config.get('FINAL_MESSAGE')"
+          [footerCredit]="config.get('FOOTER_CREDIT')"
+        />
+      } @placeholder {
+        <div class="section-skeleton section-skeleton--finale" aria-hidden="true"></div>
+      }
+    </main>
+
+    <app-secret-heart [secretMessage]="config.get('SECRET_MESSAGE')" />
+    <app-music-player [musicUrl]="config.get('MUSIC_URL', '/assets/audio/background.mp3')" />
+  }
+}
