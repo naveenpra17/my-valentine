@@ -2,54 +2,23 @@
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: clamp(4rem, 12vh, 7rem) 1.5rem 5rem;
-  background: var(--void);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: transparent;
   text-align: center;
 }
 
-.little-heart__header {
-  margin-bottom: 2rem;
+.little-heart__canvas-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
 }
 
-.little-heart__title {
-  margin: 0.5rem 0;
-}
-
-.little-heart__subtitle {
-  margin: 0;
-}
-
-.little-heart__stage {
-  position: relative;
-  max-width: 640px;
-  margin: 0 auto;
-  min-height: 420px;
-}
-
-.little-heart__canvas {
-  position: relative;
-  width: 100%;
-  height: min(55vh, 420px);
-  min-height: 320px;
-  border: 1px solid rgba(245, 240, 232, 0.08);
-  border-radius: 2px;
-  overflow: hidden;
-  cursor: grab;
-  background: radial-gradient(ellipse at center, rgba(201, 160, 168, 0.08), transparent 70%);
-
-  &:active {
-    cursor: grabbing;
-  }
-
-  canvas {
-    display: block;
-    width: 100% !important;
-    height: 100% !important;
-  }
-}
-
-.little-heart__canvas-loading,
-.little-heart__canvas-fallback {
+.little-heart__loading,
+.little-heart__fallback {
   position: absolute;
   inset: 0;
   display: flex;
@@ -70,36 +39,83 @@
   50% { transform: scale(1.06); opacity: 1; }
 }
 
-.little-heart__hint {
-  margin: 1rem 0 0;
+.little-heart__intro {
+  position: relative;
+  z-index: 2;
+  max-width: min(480px, 90vw);
+  padding: 2rem 1.5rem;
+  pointer-events: auto;
 }
 
-.little-heart__floats {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
+.little-heart__intro-line {
+  margin: 0 0 1rem;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+
+  &.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.little-heart__begin {
   margin-top: 1.5rem;
-  padding: 0 0.5rem;
 }
 
-.little-heart__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.85rem;
-  border: 1px solid rgba(245, 240, 232, 0.1);
-  background: rgba(10, 6, 16, 0.5);
+.little-heart__guidance {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  padding: 0 1.5rem 2rem;
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.little-heart__detail {
+  position: fixed;
+  bottom: clamp(2rem, 8vh, 4rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 1.25rem 1.5rem;
+  background: rgba(5, 3, 8, 0.88);
+  border: 1px solid rgba(201, 160, 168, 0.2);
+  backdrop-filter: blur(8px);
+  max-width: min(360px, 92vw);
+  pointer-events: auto;
+}
+
+.little-heart__detail-type {
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.55;
+}
+
+.little-heart__detail-label {
+  margin: 0 0 1rem;
+}
+
+.little-heart__detail-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.little-heart__detail-btn {
+  padding: 0.45rem 1rem;
+  border: 1px solid rgba(245, 240, 232, 0.15);
+  background: transparent;
   color: var(--ivory-dim);
   font-family: var(--font-body);
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
   cursor: pointer;
-  transition: border-color 0.3s ease, transform 0.3s ease;
 
-  &:hover {
-    border-color: rgba(201, 160, 168, 0.35);
-    transform: translateY(-2px);
+  &--ghost {
+    border-color: rgba(201, 160, 168, 0.25);
+    color: var(--rose);
   }
 
   &:focus-visible {
@@ -108,26 +124,43 @@
   }
 }
 
-.little-heart__chip-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--champagne);
+.little-heart__complete {
+  position: relative;
+  z-index: 2;
+  padding: 1rem 1.5rem 2.5rem;
+  pointer-events: auto;
 
-  &[data-type='memory'] { background: var(--rose); }
-  &[data-type='reason'] { background: var(--lavender); }
-  &[data-type='quote'] { background: var(--ivory); }
-  &[data-type='love-bomb'] { background: #d4b0b8; }
+  p {
+    margin: 0 0 1rem;
+  }
 }
 
-.little-heart__chip-label {
-  max-width: 120px;
+.little-heart__a11y {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  clip: rect(0, 0, 0, 0);
   white-space: nowrap;
+  border: 0;
 }
 
-.little-heart__empty {
-  margin-top: 2rem;
-  opacity: 0.6;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .little-heart__fallback-heart {
+    animation: none;
+  }
 }

@@ -1,7 +1,7 @@
-export type ChapterId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
-
 /** Director's Cut chapter map (0–12). */
 export type DirectorChapterId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+
+export type ChapterId = DirectorChapterId;
 
 export type HeartObjectType =
   | 'photo'
@@ -10,6 +10,7 @@ export type HeartObjectType =
   | 'quote'
   | 'love-bomb'
   | 'flower'
+  | 'secret'
   | 'symbol';
 
 export interface HeartObject {
@@ -17,6 +18,8 @@ export interface HeartObject {
   referenceId: number | string;
   label?: string;
   imageUrl?: string;
+  thumbnailUrl?: string;
+  metadata?: Record<string, string>;
   position?: { x: number; y: number; z: number };
   rotation?: { x: number; y: number; z: number };
   scale?: number;
@@ -24,7 +27,7 @@ export interface HeartObject {
 
 export interface ConstellationStar {
   id: string;
-  sourceType: HeartObjectType | 'secret';
+  sourceType: HeartObjectType | 'secret' | 'symbol';
   referenceId: number | string;
   x: number;
   y: number;
@@ -37,6 +40,7 @@ export interface SerializedExperienceState {
   discoveredReasons: number[];
   activatedQuotes: number[];
   triggeredLoveBombs: number[];
+  discoveredFlowers?: number[];
   foundSecrets: string[];
   openedEnvelopes: number[];
   selectedHeartObjects: HeartObject[];

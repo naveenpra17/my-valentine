@@ -32,7 +32,13 @@ npm install
 npm start
 ```
 
-App runs at `http://localhost:4200` (proxies `/api` → backend)
+App runs at `http://localhost:4200` (proxies `/api` → backend). Use `--port 4201` if 4200 is taken.
+
+## Before going live
+
+See **[PRODUCTION-CHECKLIST.md](./PRODUCTION-CHECKLIST.md)** for photos, messages, music, and deployment steps.
+
+See `frontend/ASSETS.md` for media paths and `frontend/SESSION-STATE.md` for persistence.
 
 ### 3. Verify
 
@@ -51,6 +57,7 @@ All personal content is centralized — **do not scatter names/photos in source 
 | Names, hero text, finale message | `backend/src/main/resources/db/data.sql` → `site_config` table |
 | Memories | `data.sql` → `memories` table + images in `frontend/src/assets/images/memories/` |
 | Gallery photos | `data.sql` → `photos` table + images in `frontend/src/assets/images/gallery/` |
+| Photo → memory links | `data.sql` → `photos.memory_id` FK to `memories.id` |
 | Hero photo | `frontend/src/assets/images/hero/hero.jpg` + reference in config |
 | Love bombs | `data.sql` → `love_bombs` table |
 | Reasons | `data.sql` → `reasons` table |
@@ -162,12 +169,15 @@ romantic-universe/
 
 | Phase | Status | Contents |
 |-------|--------|----------|
-| 1 | ✅ Complete | Backend API, DB schema, seed data, Angular foundation |
-| 2 | ✅ Complete | Cinematic opening, entry lock, 3D universe, hero, music player |
-| 3 | ✅ Complete | Memories timeline, reasons cards, love bombs |
-| 4 | ✅ Complete | Gallery, quote constellation, open-when envelopes |
-| 5 | ✅ Complete | Flower surprise, secret heart, cinematic finale |
-| 6 | ✅ Complete | Polish, performance, deployment configs |
+| **Director's Cut Phase 1** | ✅ Complete | Universe-first layout, hidden HUD, photo→memory flow, chapter map sync |
+| **Phase 2 — Our Little Heart** | ✅ Complete | 3D heart creation, fly-to-attach, rotation/zoom, serialization |
+| **Phase 3 — Universe Remembers** | ✅ Complete | Journey replay, exact heart reconstruction, no dashboard |
+| **Phase 4 — Finale** | ✅ Complete | Exact heart dissolve, particle universe, giant heart, secret ending |
+| **Phase 5 — Production & Share** | ✅ Complete | Personalized heart capture, share preview, quality service, production checklist |
+
+See **[PRODUCTION-CHECKLIST.md](./PRODUCTION-CHECKLIST.md)** before going live.
+
+See **[PHASE1-REPORT.md](./PHASE1-REPORT.md)** through **[PHASE5-REPORT.md](./PHASE5-REPORT.md)** for implementation details.
 
 ---
 

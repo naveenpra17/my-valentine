@@ -1,52 +1,61 @@
-<section class="finale cine-scene" #section id="finale" data-act="10" appChapterVisit="12">
+<section class="finale cine-scene" #section id="finale" appChapterVisit="12">
   <div class="finale__pin" #pinWrap>
-    <div class="finale__vignette cine-vignette"></div>
-    <canvas class="finale__canvas" #canvas aria-hidden="true"></canvas>
+    <div class="finale__vignette cine-vignette" aria-hidden="true"></div>
 
-    <div class="finale__content">
-      <p class="act-marker">Act X · Finale</p>
+    <div class="finale__canvas" #canvasHost>
+      @if (!sceneReady() && !sceneFailed()) {
+        <div class="finale__loading cine-micro" aria-hidden="true">Preparing the finale...</div>
+      }
+    </div>
 
-      <div class="finale__lines" [class.finale__lines--visible]="sequenceStarted()">
-        <p class="finale__line cine-statement" #line1El>{{ line1() }}</p>
-        <p class="finale__line cine-statement" #line2El>{{ line2() }}</p>
-        <p class="finale__line cine-statement" #line3El>{{ line3() }}</p>
-        <p class="finale__line cine-statement" #line4El>{{ line4() }}</p>
-      </div>
-
-      @if (showFinal()) {
-        <p class="finale__personal cine-intimate" #personalEl>{{ personalLine() }}</p>
-        <blockquote class="finale__final cine-letter" #finalMsg>
-          {{ finalMessage() }}
-        </blockquote>
-        <p class="finale__for cine-micro">Made just for you, {{ herName() }}. ❤️</p>
+    <div class="finale__overlay" aria-live="polite">
+      @if (overlayLine()) {
+        <p class="cine-statement finale__line">{{ overlayLine() }}</p>
+      }
+      @if (overlaySub()) {
+        <p class="cine-whisper finale__sub">{{ overlaySub() }}</p>
       }
 
-      @if (showButton()) {
+      @if (showMessage()) {
+        <p class="finale__personal cine-intimate">{{ personalLine() }}</p>
+        <blockquote class="finale__final cine-letter">{{ finalMessage() }}</blockquote>
+      }
+
+      @if (showSignature()) {
+        <p class="finale__for cine-micro">Made just for you, {{ herName() }}.</p>
+        @if (myName()) {
+          <p class="finale__sign cine-micro">— {{ myName() }}</p>
+        }
+      }
+    </div>
+
+    @if (showSecret() && !secretDone()) {
+      <div class="finale-secret" role="dialog" aria-label="One last thing">
+        <p class="cine-whisper finale-secret__text">One last thing...</p>
         <button
-          class="finale__surprise cine-enter-btn"
+          class="finale-secret__light"
           type="button"
-          (click)="triggerSurprise()"
-          [disabled]="surpriseTriggered()"
-        >
-          {{ surpriseTriggered() ? 'Surprise delivered' : 'One last surprise' }}
-        </button>
-      }
+          aria-label="Touch the light"
+          (click)="triggerSecret()"
+        ></button>
+      </div>
+    }
 
-      <footer class="finale__credit" #creditEl>
-        <p class="cine-micro">{{ footerCredit() }}</p>
-      </footer>
+    @if (showEndHeart()) {
+      <p class="finale__end-heart" aria-hidden="true">❤️</p>
+    }
+
+    @if (showShareOffer()) {
+      <app-heart-share-offer (closed)="onShareClosed()" />
+    }
+
+    <div class="finale__a11y sr-only" aria-label="Finale message">
+      <p>{{ line1() }}</p>
+      <p>{{ line2() }}</p>
+      <p>{{ line3() }}</p>
+      @if (line4()) { <p>{{ line4() }}</p> }
+      <p>{{ finalMessage() }}</p>
+      <p>Made just for you, {{ herName() }}.</p>
     </div>
   </div>
 </section>
-
-@if (showFinalSecret()) {
-  <div class="finale-secret" role="dialog" aria-label="One last thing">
-    <p class="cine-intimate finale-secret__text">One last thing...</p>
-    <button
-      class="finale-secret__light"
-      type="button"
-      aria-label="Trigger final surprise"
-      (click)="triggerFinalSecret()"
-    ></button>
-  </div>
-}

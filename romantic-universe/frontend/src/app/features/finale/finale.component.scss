@@ -2,7 +2,7 @@
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
-  background: var(--void);
+  background: transparent;
   overflow: hidden;
   color: var(--ivory);
   text-align: center;
@@ -13,90 +13,166 @@
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .finale__canvas {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+  z-index: 0;
 }
 
-.finale__content {
+.finale__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+}
+
+.finale__overlay {
   position: relative;
   z-index: 2;
-  padding: clamp(2rem, 6vw, 4rem) clamp(1.5rem, 5vw, 3rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(2rem, 10vh, 5rem) clamp(1.5rem, 5vw, 3rem);
+  pointer-events: none;
   max-width: 640px;
-  width: 100%;
-}
-
-.finale__lines {
-  margin-bottom: 2.5rem;
-  visibility: hidden;
-
-  &--visible {
-    visibility: visible;
-  }
+  margin: 0 auto;
 }
 
 .finale__line {
-  margin: 0 0 0.85rem;
-  font-size: clamp(1.2rem, 3.5vw, 1.65rem);
-  opacity: 0;
-  text-shadow: 0 0 40px rgba(201, 160, 168, 0.15);
+  margin: 0 0 0.75rem;
+  text-shadow: 0 0 40px rgba(201, 160, 168, 0.2);
+  animation: finaleTextIn 1s ease both;
+}
 
-  &:last-child {
-    margin-bottom: 0;
-  }
+.finale__sub {
+  margin: 0 0 1rem;
+  opacity: 0.75;
+  animation: finaleTextIn 1s ease both;
 }
 
 .finale__personal {
-  margin: 0 0 1.5rem;
-}
-
-.finale__for {
-  margin: 1.5rem 0 0;
-  opacity: 0.7;
+  margin: 0 0 1.25rem;
+  animation: finaleTextIn 1s ease both;
 }
 
 .finale__final {
-  margin: 0 0 2.5rem;
+  margin: 0 0 1.5rem;
   padding: 0;
   border: none;
   color: var(--rose);
+  animation: finaleTextIn 1.2s ease both;
 }
 
-.finale__surprise {
-  margin-bottom: 2.5rem;
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: default;
-  }
+.finale__for,
+.finale__sign {
+  margin: 0.35rem 0 0;
+  opacity: 0.75;
+  animation: finaleTextIn 1s ease both;
 }
 
-.finale__credit {
-  padding-top: 2rem;
-  border-top: 1px solid rgba(245, 240, 232, 0.08);
+.finale-secret {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 3, 8, 0.92);
+  pointer-events: auto;
+}
+
+.finale-secret__text {
+  margin: 0 0 2rem;
   opacity: 0.6;
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+}
 
-  p {
-    margin: 0;
-    line-height: 1.7;
+.finale-secret__light {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, #f5f0e8 0%, #c9a0a8 40%, transparent 70%);
+  box-shadow: 0 0 30px rgba(201, 160, 168, 0.6);
+  cursor: pointer;
+  animation: secretPulse 2.4s ease-in-out infinite;
+
+  &:focus-visible {
+    outline: 2px solid var(--rose);
+    outline-offset: 8px;
   }
+}
+
+.finale__end-heart {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  font-size: clamp(3rem, 12vw, 5rem);
+  color: #c9a0a8;
+  background: rgba(5, 3, 8, 0.95);
+  animation: finaleFadeIn 1.5s ease both;
+  pointer-events: none;
+}
+
+.finale__a11y {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes finaleTextIn {
+  from { opacity: 0; transform: translateY(16px); filter: blur(6px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes secretPulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+
+@keyframes finaleFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .finale__line {
-    opacity: 1 !important;
-    filter: none !important;
+  .finale__line,
+  .finale__sub,
+  .finale__personal,
+  .finale__final,
+  .finale__for,
+  .finale__sign {
+    animation: none;
   }
 
-  .finale__lines {
-    visibility: visible;
+  .finale-secret__light {
+    animation: none;
   }
 }

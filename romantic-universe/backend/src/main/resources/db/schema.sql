@@ -22,9 +22,11 @@ CREATE TABLE IF NOT EXISTS photos (
     title           VARCHAR(200),
     caption         TEXT,
     image_url       VARCHAR(500) NOT NULL,
+    memory_id       BIGINT,
     display_order   INT NOT NULL DEFAULT 0,
     active          BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_photos_memory FOREIGN KEY (memory_id) REFERENCES memories(id)
 );
 
 CREATE TABLE IF NOT EXISTS quotes (

@@ -1,54 +1,91 @@
-<section class="little-heart cine-scene" #section id="our-heart" data-act="6">
-  <div class="little-heart__vignette cine-vignette"></div>
-  <div class="cine-fade-edge cine-fade-edge--top"></div>
+<section class="little-heart cine-scene" #section id="our-heart" appChapterVisit="8">
+  <div class="little-heart__vignette cine-vignette" aria-hidden="true"></div>
 
-  <header class="little-heart__header">
-    <p class="act-marker">Chapter VI</p>
-    <h2 class="cine-editorial-sm little-heart__title">{{ title() }}</h2>
-    <p class="cine-whisper little-heart__subtitle">{{ subtitle() }}</p>
-  </header>
-
-  <div class="little-heart__stage">
-    <div class="little-heart__canvas" #canvasHost>
-      @if (!sceneReady() && !sceneFailed()) {
-        <div class="little-heart__canvas-loading cine-micro" aria-hidden="true">Loading heart...</div>
-      }
-      @if (sceneFailed()) {
-        <div class="little-heart__canvas-fallback" aria-hidden="true">
-          <span class="little-heart__fallback-heart">♥</span>
-        </div>
-      }
-    </div>
-
-    @if (hintVisible() && floatingChoices().length > 0) {
-      <p class="little-heart__hint cine-discovery-hint" #hintEl>Tap a memory below to add it to the heart</p>
+  <div class="little-heart__canvas-wrap" #canvasHost>
+    @if (!sceneReady() && !sceneFailed()) {
+      <div class="little-heart__loading cine-micro" aria-hidden="true">Preparing your heart...</div>
     }
-
-    <div class="little-heart__floats" role="list" aria-label="Objects to add to the heart">
-      @for (obj of floatingChoices(); track obj.type + '-' + obj.referenceId) {
-        <button
-          class="little-heart__chip"
-          type="button"
-          role="listitem"
-          (click)="attachObject(obj)"
-          [attr.aria-label]="'Add ' + (obj.label || obj.type) + ' to heart'"
-        >
-          <span class="little-heart__chip-dot" [attr.data-type]="obj.type"></span>
-          <span class="little-heart__chip-label">{{ obj.label || obj.type }}</span>
-        </button>
-      }
-    </div>
-
-    @if (floatingChoices().length === 0) {
-      <p class="little-heart__empty cine-body">
-        @if (discoveryCount() === 0) {
-          Explore photos, memories, and reasons above — your discoveries become part of this heart.
-        } @else {
-          You've collected {{ discoveryCount() }} discoveries. Drag the heart above to explore it.
-        }
-      </p>
+    @if (sceneFailed()) {
+      <div class="little-heart__fallback" role="img" aria-label="Heart">
+        <span class="little-heart__fallback-heart">♥</span>
+      </div>
     }
   </div>
 
-  <div class="cine-fade-edge cine-fade-edge--bottom"></div>
+  @if (showIntro() && sceneReady()) {
+    <div class="little-heart__intro" #introEl role="dialog" aria-labelledby="heart-intro-title">
+      <div class="little-heart__intro-lines">
+        @if (introLine() >= 0) {
+          <p class="cine-whisper little-heart__intro-line" [class.is-visible]="introLine() >= 0">
+            All those little things you found...
+          </p>
+        }
+        @if (introLine() >= 1) {
+          <p class="cine-whisper little-heart__intro-line" [class.is-visible]="introLine() >= 1">
+            ...I think they belong somewhere.
+          </p>
+        }
+        @if (introLine() >= 2) {
+          <p class="cine-editorial-sm little-heart__intro-line" [class.is-visible]="introLine() >= 2" id="heart-intro-title">
+            Want to make something with them?
+          </p>
+        }
+      </div>
+      @if (introLine() >= 2) {
+        <button class="cine-enter-btn little-heart__begin" type="button" (click)="beginHeart()">
+          Let's make one
+        </button>
+      }
+    </div>
+  }
+
+  @if (!showIntro() && phase() !== 'intro') {
+    <p class="little-heart__guidance cine-discovery-hint" #guidanceEl aria-live="polite">
+      {{ guidanceText() }}
+    </p>
+  }
+
+  @if (selectedObject(); as obj) {
+    <div class="little-heart__detail" role="dialog" aria-modal="true" [attr.aria-label]="obj.label ?? obj.type">
+      <p class="cine-micro little-heart__detail-type">{{ obj.type }}</p>
+      <p class="cine-editorial-sm little-heart__detail-label">{{ obj.label || 'Something you found' }}</p>
+      <div class="little-heart__detail-actions">
+        <button class="little-heart__detail-btn" type="button" (click)="dismissDetail()">Back</button>
+        <button class="little-heart__detail-btn little-heart__detail-btn--ghost" type="button" (click)="removeSelected()">
+          Release
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (showCompletion() && !showIntro()) {
+    <div class="little-heart__complete">
+      <p class="cine-editorial-sm">Look at our little heart.</p>
+      <button class="cine-enter-btn" type="button" (click)="continueJourney()">Show me</button>
+    </div>
+  }
+
+  <div class="little-heart__a11y" aria-label="Heart creation accessibility controls">
+    <h2 class="sr-only">{{ title() }}</h2>
+    <p class="sr-only">{{ subtitle() }}</p>
+    @if (poolObjects().length === 0 && attachedCount() === 0) {
+      <p class="sr-only">Explore the universe above to discover photos and memories for the heart.</p>
+    }
+    <ul class="little-heart__a11y-list">
+      @for (obj of poolObjects(); track obj.type + '-' + obj.referenceId) {
+        <li>
+          <button type="button" (click)="attachFromPool(obj)">
+            Add {{ obj.label || obj.type }} to heart
+          </button>
+        </li>
+      }
+      @for (obj of experienceState.selectedHeartObjects(); track obj.type + '-' + obj.referenceId) {
+        <li>
+          <button type="button" (click)="onAttachedTap(obj)">
+            View {{ obj.label || obj.type }} on heart
+          </button>
+        </li>
+      }
+    </ul>
+  </div>
 </section>

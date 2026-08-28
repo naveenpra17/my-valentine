@@ -15,9 +15,8 @@ import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
 import { CameraDirectorService } from '../../core/cinematic/camera-director.service';
 import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
-import { SoundDesignService } from '../../core/services/sound-design.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
-import { ExperienceStateService } from '../../core/experience/experience-state.service';
+import { ExperienceFlowService } from '../../core/experience/experience-flow.service';
 import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
 import { LoveUniverseScene } from './love-universe-scene';
 
@@ -40,8 +39,7 @@ export class LoveUniverseComponent implements OnDestroy {
   private readonly visibility = inject(VisibilityService);
   private readonly api = inject(ApiService);
   private readonly scenes = inject(SceneManagerService);
-  private readonly experienceState = inject(ExperienceStateService);
-  private readonly sounds = inject(SoundDesignService);
+  private readonly experienceFlow = inject(ExperienceFlowService);
   private readonly cameraDirector = inject(CameraDirectorService);
   private readonly controller = inject(ExperienceControllerService);
 
@@ -76,9 +74,7 @@ export class LoveUniverseComponent implements OnDestroy {
     );
     this.scene.init();
     this.scene.setPhotoDiscoverHandler((id, title) => {
-      this.sounds.enable();
-      this.sounds.play('photo');
-      this.experienceState.discoverPhoto(id, title);
+      void this.experienceFlow.handlePhotoDiscovery(id, title);
     });
     this.scene.playEntryFromVoid();
     this.scene.start();
@@ -87,7 +83,13 @@ export class LoveUniverseComponent implements OnDestroy {
       approach: (t, d) => this.scene!.approach(t, d),
       pullBack: (d) => this.scene!.pullBack(d),
       focusPhoto: (id, d) => this.scene!.focusPhotoById(id, d),
-      returnToUniverse: (d) => this.scene!.returnToUniverse(d)
+      returnToUniverse: (d) => this.scene!.returnToUniverse(d),
+      focusObject: (t, d) => this.scene!.approach(t, d),
+      enterMemory: (d) => this.scene!.approach({ x: 0, y: 0.15, z: -1.5 }, d ?? 1500),
+      exitMemory: (d) => this.scene!.pullBack(d),
+      focusReason: (d) => this.scene!.approach({ x: 1.5, y: 0.5, z: -2.5 }, d ?? 1400),
+      focusQuote: (d) => this.scene!.approach({ x: -1.2, y: 1, z: -3 }, d ?? 1400),
+      focusHeart: (d) => this.scene!.approach({ x: 0, y: 0, z: -0.5 }, d ?? 1500)
     });
 
     try {

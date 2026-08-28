@@ -1,22 +1,30 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { EXPERIENCE_CHAPTERS } from '../experience/chapter-map';
 import { CHAPTERS, ChapterDefinition, ExperienceAct, SceneDefinition } from './types';
 
-const SCENES: SceneDefinition[] = [
-  { id: 'opening', act: 'void', chapter: 0, label: 'The Invitation' },
-  { id: 'universe', act: 'universe', chapter: 1, label: 'Enter the Universe' },
-  { id: 'hero', act: 'her', chapter: 2, label: 'Discover Her World' },
-  { id: 'memories', act: 'memories', chapter: 3, label: 'Collect the Memories' },
-  { id: 'reasons', act: 'feel', chapter: 4, label: 'What I Love' },
-  { id: 'love-bomb', act: 'play', chapter: 5, label: 'Play' },
-  { id: 'heart', act: 'creation', chapter: 6, label: 'Our Little Heart' },
-  { id: 'open-when', act: 'intimacy', chapter: 7, label: 'Quiet Moments' },
-  { id: 'gallery', act: 'her', chapter: 2, label: 'Photo Discovery' },
-  { id: 'constellation', act: 'feel', chapter: 4, label: 'Memory Constellation' },
-  { id: 'flower', act: 'hidden', chapter: 8, label: 'Hidden Bloom' },
-  { id: 'remembers', act: 'remembers', chapter: 8, label: 'Universe Remembers' },
-  { id: 'letter', act: 'letter', chapter: 9, label: 'The Letter' },
-  { id: 'finale', act: 'finale', chapter: 10, label: 'Final Creation' }
-];
+const SCENE_ACTS: Record<string, ExperienceAct> = {
+  opening: 'void',
+  universe: 'universe',
+  hero: 'her',
+  gallery: 'her',
+  memories: 'memories',
+  reasons: 'feel',
+  'love-bomb': 'play',
+  'constellation-ceremony': 'feel',
+  heart: 'creation',
+  'open-when': 'intimacy',
+  flower: 'hidden',
+  remembers: 'remembers',
+  letter: 'letter',
+  finale: 'finale'
+};
+
+const SCENES: SceneDefinition[] = EXPERIENCE_CHAPTERS.map(ch => ({
+  id: ch.sceneId,
+  act: SCENE_ACTS[ch.sceneId] ?? 'universe',
+  chapter: ch.id,
+  label: ch.label
+}));
 
 @Injectable({ providedIn: 'root' })
 export class SceneManagerService {

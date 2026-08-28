@@ -9,7 +9,8 @@ import {
   afterNextRender,
   inject,
   input,
-  signal
+  signal,
+  computed
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import gsap from 'gsap';
@@ -40,6 +41,7 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
 
   readonly title = input('Things I Remember');
   readonly subtitle = input('Little moments that stayed with me');
+  readonly discoveredOnly = input(false);
   readonly introLine1 = input('Some moments disappear.');
   readonly introLine2 = input('Some stay.');
   readonly introLine3 = input('I kept these.');
@@ -54,6 +56,11 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
   private scrollTriggers: ScrollTrigger[] = [];
 
   readonly memories = signal<Memory[]>([]);
+  readonly visibleMemories = computed(() => {
+    const all = this.memories();
+    if (!this.discoveredOnly()) return all;
+    return all.filter(m => this.experienceState.isMemoryDiscovered(m.id));
+  });
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly selected = signal<Memory | null>(null);

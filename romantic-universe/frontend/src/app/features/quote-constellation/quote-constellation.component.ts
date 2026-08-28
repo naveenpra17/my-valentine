@@ -104,7 +104,7 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
       ([entry]) => {
         this.inView = entry.isIntersecting;
         if (entry.isIntersecting) {
-          this.scenes.setScene('constellation');
+          this.scenes.setScene('constellation-ceremony');
           if (this.canvasReady && !this.animationId && !this.motion.prefersReducedMotion()) {
             this.animate();
           }

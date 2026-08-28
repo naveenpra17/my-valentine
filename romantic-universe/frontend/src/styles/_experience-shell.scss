@@ -1,0 +1,115 @@
+.experience-shell {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.experience-shell__universe {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  height: 100vh;
+  height: 100dvh;
+  pointer-events: auto;
+}
+
+.experience-shell__beats {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.experience-beat {
+  pointer-events: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: clamp(2rem, 8vh, 4rem);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(5, 3, 8, 0.35) 35%,
+    rgba(5, 3, 8, 0.88) 72%,
+    rgba(5, 3, 8, 0.95) 100%
+  );
+}
+
+.experience-beat--spacer {
+  min-height: 55vh;
+  background: transparent;
+  pointer-events: none;
+}
+
+.experience-beat--hero {
+  justify-content: center;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(5, 3, 8, 0.25) 40%,
+    rgba(5, 3, 8, 0.75) 100%
+  );
+}
+
+.experience-beat--letter,
+.experience-beat--finale {
+  background: rgba(5, 3, 8, 0.96);
+}
+
+.experience-fallback {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.experience-chrome {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
+.experience-shell .act-marker,
+.experience-shell [data-act]::before {
+  display: none !important;
+}
+
+.experience-chrome__secret {
+  opacity: 0.12;
+  transition: opacity 0.4s ease;
+
+  &:hover,
+  &:focus-within {
+    opacity: 0.85;
+  }
+}
+
+.experience-chrome__music {
+  opacity: 0.55;
+  transform: scale(0.88);
+  transform-origin: bottom right;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+
+  &:hover,
+  &:focus-within {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .experience-beat {
+    background: rgba(5, 3, 8, 0.92);
+  }
+}

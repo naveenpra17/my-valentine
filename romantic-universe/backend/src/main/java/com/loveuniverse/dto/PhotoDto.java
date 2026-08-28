@@ -5,5 +5,6 @@ public record PhotoDto(
         String title,
         String caption,
         String imageUrl,
+        Long memoryId,
         int displayOrder
 ) {}

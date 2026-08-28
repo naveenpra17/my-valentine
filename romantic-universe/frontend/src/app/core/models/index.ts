@@ -13,6 +13,7 @@ export interface Photo {
   title: string | null;
   caption: string | null;
   imageUrl: string;
+  memoryId: number | null;
   displayOrder: number;
 }
 

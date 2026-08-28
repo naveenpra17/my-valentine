@@ -20,6 +20,9 @@ public class Photo {
     @Column(name = "image_url", nullable = false, length = 500)
     private String imageUrl;
 
+    @Column(name = "memory_id")
+    private Long memoryId;
+
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
 
@@ -37,6 +40,8 @@ public class Photo {
     public void setCaption(String caption) { this.caption = caption; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public Long getMemoryId() { return memoryId; }
+    public void setMemoryId(Long memoryId) { this.memoryId = memoryId; }
     public int getDisplayOrder() { return displayOrder; }
     public void setDisplayOrder(int displayOrder) { this.displayOrder = displayOrder; }
     public boolean isActive() { return active; }

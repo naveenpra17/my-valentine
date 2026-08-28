@@ -1,151 +1,323 @@
-<div class="cine-grain" aria-hidden="true"></div>
-<a class="skip-link" href="#main-content">Skip to experience</a>
-<app-particle-burst [active]="burstActive()" />
-
-@if (config.loading()) {
-  <div class="void-loader">
-    <div class="void-loader__pulse"></div>
-    <p class="void-loader__text cine-whisper">Preparing something for you...</p>
-  </div>
-} @else if (config.error()) {
-  <div class="void-loader void-loader--error">
-    <p class="cine-body">{{ config.error() }}</p>
-    <button class="cine-enter-btn" (click)="retry()">Try again</button>
-  </div>
-} @else {
-  @if (showEntryLock()) {
-    <app-entry-lock
-      [question]="config.get('ENTRY_LOCK_QUESTION')"
-      (unlocked)="onUnlocked()"
-    />
-  }
-
-  @if (showOpening()) {
-    <div #openingHost>
-      <app-opening
-        [void1]="config.get('OPENING_VOID_1', 'Hey...')"
-        [void2]="config.get('OPENING_VOID_2', 'You.')"
-        [void3]="config.get('OPENING_VOID_3', 'I made something for you.')"
-        [void4]="config.get('OPENING_VOID_4', 'Come see.')"
-        (enter)="onOpeningEnter()"
-      />
-    </div>
-  }
-
-  @if (showMain()) {
-    <app-chapter-progress [hidden]="transitioning() || !controller.canShowProgress()" />
-    <app-memory-constellation-tracker />
-
-    <main class="experience-main" id="main-content" #mainContent tabindex="-1">
-      <app-love-universe
-        [line1]="config.get('UNIVERSE_LINE_1', 'The light expands...')"
-        [line2]="config.get('UNIVERSE_LINE_2', 'Welcome to our universe.')"
-      />
-
-      <app-hero
-        appChapterVisit="2"
-        [herName]="config.get('HER_NAME', 'Beautiful')"
-        [title]="config.get('HERO_TITLE', 'Her.')"
-        [discoverLine1]="config.get('CHAPTER_2_LINE_1', 'Somewhere in this little universe...')"
-        [discoverLine2]="config.get('CHAPTER_2_LINE_2', '...there\'s someone I wanted you to meet.')"
-        [pauseLine1]="config.get('HERO_PAUSE_1', 'Beautiful?')"
-        [pauseLine2]="config.get('HERO_PAUSE_2', 'Obviously.')"
-        [pauseLine3]="config.get('HERO_PAUSE_3', 'But that\'s not even the best part.')"
-        [line1]="config.get('HERO_LINE_1')"
-        [line2]="config.get('HERO_LINE_2')"
-        [imageUrl]="config.get('HERO_IMAGE_URL', '/assets/images/hero/hero.jpg')"
-      />
-
-      <app-photo-gallery
-        appChapterVisit="3"
-        [title]="config.get('GALLERY_TITLE', 'Discover Our Moments')"
-        [subtitle]="config.get('GALLERY_SUBTITLE', 'Each photograph waits in the void')"
-      />
-
-      <app-memory-timeline
-        appChapterVisit="4"
-        [title]="config.get('MEMORIES_TITLE', 'Things I Remember')"
-        [subtitle]="config.get('MEMORIES_SUBTITLE', 'Every beautiful story leaves something behind')"
-        [introLine1]="config.get('MEMORIES_INTRO_1', 'Some moments disappear.')"
-        [introLine2]="config.get('MEMORIES_INTRO_2', 'Some stay.')"
-        [introLine3]="config.get('MEMORIES_INTRO_3', 'I kept these.')"
-      />
-
-      <app-reasons
-        appChapterVisit="5"
-        [title]="config.get('REASONS_TITLE', 'What I Love About You')"
-        [subtitle]="config.get('REASONS_SUBTITLE', 'Tap a whisper to hear more')"
-        [introLine1]="config.get('REASONS_INTRO_1', 'There are things I love about you...')"
-        [introLine2]="config.get('REASONS_INTRO_2', 'The little things you probably don\'t even notice.')"
-      />
-
-      <app-quote-constellation
-        [title]="config.get('CONSTELLATION_TITLE', 'Messages Written in Stars')"
-        [subtitle]="config.get('CONSTELLATION_SUBTITLE', 'Your discoveries form a constellation')"
-      />
-
-      <app-love-bomb
-        appChapterVisit="6"
-        [title]="config.get('LOVE_BOMB_TITLE', 'Love Bomb Mode')"
-        [subtitle]="config.get('LOVE_BOMB_SUBTITLE', 'Catch, tap, drag — you\'ve been warned')"
-        [introLine1]="config.get('LOVE_BOMB_INTRO_1', 'Okay.')"
-        [introLine2]="config.get('LOVE_BOMB_INTRO_2', 'I\'ve been way too sentimental.')"
-        [introLine3]="config.get('LOVE_BOMB_INTRO_3', 'Let\'s fix that.')"
-      />
-
-      <app-constellation-ceremony
-        [line1]="config.get('CONSTELLATION_CEREMONY_1', 'You\'ve been leaving little pieces of yourself everywhere.')"
-        [line2]="config.get('CONSTELLATION_CEREMONY_2', 'Look.')"
-      />
-
-      <app-our-little-heart
-        appChapterVisit="8"
-        [title]="config.get('HEART_TITLE', 'Our Little Heart')"
-        [subtitle]="config.get('HEART_SUBTITLE', 'Choose something for our heart.')"
-      />
-
-      <app-open-when
-        appChapterVisit="9"
-        [title]="config.get('OPEN_WHEN_TITLE', 'Open When...')"
-        [subtitle]="config.get('OPEN_WHEN_SUBTITLE', 'For the quiet moments')"
-      />
-
-      <app-flower-surprise
-        appChapterVisit="10"
-        [title]="config.get('FLOWER_TITLE', 'A Little Surprise')"
-        [subtitle]="config.get('FLOWER_SUBTITLE', 'Something is waiting to grow')"
-        [flowerMessage]="config.get('FLOWER_MESSAGE')"
-      />
-
-      <app-universe-remembers
-        appChapterVisit="10"
-        [intro]="config.get('REMEMBERS_INTRO', 'You\'ve been here for a while.')"
-        [reveal]="config.get('REMEMBERS_REVEAL', 'Look what you created.')"
-      />
-
-      <app-letter
-        appChapterVisit="11"
-        [intro]="config.get('LETTER_INTRO', 'A letter for you')"
-        [message]="config.get('LETTER_MESSAGE') || config.get('FINAL_MESSAGE')"
-        [myName]="config.get('MY_NAME', '')"
-      />
-
-      <app-finale
-        appChapterVisit="12"
-        [herName]="config.get('HER_NAME', 'Beautiful')"
-        [line1]="config.get('FINAL_LINE_1')"
-        [line2]="config.get('FINAL_LINE_2')"
-        [line3]="config.get('FINAL_LINE_3')"
-        [line4]="config.get('FINAL_LINE_4')"
-        [personalLine]="config.get('FINALE_PERSONAL_LINE', 'Something that exists because you were here.')"
-        [finalMessage]="config.get('FINAL_MESSAGE')"
-        [footerCredit]="config.get('FOOTER_CREDIT')"
-      />
-    </main>
-
-    <app-secret-heart [secretMessage]="config.get('SECRET_MESSAGE')" />
-    <app-hidden-star [message]="config.get('HIDDEN_STAR_MESSAGE')" />
-    <app-void-whisper [message]="config.get('VOID_WHISPER_MESSAGE', 'The void heard you. And it whispered back: you are loved.')" />
-    <app-music-player [musicUrl]="config.get('MUSIC_URL', '/assets/audio/background.mp3')" />
-  }
-}
+<div class="cine-grain" aria-hidden="true"></div>
+
+<a class="skip-link" href="#main-content">Skip to experience</a>
+
+<app-particle-burst [active]="burstActive()" />
+
+
+
+@if (config.loading()) {
+
+  <div class="void-loader">
+
+    <div class="void-loader__pulse"></div>
+
+    <p class="void-loader__text cine-whisper">Preparing something for you...</p>
+
+  </div>
+
+} @else if (config.error()) {
+
+  <div class="void-loader void-loader--error">
+
+    <p class="cine-body">{{ config.error() }}</p>
+
+    <button class="cine-enter-btn" (click)="retry()">Try again</button>
+
+  </div>
+
+} @else {
+
+  @if (showEntryLock()) {
+
+    <app-entry-lock
+
+      [question]="config.get('ENTRY_LOCK_QUESTION')"
+
+      (unlocked)="onUnlocked()"
+
+    />
+
+  }
+
+
+
+  @if (showOpening()) {
+
+    <div #openingHost>
+
+      <app-opening
+
+        [void1]="config.get('OPENING_VOID_1', 'Hey...')"
+
+        [void2]="config.get('OPENING_VOID_2', 'You.')"
+
+        [void3]="config.get('OPENING_VOID_3', 'I made something for you.')"
+
+        [void4]="config.get('OPENING_VOID_4', 'Come see.')"
+
+        (enter)="onOpeningEnter()"
+
+      />
+
+    </div>
+
+  }
+
+
+
+  @if (showMain()) {
+
+    <div class="experience-shell">
+
+      <div class="experience-shell__universe" aria-hidden="false">
+
+        <app-love-universe
+
+          [line1]="config.get('UNIVERSE_LINE_1', 'The light expands...')"
+
+          [line2]="config.get('UNIVERSE_LINE_2', 'Welcome to our universe.')"
+
+        />
+
+      </div>
+
+
+
+      <app-discovery-scene />
+
+
+
+      <main class="experience-shell__beats" id="main-content" #mainContent tabindex="-1">
+
+        <section class="experience-beat experience-beat--hero" appChapterVisit="2">
+
+          <app-hero
+
+            [herName]="config.get('HER_NAME', 'Beautiful')"
+
+            [title]="config.get('HERO_TITLE', 'Her.')"
+
+            [discoverLine1]="config.get('CHAPTER_2_LINE_1', 'Somewhere in this little universe...')"
+
+            [discoverLine2]="config.get('CHAPTER_2_LINE_2', '...there\'s someone I wanted you to meet.')"
+
+            [pauseLine1]="config.get('HERO_PAUSE_1', 'Beautiful?')"
+
+            [pauseLine2]="config.get('HERO_PAUSE_2', 'Obviously.')"
+
+            [pauseLine3]="config.get('HERO_PAUSE_3', 'But that\'s not even the best part.')"
+
+            [line1]="config.get('HERO_LINE_1')"
+
+            [line2]="config.get('HERO_LINE_2')"
+
+            [imageUrl]="config.get('HERO_IMAGE_URL', '/assets/images/hero/hero.jpg')"
+
+          />
+
+        </section>
+
+
+
+        <section class="experience-beat experience-beat--spacer" aria-hidden="true"></section>
+
+
+
+        <section class="experience-beat" appChapterVisit="6">
+
+          <app-love-bomb
+
+            [title]="config.get('LOVE_BOMB_TITLE', 'Love Bomb Mode')"
+
+            [subtitle]="config.get('LOVE_BOMB_SUBTITLE', 'Catch the hearts before they fade')"
+
+            [introLine1]="config.get('LOVE_BOMB_INTRO_1', 'Okay.')"
+
+            [introLine2]="config.get('LOVE_BOMB_INTRO_2', 'I\'ve been way too sentimental.')"
+
+            [introLine3]="config.get('LOVE_BOMB_INTRO_3', 'Let\'s fix that.')"
+
+          />
+
+        </section>
+
+
+
+        <section class="experience-beat" appChapterVisit="7">
+
+          <app-constellation-ceremony
+
+            [line1]="config.get('CONSTELLATION_CEREMONY_1', 'You\'ve been leaving little pieces of yourself everywhere.')"
+
+            [line2]="config.get('CONSTELLATION_CEREMONY_2', 'Look.')"
+
+          />
+
+        </section>
+
+
+
+        <section class="experience-beat" appChapterVisit="8">
+
+          <app-our-little-heart
+
+            [title]="config.get('HEART_TITLE', 'Our Little Heart')"
+
+            [subtitle]="config.get('HEART_SUBTITLE', 'Choose something for our heart.')"
+
+          />
+
+        </section>
+
+
+
+        <section class="experience-beat" appChapterVisit="9">
+
+          <app-open-when
+
+            [title]="config.get('OPEN_WHEN_TITLE', 'Open When...')"
+
+            [subtitle]="config.get('OPEN_WHEN_SUBTITLE', 'For the quiet moments')"
+
+          />
+
+        </section>
+
+
+
+        <section class="experience-beat" appChapterVisit="10">
+
+          <app-flower-surprise
+
+            [title]="config.get('FLOWER_TITLE', 'A Little Surprise')"
+
+            [subtitle]="config.get('FLOWER_SUBTITLE', 'Something is waiting to grow')"
+
+            [flowerMessage]="config.get('FLOWER_MESSAGE')"
+
+          />
+
+        </section>
+
+
+
+        <section class="experience-beat" appChapterVisit="11">
+
+          <app-universe-remembers
+
+            [intro]="config.get('REMEMBERS_INTRO', 'You\'ve been here for a while.')"
+
+            [reveal]="config.get('REMEMBERS_REVEAL', 'Look what you created.')"
+
+          />
+
+        </section>
+
+
+
+        <section class="experience-beat experience-beat--letter" appChapterVisit="12">
+
+          <app-letter
+
+            [intro]="config.get('LETTER_INTRO', 'A letter for you')"
+
+            [message]="config.get('LETTER_MESSAGE') || config.get('FINAL_MESSAGE')"
+
+            [myName]="config.get('MY_NAME', '')"
+
+          />
+
+        </section>
+
+
+
+        <section class="experience-beat experience-beat--finale" appChapterVisit="12">
+
+          <app-finale
+
+            [herName]="config.get('HER_NAME', 'Beautiful')"
+
+            [line1]="config.get('FINAL_LINE_1')"
+
+            [line2]="config.get('FINAL_LINE_2')"
+
+            [line3]="config.get('FINAL_LINE_3')"
+
+            [line4]="config.get('FINAL_LINE_4')"
+
+            [personalLine]="config.get('FINALE_PERSONAL_LINE', 'Something that exists because you were here.')"
+
+            [finalMessage]="config.get('FINAL_MESSAGE')"
+
+            [footerCredit]="config.get('FOOTER_CREDIT')"
+
+            [myName]="config.get('MY_NAME', '')"
+
+          />
+
+        </section>
+
+      </main>
+
+
+
+      <div class="experience-fallback" aria-label="Accessible content archive">
+
+        <app-photo-gallery
+
+          [title]="config.get('GALLERY_TITLE', 'Discover Our Moments')"
+
+          [subtitle]="config.get('GALLERY_SUBTITLE', 'Each photograph waits in the void')"
+
+        />
+
+        <app-memory-timeline
+
+          [discoveredOnly]="true"
+
+          [title]="config.get('MEMORIES_TITLE', 'Things I Remember')"
+
+          [subtitle]="config.get('MEMORIES_SUBTITLE', 'Every beautiful story leaves something behind')"
+
+        />
+
+        <app-reasons
+
+          [title]="config.get('REASONS_TITLE', 'What I Love About You')"
+
+          [subtitle]="config.get('REASONS_SUBTITLE', 'Tap a whisper to hear more')"
+
+        />
+
+        <app-quote-constellation
+
+          [title]="config.get('QUOTES_TITLE', 'Words That Stay')"
+
+          [subtitle]="config.get('QUOTES_SUBTITLE', 'Little lights in the dark')"
+
+        />
+
+      </div>
+
+
+
+      <div class="experience-chrome">
+
+        <app-secret-heart class="experience-chrome__secret" [secretMessage]="config.get('SECRET_MESSAGE')" />
+
+        <app-hidden-star class="experience-chrome__secret" [message]="config.get('HIDDEN_STAR_MESSAGE')" />
+
+        <app-void-whisper [message]="config.get('VOID_WHISPER_MESSAGE', 'The void heard you. And it whispered back: you are loved.')" />
+
+        <app-music-player class="experience-chrome__music" [musicUrl]="config.get('MUSIC_URL', '/assets/audio/background.mp3')" />
+
+      </div>
+
+    </div>
+
+  }
+
+}
+
+

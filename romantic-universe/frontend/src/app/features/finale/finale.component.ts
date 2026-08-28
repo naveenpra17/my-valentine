@@ -2,8 +2,8 @@ import {
   Component,
   ElementRef,
   OnDestroy,
+  AfterViewInit,
   ViewChild,
-  afterNextRender,
   inject,
   input,
   signal
@@ -11,464 +11,265 @@ import {
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MotionService } from '../../core/services/motion.service';
+import { QualityService } from '../../core/services/quality.service';
 import { VisibilityService } from '../../core/services/visibility.service';
 import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
-import { ExperienceStateService } from '../../core/experience/experience-state.service';
+import { HeartStateService } from '../../core/experience/heart-state.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
 import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
+import { HeartShareOfferComponent } from '../../shared/components/heart-share-offer/heart-share-offer.component';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
+import {
+  FinaleScenePhase,
+  FinaleTransformationScene
+} from './finale-transformation.scene';
 
 gsap.registerPlugin(ScrollTrigger);
 
-interface FinaleParticle {
-  x: number;
-  y: number;
-  targetX: number;
-  targetY: number;
-  vx: number;
-  vy: number;
-  size: number;
-  color: string;
-  arrived: boolean;
-  isBurst: boolean;
-}
+type TextPhase =
+  | 'idle'
+  | 'pre'
+  | 'lines'
+  | 'message'
+  | 'signature'
+  | 'fade'
+  | 'secret'
+  | 'end';
 
 @Component({
   selector: 'app-finale',
   standalone: true,
-  imports: [ChapterVisitDirective],
+  imports: [ChapterVisitDirective, HeartShareOfferComponent],
   templateUrl: './finale.component.html',
   styleUrl: './finale.component.scss'
 })
-export class FinaleComponent implements OnDestroy {
+export class FinaleComponent implements OnDestroy, AfterViewInit {
   @ViewChild('section') sectionRef!: ElementRef<HTMLElement>;
   @ViewChild('pinWrap') pinWrapRef!: ElementRef<HTMLElement>;
-  @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('line1El') line1Ref!: ElementRef<HTMLElement>;
-  @ViewChild('line2El') line2Ref!: ElementRef<HTMLElement>;
-  @ViewChild('line3El') line3Ref!: ElementRef<HTMLElement>;
-  @ViewChild('line4El') line4Ref!: ElementRef<HTMLElement>;
-  @ViewChild('finalMsg') finalMsgRef!: ElementRef<HTMLElement>;
-  @ViewChild('creditEl') creditRef!: ElementRef<HTMLElement>;
+  @ViewChild('canvasHost') canvasHost!: ElementRef<HTMLElement>;
 
   readonly line1 = input('Before you go...');
   readonly line2 = input('I just wanted you to know...');
-  readonly line3 = input('You are incredibly special.');
-  readonly line4 = input('And I\'m really glad you exist.');
+  readonly line3 = input('You are incredibly special to me.');
+  readonly line4 = input('');
   readonly personalLine = input('Something that exists because you were here.');
   readonly finalMessage = input('You mean more to me than words on a screen could ever say — but I tried anyway.');
-  readonly footerCredit = input('Made with ❤️, caffeine, Java, and way too many thoughts about you.');
+  readonly footerCredit = input('');
   readonly herName = input('Beautiful');
+  readonly myName = input('');
 
   private readonly motion = inject(MotionService);
+  private readonly quality = inject(QualityService);
   private readonly visibility = inject(VisibilityService);
-  private readonly experienceState = inject(ExperienceStateService);
+  private readonly heartState = inject(HeartStateService);
   private readonly controller = inject(ExperienceControllerService);
   private readonly sounds = inject(SoundDesignService);
   private readonly scenes = inject(SceneManagerService);
 
-  readonly sequenceStarted = signal(false);
-  readonly showFinal = signal(false);
-  readonly showButton = signal(false);
-  readonly surpriseTriggered = signal(false);
-  readonly heartFormed = signal(false);
-  readonly showFinalSecret = signal(false);
-  readonly secretTriggered = signal(false);
-
-  private ctx!: CanvasRenderingContext2D;
-  private particles: FinaleParticle[] = [];
-  private animationId = 0;
-  private heartPoints: { x: number; y: number }[] = [];
-  private scrollTriggered = false;
-  private heartOutlineProgress = 0;
-  private pulsePhase = 0;
+  private scene?: FinaleTransformationScene;
   private scrollTriggers: ScrollTrigger[] = [];
-  private lineTimeline?: gsap.core.Timeline;
-  private inView = false;
-  private visibilityObserver?: IntersectionObserver;
+  private observer?: IntersectionObserver;
+  private resizeObserver?: ResizeObserver;
+  private started = false;
+  private bootstrapped = false;
+  private secretTimeout?: ReturnType<typeof setTimeout>;
 
-  constructor() {
-    afterNextRender(() => {
-      this.initCanvas();
-      this.setupScrollTrigger();
-      this.setupVisibilityObserver();
-    });
-  }
+  readonly sceneReady = signal(false);
+  readonly sceneFailed = signal(false);
+  readonly textPhase = signal<TextPhase>('idle');
+  readonly overlayLine = signal('');
+  readonly overlaySub = signal('');
+  readonly showMessage = signal(false);
+  readonly showSignature = signal(false);
+  readonly showSecret = signal(false);
+  readonly secretDone = signal(false);
+  readonly showEndHeart = signal(false);
+  readonly showShareOffer = signal(false);
+  readonly lineIndex = signal(-1);
 
-  ngOnDestroy(): void {
-    cancelAnimationFrame(this.animationId);
-    window.removeEventListener('resize', this.resizeCanvas);
-    this.visibilityObserver?.disconnect();
-    this.lineTimeline?.kill();
-    this.scrollTriggers.forEach(st => st.kill());
-  }
+  readonly finaleLines = () => [
+    this.line1(),
+    this.line2(),
+    this.line3(),
+    this.line4()
+  ].filter(Boolean);
 
-  triggerSurprise(): void {
-    if (this.surpriseTriggered()) return;
-    this.surpriseTriggered.set(true);
-    this.sounds.enable();
-    this.sounds.play('finale');
-    this.spawnGrandBurst();
-    this.spawnHeartDissolve();
-
-    setTimeout(() => {
-      if (!this.motion.prefersReducedMotion()) {
-        this.showFinalSecret.set(true);
-      } else {
-        this.controller.completeExperience();
-      }
-    }, 4500);
-  }
-
-  triggerFinalSecret(): void {
-    if (this.secretTriggered()) return;
-    this.secretTriggered.set(true);
-    this.controller.showFinaleSecret();
-    this.sounds.play('finale');
-    this.spawnGrandBurst();
-    this.spawnGrandBurst();
-
-    setTimeout(() => {
-      this.showFinalSecret.set(false);
-      this.controller.completeExperience();
-    }, 3000);
-  }
-
-  private spawnHeartDissolve(): void {
-    const canvas = this.canvasRef.nativeElement;
-    const w = canvas.width / (window.devicePixelRatio || 1);
-    const h = canvas.height / (window.devicePixelRatio || 1);
-    const cx = w / 2;
-    const cy = h * 0.36;
-    const colors = ['#c9a0a8', '#9a8fa8', '#c4b08a', '#f5f0e8'];
-
-    const dissolve: FinaleParticle[] = Array.from({ length: 80 }, () => {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 4 + 1;
-      return {
-        x: cx + (Math.random() - 0.5) * 40,
-        y: cy + (Math.random() - 0.5) * 40,
-        targetX: cx,
-        targetY: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        size: 2 + Math.random() * 3,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        arrived: false,
-        isBurst: true
-      };
-    });
-    this.particles = [...this.particles, ...dissolve];
-  }
-
-  private initCanvas(): void {
-    const canvas = this.canvasRef.nativeElement;
-    this.ctx = canvas.getContext('2d')!;
-    this.resizeCanvas();
-    window.addEventListener('resize', this.resizeCanvas);
-    this.generateHeartPoints();
-  }
-
-  private resizeCanvas = (): void => {
-    const canvas = this.canvasRef?.nativeElement;
-    const section = this.pinWrapRef?.nativeElement ?? this.sectionRef?.nativeElement;
-    if (!canvas || !section) return;
-    const dpr = Math.min(window.devicePixelRatio, 2);
-    canvas.width = section.clientWidth * dpr;
-    canvas.height = section.clientHeight * dpr;
-    canvas.style.width = `${section.clientWidth}px`;
-    canvas.style.height = `${section.clientHeight}px`;
-    this.ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
-    this.generateHeartPoints();
-  };
-
-  private generateHeartPoints(): void {
-    const canvas = this.canvasRef?.nativeElement;
-    if (!canvas) return;
-    const w = canvas.width / (window.devicePixelRatio || 1);
-    const h = canvas.height / (window.devicePixelRatio || 1);
-    const cx = w / 2;
-    const cy = h * 0.36;
-    const scale = Math.min(w, h) * 0.013;
-
-    this.heartPoints = [];
-    for (let t = 0; t < Math.PI * 2; t += 0.12) {
-      const x = 16 * Math.pow(Math.sin(t), 3);
-      const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-      this.heartPoints.push({ x: cx + x * scale, y: cy + y * scale });
+  ngAfterViewInit(): void {
+    this.waitForContainerAndBootstrap();
+    const host = this.canvasHost?.nativeElement;
+    if (host) {
+      this.resizeObserver = new ResizeObserver(() => this.scene?.resize());
+      this.resizeObserver.observe(host);
     }
   }
 
-  private setupScrollTrigger(): void {
-    if (!this.sectionRef) return;
+  ngOnDestroy(): void {
+    this.observer?.disconnect();
+    this.resizeObserver?.disconnect();
+    this.scrollTriggers.forEach(st => st.kill());
+    if (this.secretTimeout) clearTimeout(this.secretTimeout);
+    this.scene?.dispose();
+  }
 
+  triggerSecret(): void {
+    if (this.secretDone()) return;
+    this.secretDone.set(true);
+    this.sounds.enable();
+    this.sounds.play('finale');
+    this.scene?.triggerSecretExplosion();
+    this.showEndHeart.set(true);
+
+    setTimeout(() => {
+      this.textPhase.set('end');
+      this.showSecret.set(false);
+      this.showEndHeart.set(false);
+      this.controller.showFinaleSecret();
+      this.showShareOffer.set(true);
+    }, 4500);
+  }
+
+  onShareClosed(): void {
+    this.showShareOffer.set(false);
+    this.controller.completeExperience();
+  }
+
+  private waitForContainerAndBootstrap(attempts = 0): void {
+    const host = this.canvasHost?.nativeElement;
+    if (!host) return;
+    if (host.clientWidth < 20 || host.clientHeight < 20) {
+      if (attempts < 60) {
+        requestAnimationFrame(() => this.waitForContainerAndBootstrap(attempts + 1));
+      }
+      return;
+    }
+    void this.bootstrap();
+  }
+
+  private async bootstrap(): Promise<void> {
+    if (this.bootstrapped) return;
+    this.bootstrapped = true;
+
+    try {
+      const mobile = this.motion.isMobile();
+      const particleScale = this.quality.particleMultiplier();
+      this.scene = new FinaleTransformationScene(
+        this.canvasHost.nativeElement,
+        this.motion.prefersReducedMotion(),
+        mobile,
+        particleScale
+      );
+      this.scene.setCallbacks({
+        onPhase: phase => this.onScenePhase(phase),
+        onDetachObject: () => this.sounds.play('star'),
+        onPulse: () => this.sounds.play('heart')
+      });
+      this.scene.init();
+      const objects = this.heartState.getValidatedHeartObjects();
+      await this.scene.loadExactHeart(objects);
+      this.scene.start();
+      this.sceneReady.set(true);
+      this.setupScroll();
+    } catch {
+      this.sceneFailed.set(true);
+    }
+  }
+
+  private setupScroll(): void {
+    if (!this.sectionRef) return;
     const mobile = this.motion.isMobile();
 
-    if (!mobile) {
+    if (!mobile && !this.motion.prefersReducedMotion()) {
       const pin = ScrollTrigger.create({
         trigger: this.sectionRef.nativeElement,
         start: 'top top',
-        end: '+=140%',
+        end: '+=180%',
         pin: this.pinWrapRef.nativeElement,
         anticipatePin: 1
       });
       this.scrollTriggers.push(pin);
     }
 
-    const enter = ScrollTrigger.create({
-      trigger: this.sectionRef.nativeElement,
-      start: mobile ? 'top 70%' : 'top 55%',
-      once: true,
-      onEnter: () => {
-        this.scenes.setScene('finale');
-        if (this.scrollTriggered) return;
-        this.scrollTriggered = true;
-        this.startFinale();
-      }
-    });
-    this.scrollTriggers.push(enter);
-  }
-
-  private setupVisibilityObserver(): void {
-    if (!this.sectionRef) return;
-    this.visibilityObserver = new IntersectionObserver(
+    this.observer = new IntersectionObserver(
       ([entry]) => {
-        this.inView = entry.isIntersecting;
-      },
-      { threshold: 0.08 }
-    );
-    this.visibilityObserver.observe(this.sectionRef.nativeElement);
-  }
-
-  private startFinale(): void {
-    this.sequenceStarted.set(true);
-    this.spawnConvergenceParticles();
-
-    if (this.motion.prefersReducedMotion()) {
-      gsap.set(this.getLineElements(), { opacity: 1, y: 0, filter: 'blur(0px)' });
-      this.showFinal.set(true);
-      this.showButton.set(true);
-      this.heartFormed.set(true);
-      this.heartOutlineProgress = 1;
-      this.drawFrame();
-      return;
-    }
-
-    requestAnimationFrame(() => {
-      const lines = this.getLineElements();
-      gsap.set(lines, { opacity: 0, y: 24, filter: 'blur(8px)' });
-
-      this.lineTimeline = gsap.timeline({ delay: 1.8 });
-      lines.forEach((el, i) => {
-        this.lineTimeline!.to(el, {
-          opacity: 1,
-          y: 0,
-          filter: 'blur(0px)',
-          duration: 1.2,
-          ease: 'power3.out'
-        }, i * 1.1);
-      });
-
-      this.lineTimeline.add(() => {
-        this.showFinal.set(true);
-        requestAnimationFrame(() => {
-          if (this.finalMsgRef) {
-            gsap.fromTo(this.finalMsgRef.nativeElement, {
-              opacity: 0,
-              y: 20,
-              filter: 'blur(6px)'
-            }, {
-              opacity: 1,
-              y: 0,
-              filter: 'blur(0px)',
-              duration: 1.1,
-              ease: 'power3.out'
-            });
+        this.scene?.setVisible(entry.isIntersecting && this.visibility.pageVisible());
+        if (entry.isIntersecting) {
+          this.scenes.setScene('finale');
+          if (!this.started && !this.controller.experienceCompleted()) {
+            this.started = true;
+            void this.beginFinale();
           }
-        });
-      }, '+=0.4');
-
-      this.lineTimeline.add(() => {
-        this.showButton.set(true);
-        this.heartFormed.set(true);
-        if (this.creditRef) {
-          gsap.from(this.creditRef.nativeElement, {
-            opacity: 0,
-            y: 12,
-            duration: 0.9,
-            ease: 'power3.out'
-          });
         }
-      }, '+=0.8');
-    });
+      },
+      { threshold: mobile ? 0.15 : 0.2 }
+    );
+    this.observer.observe(this.sectionRef.nativeElement);
   }
 
-  private getLineElements(): HTMLElement[] {
-    return [
-      this.line1Ref?.nativeElement,
-      this.line2Ref?.nativeElement,
-      this.line3Ref?.nativeElement,
-      this.line4Ref?.nativeElement
-    ].filter(Boolean) as HTMLElement[];
+  private async beginFinale(): Promise<void> {
+    this.sounds.enable();
+    this.textPhase.set('pre');
+
+    this.overlayLine.set('I wanted to keep this moment.');
+    await this.pause(2400);
+    this.overlaySub.set('Just for a little longer.');
+    await this.pause(2000);
+    this.overlayLine.set('');
+    this.overlaySub.set('');
+
+    await this.scene?.playTransformation();
   }
 
-  private spawnConvergenceParticles(): void {
-    const canvas = this.canvasRef.nativeElement;
-    const w = canvas.width / (window.devicePixelRatio || 1);
-    const h = canvas.height / (window.devicePixelRatio || 1);
-    const colors = ['#c9a0a8', '#9a8fa8', '#c4b08a', '#f5f0e8'];
-    const heartObjectCount = this.experienceState.selectedHeartObjects().length;
-    const count = this.motion.prefersReducedMotion()
-      ? 30
-      : this.motion.isMobile()
-        ? 70 + heartObjectCount * 3
-        : 140 + heartObjectCount * 5;
-
-    this.particles = Array.from({ length: count }, (_, i) => {
-      const edge = Math.floor(Math.random() * 4);
-      let x = Math.random() * w;
-      let y = Math.random() * h;
-      if (edge === 0) y = -10;
-      else if (edge === 1) y = h + 10;
-      else if (edge === 2) x = -10;
-      else x = w + 10;
-
-      const target = this.heartPoints[i % this.heartPoints.length] ?? { x: w / 2, y: h * 0.36 };
-      return {
-        x,
-        y,
-        targetX: target.x,
-        targetY: target.y,
-        vx: 0,
-        vy: 0,
-        size: 1.5 + Math.random() * 2.5,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        arrived: false,
-        isBurst: false
-      };
-    });
-
-    cancelAnimationFrame(this.animationId);
-    this.animateConvergence();
-  }
-
-  private animateConvergence = (): void => {
-    if (!this.inView || !this.visibility.pageVisible()) {
-      this.animationId = requestAnimationFrame(this.animateConvergence);
-      return;
+  private async onScenePhase(phase: FinaleScenePhase): Promise<void> {
+    if (phase === 'glow') {
+      this.sounds.play('memory');
     }
+    if (phase === 'spread') {
+      this.sounds.play('photo');
+    }
+    if (phase === 'converge') {
+      this.sounds.play('star');
+    }
+    if (phase === 'complete') {
+      await this.playFinalMessages();
+    }
+  }
 
-    this.drawFrame();
+  private async playFinalMessages(): Promise<void> {
+    this.textPhase.set('lines');
+    const lines = this.finaleLines();
 
-    let arrivedCount = 0;
-    for (const p of this.particles) {
-      if (p.isBurst) continue;
+    for (let i = 0; i < lines.length; i++) {
+      this.lineIndex.set(i);
+      this.overlayLine.set(lines[i]);
+      await this.pause(2200);
+    }
+    this.lineIndex.set(-1);
+    this.overlayLine.set('');
 
-      const dx = p.targetX - p.x;
-      const dy = p.targetY - p.y;
-      const dist = Math.hypot(dx, dy);
+    this.textPhase.set('message');
+    this.showMessage.set(true);
+    await this.pause(3200);
 
-      if (dist > 1.5) {
-        const ease = 0.035 + (1 - Math.min(dist / 400, 1)) * 0.02;
-        p.x += dx * ease;
-        p.y += dy * ease;
-      } else {
-        p.arrived = true;
-        p.x = p.targetX;
-        p.y = p.targetY;
+    this.textPhase.set('signature');
+    this.showSignature.set(true);
+    await this.pause(2800);
+
+    this.textPhase.set('fade');
+    this.showMessage.set(false);
+    this.showSignature.set(false);
+    await this.pause(2000);
+
+    this.textPhase.set('secret');
+    this.showSecret.set(true);
+    this.secretTimeout = setTimeout(() => {
+      if (!this.secretDone()) {
+        this.triggerSecret();
       }
-
-      if (p.arrived) arrivedCount++;
-    }
-
-    const targetProgress = arrivedCount / Math.max(this.particles.filter(p => !p.isBurst).length, 1);
-    this.heartOutlineProgress += (targetProgress - this.heartOutlineProgress) * 0.04;
-
-    if (this.heartOutlineProgress > 0.85 && !this.heartFormed()) {
-      // heart visually formed via particles
-    }
-
-    this.pulsePhase += 0.02;
-    this.animationId = requestAnimationFrame(this.animateConvergence);
-  };
-
-  private drawFrame(): void {
-    const canvas = this.canvasRef.nativeElement;
-    const w = canvas.width / (window.devicePixelRatio || 1);
-    const h = canvas.height / (window.devicePixelRatio || 1);
-
-    this.ctx.clearRect(0, 0, w, h);
-
-    if (this.heartOutlineProgress > 0.05 && this.heartPoints.length > 1) {
-      this.drawHeartOutline();
-    }
-
-    for (const p of this.particles) {
-      if (p.isBurst) {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.1;
-        p.vx *= 0.98;
-      }
-
-      const pulse = p.arrived && !p.isBurst
-        ? 1 + Math.sin(this.pulsePhase + p.x * 0.01) * 0.15
-        : 1;
-
-      this.ctx.globalAlpha = p.arrived ? 0.85 : 0.55;
-      this.ctx.fillStyle = p.color;
-      this.ctx.beginPath();
-      this.ctx.arc(p.x, p.y, p.size * pulse, 0, Math.PI * 2);
-      this.ctx.fill();
-    }
-
-    this.particles = this.particles.filter(p => {
-      if (!p.isBurst) return true;
-      return p.y < h + 30 && p.x > -30 && p.x < w + 30;
-    });
+    }, 12000);
   }
 
-  private drawHeartOutline(): void {
-    const visible = Math.floor(this.heartPoints.length * this.heartOutlineProgress);
-    if (visible < 2) return;
-
-    this.ctx.strokeStyle = `rgba(201, 160, 168, ${0.12 + this.heartOutlineProgress * 0.2})`;
-    this.ctx.lineWidth = 1.5;
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.heartPoints[0].x, this.heartPoints[0].y);
-    for (let i = 1; i < visible; i++) {
-      this.ctx.lineTo(this.heartPoints[i].x, this.heartPoints[i].y);
-    }
-    this.ctx.closePath();
-    this.ctx.stroke();
-  }
-
-  private spawnGrandBurst(): void {
-    const canvas = this.canvasRef.nativeElement;
-    const w = canvas.width / (window.devicePixelRatio || 1);
-    const h = canvas.height / (window.devicePixelRatio || 1);
-    const cx = w / 2;
-    const cy = h * 0.36;
-    const colors = ['#c9a0a8', '#9a8fa8', '#c4b08a', '#f5f0e8', '#d4b0b8'];
-
-    const burstCount = this.motion.prefersReducedMotion() ? 35 : 160;
-    const burstParticles: FinaleParticle[] = Array.from({ length: burstCount }, () => {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 7 + 2;
-      return {
-        x: cx,
-        y: cy,
-        targetX: cx,
-        targetY: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 3,
-        size: 2 + Math.random() * 4,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        arrived: false,
-        isBurst: true
-      };
-    });
-
-    this.particles = [...this.particles, ...burstParticles];
+  private pause(ms: number): Promise<void> {
+    if (this.motion.prefersReducedMotion()) return Promise.resolve();
+    return new Promise(r => setTimeout(r, ms));
   }
 }

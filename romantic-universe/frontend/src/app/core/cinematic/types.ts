@@ -1,3 +1,5 @@
+import { EXPERIENCE_CHAPTERS } from '../experience/chapter-map';
+
 export type ExperienceAct =
   | 'void'
   | 'universe'
@@ -35,16 +37,10 @@ export interface ChapterDefinition {
   sceneIds: string[];
 }
 
-export const CHAPTERS: ChapterDefinition[] = [
-  { id: 0, key: 'invitation', title: 'The Invitation', sceneIds: ['opening'] },
-  { id: 1, key: 'universe', title: 'Enter the Universe', sceneIds: ['universe'] },
-  { id: 2, key: 'discover', title: 'Discover Her World', sceneIds: ['hero', 'gallery'] },
-  { id: 3, key: 'memories', title: 'Collect the Memories', sceneIds: ['memories'] },
-  { id: 4, key: 'reasons', title: 'What I Love', sceneIds: ['reasons', 'constellation'] },
-  { id: 5, key: 'play', title: 'Play', sceneIds: ['love-bomb'] },
-  { id: 6, key: 'creation', title: 'Create Something', sceneIds: ['heart'] },
-  { id: 7, key: 'open-when', title: 'Quiet Moments', sceneIds: ['open-when'] },
-  { id: 8, key: 'remembers', title: 'The Universe Remembers', sceneIds: ['remembers', 'flower'] },
-  { id: 9, key: 'letter', title: 'The Letter', sceneIds: ['letter'] },
-  { id: 10, key: 'finale', title: 'Final Creation', sceneIds: ['finale'] }
-];
+/** Derived from `chapter-map.ts` — single source of truth for chapter numbering. */
+export const CHAPTERS: ChapterDefinition[] = EXPERIENCE_CHAPTERS.map(c => ({
+  id: c.id,
+  key: c.key,
+  title: c.label,
+  sceneIds: [c.sceneId]
+}));

@@ -1,47 +1,49 @@
 import { Injectable, inject } from '@angular/core';
-import { ExperienceStateService } from '../experience/experience-state.service';
+import { HeartStateService } from '../experience/heart-state.service';
 import { ConfigService } from './config.service';
+import { renderHeartSnapshot } from './heart-capture.renderer';
 
 @Injectable({ providedIn: 'root' })
 export class HeartShareService {
-  private readonly state = inject(ExperienceStateService);
+  private readonly heartState = inject(HeartStateService);
   private readonly config = inject(ConfigService);
+  private previewUrl: string | null = null;
+
+  /** Read-only capture of the exact personalized heart. */
+  async captureHeartImage(): Promise<HTMLCanvasElement> {
+    const objects = this.heartState.getValidatedHeartObjects();
+    return renderHeartSnapshot(objects, {
+      width: 1080,
+      height: 1080,
+      herName: this.config.get('HER_NAME', ''),
+      title: 'Our Little Heart'
+    });
+  }
 
   async generateShareImage(): Promise<Blob | null> {
-    const canvas = document.createElement('canvas');
-    canvas.width = 800;
-    canvas.height = 800;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
+    try {
+      const canvas = await this.captureHeartImage();
+      return new Promise(resolve => {
+        canvas.toBlob(blob => resolve(blob), 'image/png', 0.92);
+      });
+    } catch {
+      return null;
+    }
+  }
 
-    const herName = this.config.get('HER_NAME', 'you');
-    const objects = this.state.selectedHeartObjects();
-    const discoveries = this.state.totalDiscoveries();
+  async getPreviewDataUrl(): Promise<string | null> {
+    if (this.previewUrl) return this.previewUrl;
+    try {
+      const canvas = await this.captureHeartImage();
+      this.previewUrl = canvas.toDataURL('image/png', 0.9);
+      return this.previewUrl;
+    } catch {
+      return null;
+    }
+  }
 
-    ctx.fillStyle = '#050308';
-    ctx.fillRect(0, 0, 800, 800);
-
-    const grad = ctx.createRadialGradient(400, 360, 0, 400, 360, 320);
-    grad.addColorStop(0, 'rgba(201, 160, 168, 0.25)');
-    grad.addColorStop(1, 'rgba(5, 3, 8, 0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 800, 800);
-
-    this.drawHeart(ctx, 400, 380, 120);
-
-    ctx.fillStyle = '#f5f0e8';
-    ctx.font = 'italic 28px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Our Little Heart', 400, 580);
-
-    ctx.font = '16px sans-serif';
-    ctx.fillStyle = 'rgba(245, 240, 232, 0.6)';
-    ctx.fillText(`${objects.length} treasures · ${discoveries} discoveries`, 400, 620);
-    ctx.fillText(`Made for ${herName}`, 400, 660);
-
-    return new Promise(resolve => {
-      canvas.toBlob(blob => resolve(blob), 'image/png', 0.92);
-    });
+  clearPreviewCache(): void {
+    this.previewUrl = null;
   }
 
   async share(): Promise<boolean> {
@@ -50,42 +52,31 @@ export class HeartShareService {
 
     const herName = this.config.get('HER_NAME', 'you');
     const file = new File([blob], 'our-little-heart.png', { type: 'image/png' });
+    const title = 'Our Little Heart ❤️';
+    const text = `A little universe made for ${herName}`;
 
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({
-        title: 'Our Little Heart',
-        text: `A little universe made for ${herName}`,
-        files: [file]
-      });
-      return true;
+    try {
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ title, text, files: [file] });
+        return true;
+      }
+    } catch {
+      // fall through to download
     }
 
-    const url = URL.createObjectURL(blob);
+    return this.download(blob);
+  }
+
+  async download(blob?: Blob): Promise<boolean> {
+    const image = blob ?? (await this.generateShareImage());
+    if (!image) return false;
+
+    const url = URL.createObjectURL(image);
     const link = document.createElement('a');
     link.href = url;
     link.download = 'our-little-heart.png';
     link.click();
     URL.revokeObjectURL(url);
     return true;
-  }
-
-  private drawHeart(ctx: CanvasRenderingContext2D, cx: number, cy: number, scale: number): void {
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.scale(scale / 16, scale / 16);
-    ctx.beginPath();
-    for (let t = 0; t <= Math.PI * 2; t += 0.08) {
-      const x = 16 * Math.pow(Math.sin(t), 3);
-      const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-      if (t === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.strokeStyle = 'rgba(201, 160, 168, 0.8)';
-    ctx.lineWidth = 0.15;
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(201, 160, 168, 0.12)';
-    ctx.fill();
-    ctx.restore();
   }
 }

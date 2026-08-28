@@ -11,6 +11,8 @@ import {
 import gsap from 'gsap';
 import { MotionService } from '../../core/services/motion.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
+import { ExperienceStateService } from '../../core/experience/experience-state.service';
+import { SoundDesignService } from '../../core/services/sound-design.service';
 
 @Component({
   selector: 'app-flower-surprise',
@@ -33,6 +35,8 @@ export class FlowerSurpriseComponent implements OnDestroy {
 
   private readonly motion = inject(MotionService);
   private readonly scenes = inject(SceneManagerService);
+  private readonly experienceState = inject(ExperienceStateService);
+  private readonly sounds = inject(SoundDesignService);
   private observer?: IntersectionObserver;
   private bloomTimeline?: gsap.core.Timeline;
 
@@ -54,6 +58,7 @@ export class FlowerSurpriseComponent implements OnDestroy {
     if (this.motion.prefersReducedMotion()) {
       this.phase.set('bloomed');
       this.showMessage.set(true);
+      this.registerFlowerDiscovery();
       return;
     }
 
@@ -87,13 +92,14 @@ export class FlowerSurpriseComponent implements OnDestroy {
     gsap.set(leaves, { opacity: 0, scale: 0.5 });
     gsap.set(bloom, { scale: 0, opacity: 0 });
     gsap.set(petals, { scale: 0, opacity: 0, transformOrigin: 'center bottom' });
-  if (center) gsap.set(center, { scale: 0, opacity: 0 });
+    if (center) gsap.set(center, { scale: 0, opacity: 0 });
 
     this.bloomTimeline = gsap.timeline({
       onComplete: () => {
         this.phase.set('bloomed');
         this.showMessage.set(true);
-        this.revealMessage();
+        this.registerFlowerDiscovery();
+        this.animateMessageReveal();
       }
     });
 
@@ -119,7 +125,13 @@ export class FlowerSurpriseComponent implements OnDestroy {
     }
   }
 
-  private revealMessage(): void {
+  private registerFlowerDiscovery(): void {
+    this.sounds.enable();
+    this.sounds.play('heart');
+    this.experienceState.discoverFlower(1, this.flowerMessage());
+  }
+
+  private animateMessageReveal(): void {
     const el = this.messageElRef?.nativeElement;
     if (!el || this.motion.prefersReducedMotion()) return;
 

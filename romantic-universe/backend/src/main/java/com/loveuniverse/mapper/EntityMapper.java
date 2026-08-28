@@ -25,6 +25,7 @@ public class EntityMapper {
                 entity.getTitle(),
                 entity.getCaption(),
                 entity.getImageUrl(),
+                entity.getMemoryId(),
                 entity.getDisplayOrder()
         );
     }

@@ -1,4 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { applyPlacement } from './heart-composition.util';
 import {
   ChapterId,
   ConstellationStar,
@@ -16,6 +17,7 @@ export class ExperienceStateService {
   readonly discoveredReasons = signal<Set<number>>(new Set());
   readonly activatedQuotes = signal<Set<number>>(new Set());
   readonly triggeredLoveBombs = signal<Set<number>>(new Set());
+  readonly discoveredFlowers = signal<Set<number>>(new Set());
   readonly foundSecrets = signal<Set<string>>(new Set());
   readonly openedEnvelopes = signal<Set<number>>(new Set());
   readonly selectedHeartObjects = signal<HeartObject[]>([]);
@@ -23,6 +25,8 @@ export class ExperienceStateService {
   readonly constellationStars = signal<ConstellationStar[]>([]);
   readonly currentChapter = signal<ChapterId>(0);
   readonly musicEnabled = signal(false);
+  readonly experienceStarted = signal(false);
+  readonly experienceCompleted = signal(false);
 
   readonly totalDiscoveries = computed(() => {
     return (
@@ -31,7 +35,8 @@ export class ExperienceStateService {
       this.discoveredReasons().size +
       this.activatedQuotes().size +
       this.triggeredLoveBombs().size +
-      this.foundSecrets().size
+      this.foundSecrets().size +
+      this.discoveredFlowers().size
     );
   });
 
@@ -67,7 +72,13 @@ export class ExperienceStateService {
     if (this.discoveredPhotos().has(id)) return false;
     this.discoveredPhotos.update(set => new Set(set).add(id));
     this.addConstellationStar('photo', id);
-    this.addToHeartPool({ type: 'photo', referenceId: id, label, imageUrl });
+    this.addToHeartPool({
+      type: 'photo',
+      referenceId: id,
+      label,
+      imageUrl,
+      thumbnailUrl: imageUrl
+    });
     this.persist();
     return true;
   }
@@ -76,7 +87,13 @@ export class ExperienceStateService {
     if (this.discoveredMemories().has(id)) return false;
     this.discoveredMemories.update(set => new Set(set).add(id));
     this.addConstellationStar('memory', id);
-    this.addToHeartPool({ type: 'memory', referenceId: id, label, imageUrl });
+    this.addToHeartPool({
+      type: 'memory',
+      referenceId: id,
+      label,
+      imageUrl,
+      thumbnailUrl: imageUrl
+    });
     this.persist();
     return true;
   }
@@ -86,6 +103,15 @@ export class ExperienceStateService {
     this.discoveredReasons.update(set => new Set(set).add(id));
     this.addConstellationStar('reason', id);
     this.addToHeartPool({ type: 'reason', referenceId: id, label });
+    this.persist();
+    return true;
+  }
+
+  discoverFlower(id = 1, label?: string): boolean {
+    if (this.discoveredFlowers().has(id)) return false;
+    this.discoveredFlowers.update(set => new Set(set).add(id));
+    this.addConstellationStar('flower', id);
+    this.addToHeartPool({ type: 'flower', referenceId: id, label: label ?? 'A little surprise' });
     this.persist();
     return true;
   }
@@ -108,10 +134,11 @@ export class ExperienceStateService {
     return true;
   }
 
-  discoverSecret(key: string): boolean {
+  discoverSecret(key: string, label?: string): boolean {
     if (this.foundSecrets().has(key)) return false;
     this.foundSecrets.update(set => new Set(set).add(key));
     this.addConstellationStar('secret', key);
+    this.addToHeartPool({ type: 'secret', referenceId: key, label: label ?? 'A secret' });
     this.persist();
     return true;
   }
@@ -119,6 +146,7 @@ export class ExperienceStateService {
   openEnvelope(id: number): boolean {
     if (this.openedEnvelopes().has(id)) return false;
     this.openedEnvelopes.update(set => new Set(set).add(id));
+    this.addConstellationStar('symbol', `envelope-${id}`);
     this.persist();
     return true;
   }
@@ -129,7 +157,9 @@ export class ExperienceStateService {
     );
     if (exists) return;
 
-    this.selectedHeartObjects.update(list => [...list, object]);
+    const index = this.selectedHeartObjects().length;
+    const placed = applyPlacement(object, index);
+    this.selectedHeartObjects.update(list => [...list, placed]);
     this.persist();
   }
 
@@ -154,6 +184,7 @@ export class ExperienceStateService {
     this.discoveredReasons.set(new Set());
     this.activatedQuotes.set(new Set());
     this.triggeredLoveBombs.set(new Set());
+    this.discoveredFlowers.set(new Set());
     this.foundSecrets.set(new Set());
     this.openedEnvelopes.set(new Set());
     this.selectedHeartObjects.set([]);
@@ -161,6 +192,8 @@ export class ExperienceStateService {
     this.constellationStars.set([]);
     this.currentChapter.set(0);
     this.musicEnabled.set(false);
+    this.experienceStarted.set(false);
+    this.experienceCompleted.set(false);
     sessionStorage.removeItem(STORAGE_KEY);
   }
 
@@ -169,7 +202,7 @@ export class ExperienceStateService {
   }
 
   private addConstellationStar(
-    sourceType: HeartObjectType | 'secret',
+    sourceType: HeartObjectType | 'secret' | 'symbol',
     referenceId: number | string
   ): void {
     const id = `${sourceType}-${referenceId}`;
@@ -211,6 +244,8 @@ export class ExperienceStateService {
     for (const id of this.discoveredReasons()) add({ type: 'reason', referenceId: id });
     for (const id of this.activatedQuotes()) add({ type: 'quote', referenceId: id });
     for (const id of this.triggeredLoveBombs()) add({ type: 'love-bomb', referenceId: id });
+    for (const id of this.discoveredFlowers()) add({ type: 'flower', referenceId: id });
+    for (const key of this.foundSecrets()) add({ type: 'secret', referenceId: key });
 
     this.heartPool.set(pool);
   }
@@ -232,6 +267,7 @@ export class ExperienceStateService {
       this.discoveredReasons.set(new Set(data.discoveredReasons ?? []));
       this.activatedQuotes.set(new Set(data.activatedQuotes ?? []));
       this.triggeredLoveBombs.set(new Set(data.triggeredLoveBombs ?? []));
+      this.discoveredFlowers.set(new Set(data.discoveredFlowers ?? []));
       this.foundSecrets.set(new Set(data.foundSecrets ?? []));
       this.openedEnvelopes.set(new Set(data.openedEnvelopes ?? []));
       this.selectedHeartObjects.set(data.selectedHeartObjects ?? []);
@@ -239,6 +275,8 @@ export class ExperienceStateService {
       this.constellationStars.set(data.constellationStars ?? []);
       this.currentChapter.set((data.currentChapter ?? 0) as ChapterId);
       this.musicEnabled.set(data.musicEnabled ?? false);
+      this.experienceStarted.set(data.experienceStarted ?? false);
+      this.experienceCompleted.set(data.experienceCompleted ?? false);
       if (!data.heartPool?.length) {
         this.rebuildHeartPoolFromDiscoveries();
       }
@@ -247,13 +285,14 @@ export class ExperienceStateService {
     }
   }
 
-  private serialize(): SerializedExperienceState {
+  serialize(): SerializedExperienceState {
     return {
       discoveredPhotos: [...this.discoveredPhotos()],
       discoveredMemories: [...this.discoveredMemories()],
       discoveredReasons: [...this.discoveredReasons()],
       activatedQuotes: [...this.activatedQuotes()],
       triggeredLoveBombs: [...this.triggeredLoveBombs()],
+      discoveredFlowers: [...this.discoveredFlowers()],
       foundSecrets: [...this.foundSecrets()],
       openedEnvelopes: [...this.openedEnvelopes()],
       selectedHeartObjects: this.selectedHeartObjects(),
@@ -261,8 +300,18 @@ export class ExperienceStateService {
       constellationStars: this.constellationStars(),
       currentChapter: this.currentChapter(),
       musicEnabled: this.musicEnabled(),
-      experienceStarted: false,
-      experienceCompleted: false
+      experienceStarted: this.experienceStarted(),
+      experienceCompleted: this.experienceCompleted()
     };
+  }
+
+  setExperienceStarted(started: boolean): void {
+    this.experienceStarted.set(started);
+    this.persist();
+  }
+
+  setExperienceCompleted(completed: boolean): void {
+    this.experienceCompleted.set(completed);
+    this.persist();
   }
 }

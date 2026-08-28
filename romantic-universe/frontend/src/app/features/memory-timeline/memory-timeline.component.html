@@ -14,9 +14,13 @@
       <div class="memories__state cine-body">Loading memories...</div>
     } @else if (error()) {
       <div class="memories__state memories__state--error cine-body">{{ error() }}</div>
+    } @else if (visibleMemories().length === 0 && discoveredOnly()) {
+      <div class="memories__state cine-body memories__state--quiet">
+        Discover photos in the universe — memories will appear here.
+      </div>
     } @else {
       <div class="memories__timeline">
-        @for (memory of memories(); track memory.id; let i = $index) {
+        @for (memory of visibleMemories(); track memory.id; let i = $index) {
           <article
             class="memory-card"
             [class.memory-card--right]="i % 2 === 1"

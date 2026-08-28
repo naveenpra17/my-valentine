@@ -78,13 +78,13 @@ INSERT INTO memories (title, message, memory_date, location, image_url, display_
 ('A quiet evening', 'Nothing extraordinary happened — and somehow that made it extraordinary.', '2024-06-08', NULL, '/assets/images/memories/memory-3.jpg', 3),
 ('The look on your face', 'That smile. I''d frame it if I could.', '2024-09-12', NULL, '/assets/images/memories/memory-4.jpg', 4);
 
-INSERT INTO photos (title, caption, image_url, display_order) VALUES
-('Us', 'My favourite view.', '/assets/images/gallery/photo-1.jpg', 1),
-('Sunset', 'Golden hour with you hits different.', '/assets/images/gallery/photo-2.jpg', 2),
-('Adventure', 'Every road is better with you.', '/assets/images/gallery/photo-3.jpg', 3),
-('Candid', 'Caught you being adorable again.', '/assets/images/gallery/photo-4.jpg', 4),
-('Together', 'Home is wherever you are.', '/assets/images/gallery/photo-5.jpg', 5),
-('Smile', 'The one that ruins my concentration.', '/assets/images/gallery/photo-6.jpg', 6);
+INSERT INTO photos (title, caption, image_url, memory_id, display_order) VALUES
+('Us', 'My favourite view.', '/assets/images/gallery/photo-1.jpg', 1, 1),
+('Sunset', 'Golden hour with you hits different.', '/assets/images/gallery/photo-2.jpg', 2, 2),
+('Adventure', 'Every road is better with you.', '/assets/images/gallery/photo-3.jpg', 3, 3),
+('Candid', 'Caught you being adorable again.', '/assets/images/gallery/photo-4.jpg', 4, 4),
+('Together', 'Home is wherever you are.', '/assets/images/gallery/photo-5.jpg', NULL, 5),
+('Smile', 'The one that ruins my concentration.', '/assets/images/gallery/photo-6.jpg', NULL, 6);
 
 INSERT INTO quotes (text, author, display_order) VALUES
 ('If I could give you one thing, I''d let you see yourself through my eyes.', NULL, 1),

@@ -2,168 +2,281 @@ import {
   Component,
   ElementRef,
   OnDestroy,
+  AfterViewInit,
   ViewChild,
-  afterNextRender,
   computed,
   inject,
   input,
   signal
 } from '@angular/core';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MotionService } from '../../core/services/motion.service';
+import { VisibilityService } from '../../core/services/visibility.service';
+import { SoundDesignService } from '../../core/services/sound-design.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
+import { HeartStateService } from '../../core/experience/heart-state.service';
+import { JourneyReplayService, JourneyReplayEvent } from '../../core/experience/journey-replay.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
-import { HeartShareService } from '../../core/services/heart-share.service';
+import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
+import { HeartObject } from '../../core/experience/experience-state.types';
+import { OurLittleHeartScene } from '../our-little-heart/our-little-heart-scene';
+import { objectKey } from '../our-little-heart/heart-object-meshes';
 
-gsap.registerPlugin(ScrollTrigger);
+type RemembersPhase =
+  | 'idle'
+  | 'intro'
+  | 'journey'
+  | 'heart-intro'
+  | 'reconstruct'
+  | 'complete';
 
 @Component({
   selector: 'app-universe-remembers',
   standalone: true,
+  imports: [ChapterVisitDirective],
   templateUrl: './universe-remembers.component.html',
   styleUrl: './universe-remembers.component.scss'
 })
-export class UniverseRemembersComponent implements OnDestroy {
+export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
   @ViewChild('section') sectionRef!: ElementRef<HTMLElement>;
-  @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('introEl') introRef!: ElementRef<HTMLElement>;
-  @ViewChild('recapEl') recapRef!: ElementRef<HTMLElement>;
+  @ViewChild('canvasHost') canvasHost!: ElementRef<HTMLElement>;
 
-  readonly intro = input('You\'ve been exploring for a while...');
+  readonly intro = input('You\'ve been here for a while.');
   readonly reveal = input('Look what you created.');
 
   private readonly motion = inject(MotionService);
+  private readonly visibility = inject(VisibilityService);
+  private readonly sounds = inject(SoundDesignService);
   readonly experienceState = inject(ExperienceStateService);
+  private readonly heartState = inject(HeartStateService);
+  private readonly journey = inject(JourneyReplayService);
   private readonly scenes = inject(SceneManagerService);
-  private readonly share = inject(HeartShareService);
 
+  private scene?: OurLittleHeartScene;
   private observer?: IntersectionObserver;
-  private scrollTrigger?: ScrollTrigger;
-  private animationId = 0;
+  private resizeObserver?: ResizeObserver;
   private started = false;
+  private bootstrapped = false;
 
-  readonly sharing = signal(false);
+  readonly phase = signal<RemembersPhase>('idle');
+  readonly sceneReady = signal(false);
+  readonly sceneFailed = signal(false);
+  readonly overlayLine = signal('');
+  readonly overlaySubtitle = signal('');
+  readonly showTitle = signal(false);
+  readonly selectedObject = signal<HeartObject | null>(null);
+  readonly introLineIndex = signal(-1);
 
-  readonly recap = computed(() => ({
-    photos: this.experienceState.discoveredPhotos().size,
-    memories: this.experienceState.discoveredMemories().size,
-    reasons: this.experienceState.discoveredReasons().size,
-    quotes: this.experienceState.activatedQuotes().size,
-    bombs: this.experienceState.triggeredLoveBombs().size,
-    secrets: this.experienceState.foundSecrets().size,
-    heartObjects: this.experienceState.selectedHeartObjects().length,
-    stars: this.experienceState.constellationStars().length
-  }));
+  readonly journeyEvents = computed(() => this.journey.buildTimeline());
+  readonly heartObjects = computed(() => this.heartState.getValidatedHeartObjects());
+  readonly hasHeart = computed(() => this.heartObjects().length > 0);
+  readonly hasJourney = computed(() => this.journey.hasJourney());
 
-  constructor() {
-    afterNextRender(() => this.initObserver());
+  ngAfterViewInit(): void {
+    this.waitForContainerAndBootstrap();
+    const host = this.canvasHost?.nativeElement;
+    if (host) {
+      this.resizeObserver = new ResizeObserver(() => this.scene?.resize());
+      this.resizeObserver.observe(host);
+    }
   }
 
   ngOnDestroy(): void {
     this.observer?.disconnect();
-    this.scrollTrigger?.kill();
-    cancelAnimationFrame(this.animationId);
+    this.resizeObserver?.disconnect();
+    this.scene?.dispose();
   }
 
-  async keepHeart(): Promise<void> {
-    this.sharing.set(true);
+  dismissDetail(): void {
+    this.selectedObject.set(null);
+    this.scene?.clearAttachedFocus();
+  }
+
+  private waitForContainerAndBootstrap(attempts = 0): void {
+    const host = this.canvasHost?.nativeElement;
+    if (!host) return;
+    if (host.clientWidth < 20 || host.clientHeight < 20) {
+      if (attempts < 60) {
+        requestAnimationFrame(() => this.waitForContainerAndBootstrap(attempts + 1));
+      }
+      return;
+    }
+    void this.bootstrap();
+  }
+
+  private async bootstrap(): Promise<void> {
+    if (this.bootstrapped) return;
+    this.bootstrapped = true;
+
     try {
-      await this.share.share();
-    } finally {
-      this.sharing.set(false);
+      const mobile = window.innerWidth < 768;
+      this.scene = new OurLittleHeartScene(
+        this.canvasHost.nativeElement,
+        this.motion.prefersReducedMotion(),
+        mobile,
+        'reconstruct'
+      );
+      this.scene.setCallbacks({
+        onAttachedSelect: obj => this.onObjectInspect(obj),
+        onReconstructItem: () => this.sounds.play('heart'),
+        onReconstructComplete: () => {
+          this.sounds.play('memory');
+          void this.playFinaleLines();
+        },
+        onPulse: () => this.sounds.play('star')
+      });
+      this.scene.init();
+      this.scene.start();
+      this.sceneReady.set(true);
+
+      this.observer = new IntersectionObserver(
+        ([entry]) => {
+          this.scene?.setVisible(entry.isIntersecting && this.visibility.pageVisible());
+          if (entry.isIntersecting) {
+            this.scenes.setScene('remembers');
+            this.experienceState.setChapter(11);
+            if (!this.started) {
+              this.started = true;
+              void this.playExperience();
+            }
+          }
+        },
+        { threshold: 0.2 }
+      );
+      this.observer.observe(this.sectionRef.nativeElement);
+    } catch {
+      this.sceneFailed.set(true);
     }
   }
 
-  private initObserver(): void {
-    this.observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          this.scenes.setScene('remembers');
-          this.experienceState.setChapter(8);
-          if (!this.started) {
-            this.started = true;
-            this.playReveal();
-          }
-        }
-      },
-      { threshold: 0.25 }
-    );
-    this.observer.observe(this.sectionRef.nativeElement);
+  private async playExperience(): Promise<void> {
+    this.sounds.enable();
+    this.phase.set('intro');
+    await this.playIntroSequence();
+    await this.playJourneyReplay();
+    await this.playHeartSequence();
   }
 
-  private playReveal(): void {
-    if (this.motion.prefersReducedMotion()) {
-      this.drawConstellation();
+  private async playIntroSequence(): Promise<void> {
+    const lines = [
+      this.intro(),
+      'You found quite a few things.',
+      'And somehow...',
+      '...you left a little bit of yourself behind.'
+    ];
+
+    for (let i = 0; i < lines.length; i++) {
+      this.introLineIndex.set(i);
+      this.overlayLine.set(lines[i]);
+      this.overlaySubtitle.set('');
+      await this.pause(i === 0 ? 2400 : 2000);
+    }
+    this.introLineIndex.set(-1);
+    this.overlayLine.set('');
+  }
+
+  private async playJourneyReplay(): Promise<void> {
+    const events = this.journeyEvents();
+    if (events.length === 0) {
+      this.overlayLine.set('Even the little things matter.');
+      await this.pause(2200);
+      this.overlayLine.set('');
       return;
     }
 
-    const intro = this.introRef.nativeElement;
-    const recap = this.recapRef.nativeElement;
-    gsap.set([intro, recap], { opacity: 0, y: 24, filter: 'blur(8px)' });
+    this.phase.set('journey');
+    const total = events.length;
 
-    const tl = gsap.timeline({ onComplete: () => this.animateConstellation() });
-    tl.to(intro, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.4, ease: 'power3.out' })
-      .to(recap, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.2, ease: 'power3.out' }, '+=1.2');
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+      await this.playJourneyEvent(event, i, total);
+    }
+
+    this.overlayLine.set('');
+    this.overlaySubtitle.set('');
+    await this.pause(1200);
   }
 
-  private animateConstellation(): void {
-    this.drawConstellation();
-    if (this.motion.prefersReducedMotion()) return;
+  private async playJourneyEvent(
+    event: JourneyReplayEvent,
+    index: number,
+    total: number
+  ): Promise<void> {
+    this.scene?.addJourneyMarker(index, total);
+    this.scene?.highlightJourneyMarker(index);
 
-    const animate = (): void => {
-      this.drawConstellation(performance.now() * 0.001);
-      this.animationId = requestAnimationFrame(animate);
-    };
-    animate();
+    if (event.kind === 'reason' || event.kind === 'quote') {
+      this.overlayLine.set(event.label ?? '');
+      this.overlaySubtitle.set('');
+    } else {
+      this.overlayLine.set(event.subtitle ?? '');
+      this.overlaySubtitle.set(event.label ?? '');
+    }
+
+    this.sounds.play('star');
+    await this.pause(this.motion.prefersReducedMotion() ? 900 : 1600);
+    this.overlayLine.set('');
+    this.overlaySubtitle.set('');
+    await this.pause(400);
   }
 
-  private drawConstellation(time = 0): void {
-    const canvas = this.canvasRef?.nativeElement;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  private async playHeartSequence(): Promise<void> {
+    const objects = this.heartObjects();
 
-    const dpr = Math.min(window.devicePixelRatio, 2);
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
+    this.phase.set('heart-intro');
+    this.overlayLine.set('You found all these little things...');
+    await this.pause(2200);
+    this.overlayLine.set('...and then you made this.');
+    await this.pause(2000);
+    this.overlayLine.set('');
+    this.showTitle.set(true);
 
-    const stars = this.experienceState.constellationStars();
-    if (stars.length < 2) return;
+    this.scene?.revealHeartForReconstruction();
+    await this.pause(1000);
 
-    const points = stars.map(s => ({
-      x: s.x * w,
-      y: s.y * h,
-      pulse: 0.6 + 0.4 * Math.sin(time * 2 + s.discoveredAt * 0.001)
-    }));
+    this.phase.set('reconstruct');
 
-    ctx.strokeStyle = 'rgba(201, 160, 168, 0.15)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x, points[i].y);
+    if (objects.length === 0) {
+      this.scene?.prepareReconstruction();
+      this.overlayLine.set('Even the little things matter.');
+      await this.pause(2400);
+      this.overlayLine.set('');
+      this.phase.set('complete');
+      this.scene?.setReadOnly(true);
+      return;
     }
-    if (stars.length >= 6) ctx.closePath();
-    ctx.stroke();
 
-    for (const p of points) {
-      const r = 3 * p.pulse;
-      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 4);
-      grad.addColorStop(0, 'rgba(196, 176, 138, 0.6)');
-      grad.addColorStop(1, 'transparent');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, r * 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = '#f5f0e8';
-      ctx.fill();
+    await this.scene?.reconstructSequential(objects);
+  }
+
+  private async playFinaleLines(): Promise<void> {
+    this.phase.set('complete');
+    const lines = [
+      'Every little thing you found...',
+      'Every memory.',
+      'Every little secret.',
+      'And every piece you chose...',
+      '...became this.'
+    ];
+
+    for (const line of lines) {
+      this.overlayLine.set(line);
+      await this.pause(2000);
     }
+    this.overlayLine.set('');
+    this.showTitle.set(true);
+  }
+
+  private onObjectInspect(obj: HeartObject): void {
+    this.selectedObject.set(obj);
+    this.scene?.focusAttached(objectKey(obj));
+    this.sounds.enable();
+    this.sounds.play('star');
+  }
+
+  private pause(ms: number): Promise<void> {
+    if (this.motion.prefersReducedMotion()) {
+      return Promise.resolve();
+    }
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }

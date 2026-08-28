@@ -47,7 +47,7 @@ export class ConstellationCeremonyComponent implements OnDestroy {
     this.observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !this.played) {
-          this.scenes.setScene('constellation');
+          this.scenes.setScene('constellation-ceremony');
           this.played = true;
           this.playCeremony();
         }
