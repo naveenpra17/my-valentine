@@ -1,33 +1,14 @@
 import * as THREE from 'three';
 import { HeartObject, HeartObjectType } from '../../core/experience/experience-state.types';
 import { heartAssetKey } from '../../core/experience/heart-asset.types';
-
-const textureCache = new Map<string, THREE.Texture>();
-const textureLoader = new THREE.TextureLoader();
+import { acquireTexture, disposeAllCachedTextures, releaseTextureFromMap } from '../../core/three/texture-cache';
 
 export function objectKey(obj: HeartObject): string {
   return heartAssetKey(obj.type, obj.referenceId);
 }
 
 export function loadTexture(url: string, maxSize = 256): Promise<THREE.Texture> {
-  const cached = textureCache.get(url);
-  if (cached) return Promise.resolve(cached);
-
-  return new Promise((resolve, reject) => {
-    textureLoader.load(
-      url,
-      texture => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.anisotropy = 4;
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        textureCache.set(url, texture);
-        resolve(texture);
-      },
-      undefined,
-      err => reject(err)
-    );
-  });
+  return acquireTexture(url, maxSize);
 }
 
 export function createTextTexture(
@@ -121,6 +102,7 @@ async function addPhotoMesh(
   const w = quality === 'mobile' ? 0.22 : 0.26;
   const h = w * 1.15;
   const depth = 0.025;
+  const maxTex = quality === 'mobile' ? 256 : 512;
 
   const frame = new THREE.Mesh(
     new THREE.BoxGeometry(w + 0.02, h + 0.02, depth * 0.6),
@@ -136,7 +118,7 @@ async function addPhotoMesh(
   let frontMat: THREE.Material;
   if (url) {
     try {
-      const tex = await loadTexture(url);
+      const tex = await loadTexture(url, maxTex);
       frontMat = new THREE.MeshStandardMaterial({
         map: tex,
         metalness: 0.05,
@@ -168,6 +150,7 @@ async function addMemoryMesh(
 ): Promise<void> {
   const w = quality === 'mobile' ? 0.2 : 0.24;
   const h = w * 0.85;
+  const maxTex = quality === 'mobile' ? 256 : 384;
 
   const glow = new THREE.Mesh(
     new THREE.PlaneGeometry(w + 0.04, h + 0.04),
@@ -183,7 +166,7 @@ async function addMemoryMesh(
   const url = obj.thumbnailUrl ?? obj.imageUrl;
   if (url) {
     try {
-      const tex = await loadTexture(url);
+      const tex = await loadTexture(url, maxTex);
       const img = new THREE.Mesh(
         new THREE.PlaneGeometry(w, h),
         new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 })
@@ -314,20 +297,25 @@ function placeholderMat(color: number): THREE.MeshStandardMaterial {
   });
 }
 
+/**
+ * Dispose OWNED geometry/materials on a group.
+ * SHARED cached textures are released (ref-counted), never directly disposed.
+ * OWNED canvas textures (no cacheKey) are disposed directly.
+ */
 export function disposeGroup(group: THREE.Group): void {
   group.traverse(child => {
     if (child instanceof THREE.Mesh) {
       child.geometry.dispose();
       const mats = Array.isArray(child.material) ? child.material : [child.material];
       mats.forEach(m => {
-        if ('map' in m && m.map) m.map.dispose();
+        if ('map' in m && m.map) releaseTextureFromMap(m.map as THREE.Texture);
         m.dispose();
       });
     }
   });
 }
 
+/** @deprecated Use disposeGroup per-scene; only call on full app teardown. */
 export function disposeAllTextures(): void {
-  textureCache.forEach(t => t.dispose());
-  textureCache.clear();
+  disposeAllCachedTextures();
 }

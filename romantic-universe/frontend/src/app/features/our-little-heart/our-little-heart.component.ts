@@ -16,6 +16,7 @@ import { VisibilityService } from '../../core/services/visibility.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { HeartStateService } from '../../core/experience/heart-state.service';
+import { HeartShareService } from '../../core/services/heart-share.service';
 import { prioritizePool } from '../../core/experience/heart-asset.mapper';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { CameraDirectorService } from '../../core/cinematic/camera-director.service';
@@ -50,6 +51,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   private readonly sounds = inject(SoundDesignService);
   readonly experienceState = inject(ExperienceStateService);
   private readonly heartState = inject(HeartStateService);
+  private readonly heartShare = inject(HeartShareService);
   private readonly scenes = inject(SceneManagerService);
   private readonly camera = inject(CameraDirectorService);
 
@@ -144,6 +146,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
     try {
       await this.scene?.flyAttach(placed);
       this.experienceState.attachHeartObject(placed);
+      this.heartShare.clearPreviewCache();
       this.sounds.play('heart');
 
       const isFirst = !sessionStorage.getItem(FIRST_ATTACH_KEY);
@@ -164,6 +167,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
 
     this.attaching = true;
     this.experienceState.removeHeartObject(obj.type, obj.referenceId);
+    this.heartShare.clearPreviewCache();
     const poolIndex = this.poolObjects().length;
     await this.scene?.flyDetach(obj, poolIndex, poolIndex + 1);
     this.selectedObject.set(null);

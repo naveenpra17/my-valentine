@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HeartStateService } from '../experience/heart-state.service';
+import { heartStateCacheKey } from '../experience/heart-state-hash.util';
 import { ConfigService } from './config.service';
 import { renderHeartSnapshot } from './heart-capture.renderer';
 
@@ -8,6 +9,7 @@ export class HeartShareService {
   private readonly heartState = inject(HeartStateService);
   private readonly config = inject(ConfigService);
   private previewUrl: string | null = null;
+  private previewCacheKey: string | null = null;
 
   /** Read-only capture of the exact personalized heart. */
   async captureHeartImage(): Promise<HTMLCanvasElement> {
@@ -32,10 +34,14 @@ export class HeartShareService {
   }
 
   async getPreviewDataUrl(): Promise<string | null> {
-    if (this.previewUrl) return this.previewUrl;
+    const cacheKey = heartStateCacheKey(this.heartState.captureHeartState());
+    if (this.previewUrl && this.previewCacheKey === cacheKey) {
+      return this.previewUrl;
+    }
     try {
       const canvas = await this.captureHeartImage();
       this.previewUrl = canvas.toDataURL('image/png', 0.9);
+      this.previewCacheKey = cacheKey;
       return this.previewUrl;
     } catch {
       return null;
@@ -44,6 +50,7 @@ export class HeartShareService {
 
   clearPreviewCache(): void {
     this.previewUrl = null;
+    this.previewCacheKey = null;
   }
 
   async share(): Promise<boolean> {

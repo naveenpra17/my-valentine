@@ -18,6 +18,7 @@
 html {
   scroll-behavior: smooth;
   background: var(--void);
+  scrollbar-color: rgba(201, 160, 168, 0.45) var(--void);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -47,6 +48,12 @@ body {
   overflow-x: hidden;
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  color: var(--void);
+  background: var(--dust-pink);
 }
 
 h1, h2, h3, h4 {
@@ -72,6 +79,12 @@ button {
   border: none;
   background: none;
   color: inherit;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--champagne);
+  outline-offset: 4px;
 }
 
 /* Legacy utilities — gradually migrating */
@@ -148,4 +161,11 @@ button {
 
 .experience-main {
   background: var(--void);
+}
+
+// Chapter components are direct children of this container. Angular hosts
+// default to inline, which can collapse visually rich sections to a hairline.
+.experience-main > * {
+  display: block;
+  width: 100%;
 }

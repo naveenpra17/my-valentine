@@ -108,6 +108,7 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
     this.resizeObserver?.disconnect();
     this.scrollTriggers.forEach(st => st.kill());
     if (this.secretTimeout) clearTimeout(this.secretTimeout);
+    this.scene?.cancel();
     this.scene?.dispose();
   }
 
@@ -156,7 +157,8 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
         this.canvasHost.nativeElement,
         this.motion.prefersReducedMotion(),
         mobile,
-        particleScale
+        particleScale,
+        this.quality.getLevel()
       );
       this.scene.setCallbacks({
         onPhase: phase => this.onScenePhase(phase),

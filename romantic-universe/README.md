@@ -1,6 +1,10 @@
 # Romantic Universe
 
-An immersive, interactive 3D romantic website — Angular frontend, Spring Boot REST API, SQL database.
+A **cinematic interactive love experience** — explore a living universe, discover memories, build a personalized 3D heart, watch the universe remember it, experience a particle finale, and share her exact creation.
+
+**Stack:** Angular 19 + Three.js frontend, Spring Boot REST API, PostgreSQL/H2.
+
+See **[ARCHITECTURE.md](./ARCHITECTURE.md)** for system design and **[HARDENING-REPORT.md](./HARDENING-REPORT.md)** for the production hardening pass.
 
 ## Prerequisites
 
@@ -174,6 +178,7 @@ romantic-universe/
 | **Phase 3 — Universe Remembers** | ✅ Complete | Journey replay, exact heart reconstruction, no dashboard |
 | **Phase 4 — Finale** | ✅ Complete | Exact heart dissolve, particle universe, giant heart, secret ending |
 | **Phase 5 — Production & Share** | ✅ Complete | Personalized heart capture, share preview, quality service, production checklist |
+| **Production Hardening** | ✅ Complete | Texture ownership, state SSOT, finale particles, cancellable animations, tests |
 
 See **[PRODUCTION-CHECKLIST.md](./PRODUCTION-CHECKLIST.md)** before going live.
 
@@ -183,11 +188,12 @@ See **[PHASE1-REPORT.md](./PHASE1-REPORT.md)** through **[PHASE5-REPORT.md](./PH
 
 ## Performance Notes
 
-- Sections below the hero use `@defer` — they load only when scrolled into view
-- Three.js scene pauses when off-screen or tab is hidden
-- Read-only API responses are cached for 5 minutes
+- Adaptive quality via `QualityService` (low / medium / high particle budgets)
+- Reference-counted texture cache — no shared texture disposal bugs
+- Three.js scenes pause when off-screen or tab is hidden
+- Share capture uses a temporary renderer — disposed immediately after snapshot
+- Heart thumbnails downscaled before GPU upload (256–512px class)
 - Gzip compression enabled on the backend
-- Edit `frontend/src/assets/config.json` for production API URL (no rebuild needed for URL-only changes if you redeploy just that file)
 
 ---
 

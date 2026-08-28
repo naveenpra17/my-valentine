@@ -111,9 +111,32 @@ class THREELikeVector {
 }
 
 export function applyPlacement(object: HeartObject, index: number): HeartObject {
-  if (object.position && object.rotation && object.scale != null) {
+  if (hasPersistedPlacement(object)) {
     return object;
   }
   const placement = computeHeartPlacement(object.type, object.referenceId, index);
   return { ...object, ...placement };
+}
+
+/** True when saved placement exists and passes validation — authoritative for reconstruction. */
+export function hasPersistedPlacement(object: HeartObject): boolean {
+  if (!object.position || !object.rotation || object.scale == null) return false;
+  return isValidPlacement(object);
+}
+
+export function isValidPlacement(object: HeartObject): boolean {
+  const p = object.position;
+  const r = object.rotation;
+  const s = object.scale ?? 1;
+  if (!p || !r) return false;
+  const inRange = (n: number) => Number.isFinite(n) && Math.abs(n) < 20;
+  return inRange(p.x) && inRange(p.y) && inRange(p.z) &&
+    inRange(r.x) && inRange(r.y) && inRange(r.z) &&
+    Number.isFinite(s) && s > 0 && s < 5;
+}
+
+/** Deterministic fallback when persisted placement is corrupt. */
+export function applyPlacementWithFallback(object: HeartObject, index: number): HeartObject {
+  if (hasPersistedPlacement(object)) return object;
+  return applyPlacement(object, index);
 }

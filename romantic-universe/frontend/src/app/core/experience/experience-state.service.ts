@@ -1,5 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { applyPlacement } from './heart-composition.util';
+import { applyPlacementWithFallback } from './heart-composition.util';
 import {
   ChapterId,
   ConstellationStar,
@@ -158,7 +158,7 @@ export class ExperienceStateService {
     if (exists) return;
 
     const index = this.selectedHeartObjects().length;
-    const placed = applyPlacement(object, index);
+    const placed = applyPlacementWithFallback(object, index);
     this.selectedHeartObjects.update(list => [...list, placed]);
     this.persist();
   }

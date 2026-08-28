@@ -9,7 +9,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--void);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(201, 160, 168, 0.055), transparent 42%),
+    var(--void);
   color: var(--ivory);
   overflow: hidden;
 }

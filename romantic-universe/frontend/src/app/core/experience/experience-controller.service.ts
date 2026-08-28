@@ -18,20 +18,24 @@ type EmotionalBeat =
   | 'wow';
 
 interface PersistedControllerState {
-  experienceStarted: boolean;
-  experienceCompleted: boolean;
   visitedChapters: DirectorChapterId[];
   unlockedChapters: DirectorChapterId[];
   constellationRevealed: boolean;
   finaleSecretShown: boolean;
+  /** @deprecated migrated to ExperienceStateService */
+  experienceStarted?: boolean;
+  /** @deprecated migrated to ExperienceStateService */
+  experienceCompleted?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ExperienceControllerService {
   private readonly state = inject(ExperienceStateService);
 
-  readonly experienceStarted = signal(false);
-  readonly experienceCompleted = signal(false);
+  /** Single source of truth — delegated to ExperienceStateService. */
+  readonly experienceStarted = this.state.experienceStarted;
+  readonly experienceCompleted = this.state.experienceCompleted;
+
   readonly visitedChapters = signal<Set<DirectorChapterId>>(new Set());
   readonly unlockedChapters = signal<Set<DirectorChapterId>>(new Set([1]));
   readonly emotionalBeat = signal<EmotionalBeat>('curious');
@@ -46,7 +50,6 @@ export class ExperienceControllerService {
   }
 
   startExperience(): void {
-    this.experienceStarted.set(true);
     this.state.setExperienceStarted(true);
     this.state.setChapter(1);
     this.setEmotionalBeat('wonder');
@@ -56,7 +59,7 @@ export class ExperienceControllerService {
   }
 
   restoreForReturningVisitor(): void {
-    if (this.experienceStarted()) {
+    if (this.state.experienceStarted()) {
       this.unlockChapter(1);
       this.unlockChapter(2);
       for (const ch of this.visitedChapters()) {
@@ -70,7 +73,6 @@ export class ExperienceControllerService {
   }
 
   completeExperience(): void {
-    this.experienceCompleted.set(true);
     this.setEmotionalBeat('wow');
     this.state.setExperienceCompleted(true);
     this.persist();
@@ -127,14 +129,6 @@ export class ExperienceControllerService {
     this.state.openEnvelope(id);
   }
 
-  private unlockAllChapters(): void {
-    const all = new Set<DirectorChapterId>();
-    for (let i = 1; i <= 12; i++) {
-      all.add(i as DirectorChapterId);
-    }
-    this.unlockedChapters.set(all);
-  }
-
   private unlockChapter(chapter: DirectorChapterId): void {
     this.unlockedChapters.update(set => new Set(set).add(chapter));
   }
@@ -146,8 +140,6 @@ export class ExperienceControllerService {
   private persist(): void {
     if (typeof sessionStorage === 'undefined') return;
     const data: PersistedControllerState = {
-      experienceStarted: this.experienceStarted(),
-      experienceCompleted: this.experienceCompleted(),
       visitedChapters: [...this.visitedChapters()],
       unlockedChapters: [...this.unlockedChapters()],
       constellationRevealed: this.constellationRevealed(),
@@ -163,12 +155,18 @@ export class ExperienceControllerService {
 
     try {
       const data = JSON.parse(raw) as PersistedControllerState;
-      this.experienceStarted.set(data.experienceStarted ?? false);
-      this.experienceCompleted.set(data.experienceCompleted ?? false);
       this.visitedChapters.set(new Set(data.visitedChapters ?? []));
       this.unlockedChapters.set(new Set(data.unlockedChapters ?? [1]));
       this.constellationRevealed.set(data.constellationRevealed ?? false);
       this.finaleSecretShown.set(data.finaleSecretShown ?? false);
+
+      // Migrate legacy controller copies into ExperienceStateService once.
+      if (data.experienceStarted && !this.state.experienceStarted()) {
+        this.state.setExperienceStarted(true);
+      }
+      if (data.experienceCompleted && !this.state.experienceCompleted()) {
+        this.state.setExperienceCompleted(true);
+      }
     } catch {
       sessionStorage.removeItem(CONTROLLER_STORAGE_KEY);
     }

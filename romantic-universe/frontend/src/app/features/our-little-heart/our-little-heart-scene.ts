@@ -3,7 +3,6 @@ import { HeartObject } from '../../core/experience/experience-state.types';
 import { computePoolOrbit } from '../../core/experience/heart-composition.util';
 import {
   buildObjectMesh,
-  disposeAllTextures,
   disposeGroup,
   objectKey
 } from './heart-object-meshes';
@@ -741,7 +740,6 @@ export class OurLittleHeartScene {
     (this.stars.material as THREE.Material).dispose();
     this.particles.geometry.dispose();
     (this.particles.material as THREE.Material).dispose();
-    disposeAllTextures();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }

@@ -45,9 +45,9 @@
   --duration-medium: 1s;
   --duration-fast: 0.5s;
 
-  --radius-lg: 2px;
+  --radius-lg: 10px;
   --radius-pill: 999px;
-  --shadow-soft: none;
-  --shadow-glow: 0 0 60px var(--glow-rose);
+  --shadow-soft: 0 20px 55px rgba(0, 0, 0, 0.24);
+  --shadow-glow: 0 0 60px var(--glow-rose), 0 18px 60px rgba(0, 0, 0, 0.2);
   --transition: var(--duration-fast) var(--ease-breathe);
 }

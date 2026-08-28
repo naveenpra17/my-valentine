@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ExperienceStateService } from './experience-state.service';
-import { applyPlacement } from './heart-composition.util';
+import { applyPlacementWithFallback, hasPersistedPlacement } from './heart-composition.util';
 import { toHeartAsset } from './heart-asset.mapper';
 import { HeartAsset, SerializedHeartAsset, SerializedHeartState } from './heart-asset.types';
 import { HeartObject, HeartObjectType } from './experience-state.types';
@@ -31,7 +31,7 @@ export class HeartStateService {
 
   getValidatedHeartObjects(): HeartObject[] {
     return this.validateObjects(this.state.selectedHeartObjects()).map((o, i) =>
-      applyPlacement(o, i)
+      applyPlacementWithFallback(o, i)
     );
   }
 
@@ -41,7 +41,7 @@ export class HeartStateService {
 
   prepareAttach(object: HeartObject): HeartObject {
     const index = this.state.selectedHeartObjects().length;
-    return applyPlacement(object, index);
+    return applyPlacementWithFallback(object, index);
   }
 
   toAssets(objects: HeartObject[]): HeartAsset[] {
@@ -49,7 +49,9 @@ export class HeartStateService {
   }
 
   private validateObjects(objects: HeartObject[]): HeartObject[] {
-    return objects.filter(obj => this.isValidObject(obj));
+    return objects
+      .filter(obj => this.isValidObject(obj))
+      .map((obj, i) => (hasPersistedPlacement(obj) ? obj : applyPlacementWithFallback(obj, i)));
   }
 
   private validateAssets(assets: SerializedHeartAsset[]): SerializedHeartAsset[] {
@@ -78,7 +80,7 @@ export class HeartStateService {
   }
 
   private serializeAsset(object: HeartObject, index: number): SerializedHeartAsset {
-    const placed = applyPlacement(object, index);
+    const placed = hasPersistedPlacement(object) ? object : applyPlacementWithFallback(object, index);
     return {
       id: `${placed.type}-${placed.referenceId}`,
       type: placed.type,
