@@ -9,14 +9,21 @@ import { HeartShareService } from '../../../core/services/heart-share.service';
       <div class="share-offer__backdrop" (click)="closed.emit()"></div>
       <div class="share-offer__panel">
         <p class="cine-whisper share-offer__hint" id="share-offer-title">Keep our little heart.</p>
+        <p class="cine-micro share-offer__sub">A snapshot of the heart you helped build.</p>
 
         <div class="share-offer__frame">
           @if (loading()) {
-            <p class="cine-micro share-offer__loading">Preparing your heart...</p>
+            <div class="share-offer__loading-wrap">
+              <div class="share-offer__loading-heart" aria-hidden="true">♥</div>
+              <p class="cine-micro share-offer__loading">Preparing your heart...</p>
+            </div>
           } @else if (previewUrl()) {
             <img [src]="previewUrl()!" alt="Your personalized heart" class="share-offer__image" />
           } @else {
-            <p class="cine-micro share-offer__loading">We couldn't prepare the image. Try again.</p>
+            <div class="share-offer__fallback">
+              <div class="share-offer__fallback-heart" aria-hidden="true">♥</div>
+              <p class="cine-micro share-offer__loading">Your heart is still here — even without a picture.</p>
+            </div>
           }
         </div>
 
@@ -24,7 +31,7 @@ import { HeartShareService } from '../../../core/services/heart-share.service';
           <button
             class="cine-enter-btn share-offer__btn"
             type="button"
-            [disabled]="!previewUrl() || sharing()"
+            [disabled]="sharing()"
             (click)="share()"
           >
             {{ sharing() ? 'Sharing...' : 'Share' }}
@@ -32,7 +39,7 @@ import { HeartShareService } from '../../../core/services/heart-share.service';
           <button
             class="share-offer__btn share-offer__btn--ghost"
             type="button"
-            [disabled]="!previewUrl() || sharing()"
+            [disabled]="sharing()"
             (click)="save()"
           >
             Save
@@ -46,6 +53,9 @@ import { HeartShareService } from '../../../core/services/heart-share.service';
         <button class="share-offer__dismiss cine-micro" type="button" (click)="closed.emit()">
           Continue
         </button>
+        <button class="share-offer__restart cine-micro" type="button" (click)="requestRestart()">
+          Start from the beginning
+        </button>
       </div>
     </div>
   `,
@@ -53,7 +63,7 @@ import { HeartShareService } from '../../../core/services/heart-share.service';
     .share-offer {
       position: fixed;
       inset: 0;
-      z-index: 200;
+      z-index: 10200;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -75,14 +85,21 @@ import { HeartShareService } from '../../../core/services/heart-share.service';
     }
 
     .share-offer__hint {
-      margin: 0 0 1.25rem;
+      margin: 0 0 0.5rem;
       opacity: 0.8;
+    }
+
+    .share-offer__sub {
+      margin: 0 0 1.25rem;
+      opacity: 0.5;
     }
 
     .share-offer__frame {
       aspect-ratio: 1;
       border: 1px solid rgba(201, 160, 168, 0.2);
-      background: rgba(10, 6, 16, 0.6);
+      background:
+        radial-gradient(ellipse at 50% 40%, rgba(201, 160, 168, 0.12) 0%, transparent 55%),
+        rgba(10, 6, 16, 0.6);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -100,7 +117,30 @@ import { HeartShareService } from '../../../core/services/heart-share.service';
     .share-offer__loading {
       opacity: 0.55;
       margin: 0;
+      padding: 0 1rem;
+    }
+
+    .share-offer__loading-wrap,
+    .share-offer__fallback {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
       padding: 1rem;
+    }
+
+    .share-offer__loading-heart,
+    .share-offer__fallback-heart {
+      font-size: 2.5rem;
+      color: var(--rose);
+      text-shadow: 0 0 30px rgba(201, 160, 168, 0.5);
+      animation: shareHeartPulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes shareHeartPulse {
+      0%, 100% { transform: scale(1); opacity: 0.7; }
+      50% { transform: scale(1.08); opacity: 1; }
     }
 
     .share-offer__actions {
@@ -139,12 +179,25 @@ import { HeartShareService } from '../../../core/services/heart-share.service';
       text-decoration: underline;
       font-family: var(--font-body);
     }
+
+    .share-offer__restart {
+      display: block;
+      margin: 0.85rem auto 0;
+      border: none;
+      background: none;
+      color: rgba(245, 240, 232, 0.38);
+      cursor: pointer;
+      text-decoration: underline;
+      font-family: var(--font-body);
+      letter-spacing: 0.06em;
+    }
   `]
 })
 export class HeartShareOfferComponent implements OnInit {
   private readonly shareService = inject(HeartShareService);
 
   readonly closed = output<void>();
+  readonly restart = output<void>();
 
   readonly loading = signal(true);
   readonly sharing = signal(false);
@@ -187,5 +240,9 @@ export class HeartShareOfferComponent implements OnInit {
     this.previewUrl.set(url);
     this.loading.set(false);
     if (!url) this.error.set(true);
+  }
+
+  requestRestart(): void {
+    this.restart.emit();
   }
 }

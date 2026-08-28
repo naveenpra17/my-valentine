@@ -31,6 +31,15 @@ export class QualityService {
     }
   }
 
+  /** Target active particle count for finale (single quality source). */
+  getParticleBudget(): number {
+    const tier = { low: 650, medium: 1250, high: 2400 };
+    let budget = tier[this.getLevel()];
+    if (this.motion.prefersReducedMotion()) budget = Math.round(budget * 0.5);
+    if (this.motion.isMobile()) budget = Math.round(budget * 0.82);
+    return budget;
+  }
+
   maxDpr(): number {
     switch (this.getLevel()) {
       case 'low': return 1;

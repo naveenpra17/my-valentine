@@ -1,61 +1,235 @@
 <section class="finale cine-scene" #section id="finale" appChapterVisit="12">
+
   <div class="finale__pin" #pinWrap>
+
     <div class="finale__vignette cine-vignette" aria-hidden="true"></div>
 
+
+
     <div class="finale__canvas" #canvasHost>
+
       @if (!sceneReady() && !sceneFailed()) {
+
         <div class="finale__loading cine-micro" aria-hidden="true">Preparing the finale...</div>
+
       }
+
     </div>
+
+
 
     <div class="finale__overlay" aria-live="polite">
+
       @if (overlayLine()) {
+
         <p class="cine-statement finale__line">{{ overlayLine() }}</p>
+
       }
+
       @if (overlaySub()) {
+
         <p class="cine-whisper finale__sub">{{ overlaySub() }}</p>
+
       }
+
+
 
       @if (showMessage()) {
+
         <p class="finale__personal cine-intimate">{{ personalLine() }}</p>
+
         <blockquote class="finale__final cine-letter">{{ finalMessage() }}</blockquote>
+
       }
+
+
 
       @if (showSignature()) {
+
         <p class="finale__for cine-micro">Made just for you, {{ herName() }}.</p>
+
         @if (myName()) {
+
           <p class="finale__sign cine-micro">— {{ myName() }}</p>
+
         }
+
       }
+
     </div>
+
+
 
     @if (showSecret() && !secretDone()) {
+
       <div class="finale-secret" role="dialog" aria-label="One last thing">
+
         <p class="cine-whisper finale-secret__text">One last thing...</p>
+
+        <p class="cine-micro finale-secret__hint">There's one more surprise waiting for you.</p>
+
         <button
-          class="finale-secret__light"
+
+          class="finale-secret__surprise cine-enter-btn"
+
           type="button"
-          aria-label="Touch the light"
+
           (click)="triggerSecret()"
-        ></button>
+
+        >
+
+          One more surprise
+
+        </button>
+
       </div>
+
     }
 
-    @if (showEndHeart()) {
-      <p class="finale__end-heart" aria-hidden="true">❤️</p>
+
+
+    @if (showEpilogue()) {
+
+      <div class="finale-epilogue" role="dialog" aria-label="The end of our little universe">
+
+        <div class="finale-epilogue__glow" aria-hidden="true"></div>
+
+        <div class="finale-epilogue__stars" aria-hidden="true"></div>
+
+        <div class="finale-epilogue__content">
+
+          <p class="cine-micro finale-epilogue__eyebrow">You made it to the end</p>
+
+          <h2 class="cine-statement finale-epilogue__title">Thank you for being here, {{ herName() }}.</h2>
+
+          <p class="cine-intimate finale-epilogue__message">
+
+            This was never just a website. It was a little universe I built because you exist —
+
+            and because loving you felt too big to keep in ordinary words.
+
+          </p>
+
+          <p class="cine-whisper finale-epilogue__closing">{{ heartClosingLine() }}</p>
+
+          <div class="finale-epilogue__actions">
+
+            <button class="cine-enter-btn" type="button" (click)="openShareFromEpilogue()">
+
+              Keep our little heart
+
+            </button>
+
+            <button class="finale-epilogue__stay cine-micro" type="button" (click)="closeEpilogue()">
+
+              Stay in this moment
+
+            </button>
+
+            <button class="finale-epilogue__restart cine-micro" type="button" (click)="restartFromBeginning()">
+
+              Start from the beginning
+
+            </button>
+
+          </div>
+
+          <p class="cine-micro finale-epilogue__credit">{{ heartFooterText() }}</p>
+
+        </div>
+
+      </div>
+
     }
+
+
 
     @if (showShareOffer()) {
-      <app-heart-share-offer (closed)="onShareClosed()" />
+
+      <app-heart-share-offer (closed)="onShareClosed()" (restart)="restartFromBeginning()" />
+
     }
 
+
+
     <div class="finale__a11y sr-only" aria-label="Finale message">
+
       <p>{{ line1() }}</p>
+
       <p>{{ line2() }}</p>
+
       <p>{{ line3() }}</p>
+
       @if (line4()) { <p>{{ line4() }}</p> }
+
       <p>{{ finalMessage() }}</p>
+
       <p>Made just for you, {{ herName() }}.</p>
+
+    </div>
+
+  </div>
+
+</section>
+
+<canvas
+  #bulbCanvas
+  class="finale__bulb-canvas"
+  [class.finale__bulb-canvas--visible]="bulbHeartActive()"
+  [class.finale__bulb-canvas--ignite]="bulbHeartIgnite()"
+  [class.finale__bulb-canvas--glowing]="bulbHeartGlowing()"
+  aria-hidden="true"
+></canvas>
+
+@if (bulbHeartActive()) {
+  <div
+    class="finale__heart-quote"
+    [class.finale__heart-quote--visible]="showHeartQuote()"
+    aria-live="polite"
+  >
+    <div class="finale__heart-quote-panel">
+      <p class="finale__heart-quote-eyebrow cine-micro">A little universe, just for you</p>
+      <p class="finale__heart-quote-personal cine-intimate">{{ personalLine() }}</p>
+      <div class="finale__heart-quote-divider" aria-hidden="true"></div>
+      <blockquote class="finale__heart-quote-message cine-letter">{{ finalMessage() }}</blockquote>
+      @if (heartClosingLine()) {
+        <p class="finale__heart-quote-closing cine-whisper">{{ heartClosingLine() }}</p>
+      }
+      <p class="finale__heart-quote-for cine-micro">Made just for you, {{ herName() }}.</p>
+      @if (myName()) {
+        <p class="finale__heart-quote-sign cine-micro">With all my love — {{ myName() }}</p>
+      } @else {
+        <p class="finale__heart-quote-sign cine-micro">With all my love.</p>
+      }
     </div>
   </div>
-</section>
+
+  <footer
+    class="finale__heart-footer cine-micro"
+    [class.finale__heart-footer--visible]="showHeartQuote()"
+  >
+    <p>{{ heartFooterText() }}</p>
+  </footer>
+
+  @if (showHeartContinue()) {
+    <button
+      class="finale__heart-continue cine-enter-btn"
+      type="button"
+      (click)="continueFromHeart()"
+    >
+      Continue
+    </button>
+  }
+
+  @if (heartLinger()) {
+    <p class="finale__heart-linger cine-micro">Take your time. This moment is yours.</p>
+    <button
+      class="finale__heart-restart cine-micro"
+      type="button"
+      (click)="restartFromBeginning()"
+    >
+      Start from the beginning
+    </button>
+  }
+}
+

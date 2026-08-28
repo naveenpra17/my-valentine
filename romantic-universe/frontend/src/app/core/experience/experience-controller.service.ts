@@ -1,6 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ExperienceStateService } from './experience-state.service';
 import { DirectorChapterId } from './experience-state.types';
+import { SessionService } from '../services/session.service';
+import { HeartShareService } from '../services/heart-share.service';
 
 const CONTROLLER_STORAGE_KEY = 'ru_controller_v1';
 
@@ -31,6 +33,8 @@ interface PersistedControllerState {
 @Injectable({ providedIn: 'root' })
 export class ExperienceControllerService {
   private readonly state = inject(ExperienceStateService);
+  private readonly session = inject(SessionService);
+  private readonly heartShare = inject(HeartShareService);
 
   /** Single source of truth — delegated to ExperienceStateService. */
   readonly experienceStarted = this.state.experienceStarted;
@@ -123,6 +127,27 @@ export class ExperienceControllerService {
   showFinaleSecret(): void {
     this.finaleSecretShown.set(true);
     this.persist();
+  }
+
+  /** Clear journey progress and return to the opening. Keeps entry-lock unlock. */
+  restartFromBeginning(): void {
+    this.state.resetSession();
+    this.resetForRestart();
+    this.session.clearEntered();
+    this.heartShare.clearPreviewCache();
+    sessionStorage.removeItem('love_bombs_count');
+    sessionStorage.removeItem('ru_heart_intro_seen');
+    sessionStorage.removeItem('ru_heart_first_attach');
+    window.location.assign(window.location.pathname || '/');
+  }
+
+  private resetForRestart(): void {
+    this.visitedChapters.set(new Set());
+    this.unlockedChapters.set(new Set([1]));
+    this.constellationRevealed.set(false);
+    this.finaleSecretShown.set(false);
+    this.emotionalBeat.set('curious');
+    sessionStorage.removeItem(CONTROLLER_STORAGE_KEY);
   }
 
   openEnvelope(id: number): void {

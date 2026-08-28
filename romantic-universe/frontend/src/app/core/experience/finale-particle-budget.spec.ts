@@ -29,4 +29,17 @@ describe('finale-particle-budget', () => {
     const bomb = origins.find(o => o.kind === 'love-bomb')?.count ?? 0;
     expect(photo).toBeGreaterThan(bomb);
   });
+
+  it('fills most capacity with two heart objects on high quality', () => {
+    const origins = buildPersonalizedOrigins({
+      objects,
+      capacity: 2000,
+      quality: 'high',
+      reducedMotion: false,
+      mobile: false
+    });
+    const personalized = origins.reduce((s, o) => s + (o.count ?? 0), 0);
+    expect(personalized).toBeGreaterThan(200);
+    expect(ambientParticleCount(2000, personalized)).toBeGreaterThan(1000);
+  });
 });

@@ -101,7 +101,14 @@ Three conceptual groups, one GPU `FinaleParticleSystem`:
 | Ambient | Fills remaining capacity | Soft generic universe glow |
 | Transformation | Convergence / burst | Reuses same buffers |
 
-Quality tiers (`QualityService`): low / medium / high — adaptive capacity 500–3000.
+Quality tiers (`QualityService`): low / medium / high — `getParticleBudget()` returns 500–3000 target.
+
+Particle groups in one `FinaleParticleSystem`:
+- **Personalized** (~48% of budget): type-weighted, origin at heart object world position
+- **Ambient** (remaining capacity): distant universe stars, low alpha, subtle drift
+- **Final heart**: all active particles receive converge targets via `beginConverge()`
+
+Per-particle GPU attributes: `color`, `psize`, `particleAlpha` (shader-driven, not one material per particle).
 
 ---
 
@@ -110,9 +117,10 @@ Quality tiers (`QualityService`): low / medium / high — adaptive capacity 500�
 `FinaleTransformationScene` uses `SceneLifecycle`:
 
 - `begin()` increments generation token
-- `cancel()` clears RAF loops, timeouts, invalidates generation
+- `cancel()` clears RAF loops + timeouts, invalidates generation, stops render loop
 - `dispose()` calls `cancel()` then releases Three.js resources
-- No RAF loop survives navigation or replay
+- `scheduleTimeout()` / `animate()` / `wait()` all respect generation
+- `FinaleComponent` tracks its own timeouts with `destroyed` flag + generation token for message/secret UI
 
 ---
 

@@ -35,4 +35,8 @@ export class SessionService {
   markUnlocked(): void {
     localStorage.setItem('romantic_universe_unlocked', 'true');
   }
+
+  clearEntered(): void {
+    localStorage.removeItem('romantic_universe_entered');
+  }
 }

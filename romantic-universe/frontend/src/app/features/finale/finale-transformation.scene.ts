@@ -48,6 +48,10 @@ class SceneLifecycle {
     return ++this.generation;
   }
 
+  currentGeneration(): number {
+    return this.generation;
+  }
+
   cancel(): void {
     this.cancelled = true;
     this.generation++;
@@ -61,9 +65,11 @@ class SceneLifecycle {
     return !this.cancelled && gen === this.generation;
   }
 
-  raf(callback: FrameRequestCallback): number {
+  raf(callback: FrameRequestCallback, gen?: number): number {
     const id = requestAnimationFrame(time => {
       this.rafIds.delete(id);
+      if (this.cancelled) return;
+      if (gen !== undefined && !this.isActive(gen)) return;
       callback(time);
     });
     this.rafIds.add(id);
@@ -75,10 +81,25 @@ class SceneLifecycle {
     return new Promise<void>(resolve => {
       const id = setTimeout(() => {
         this.timeoutIds.delete(id);
+        if (!this.isActive(gen)) {
+          resolve();
+          return;
+        }
         resolve();
       }, ms);
       this.timeoutIds.add(id);
     });
+  }
+
+  scheduleTimeout(callback: () => void, ms: number, gen?: number): void {
+    if (gen !== undefined && !this.isActive(gen)) return;
+    const id = setTimeout(() => {
+      this.timeoutIds.delete(id);
+      if (this.cancelled) return;
+      if (gen !== undefined && !this.isActive(gen)) return;
+      callback();
+    }, ms);
+    this.timeoutIds.add(id);
   }
 
   animate(
@@ -98,13 +119,13 @@ class SceneLifecycle {
         const t = Math.min(1, (performance.now() - start) / duration);
         update(t);
         if (t < 1) {
-          this.raf(step);
+          this.raf(step, gen);
         } else {
-          onComplete?.();
+          if (this.isActive(gen)) onComplete?.();
           resolve();
         }
       };
-      this.raf(step);
+      this.raf(step, gen);
     });
   }
 }
@@ -113,8 +134,8 @@ export class FinaleTransformationScene {
   private readonly container: HTMLElement;
   private readonly reducedMotion: boolean;
   private readonly mobile: boolean;
-  private readonly particleScale: number;
   private readonly qualityLevel: QualityLevel;
+  private readonly particleBudget: number;
   private callbacks: FinaleSceneCallbacks = {};
   private readonly lifecycle = new SceneLifecycle();
 
@@ -136,7 +157,6 @@ export class FinaleTransformationScene {
   private running = false;
   private visible = true;
   private clock = new THREE.Clock();
-  private secretTimeout?: ReturnType<typeof setTimeout>;
 
   private cameraZ = 6;
   private targetCameraZ = 6;
@@ -151,14 +171,14 @@ export class FinaleTransformationScene {
     container: HTMLElement,
     reducedMotion = false,
     mobile = false,
-    particleScale = 1,
-    qualityLevel: QualityLevel = 'high'
+    qualityLevel: QualityLevel = 'high',
+    particleBudget = 2400
   ) {
     this.container = container;
     this.reducedMotion = reducedMotion;
     this.mobile = mobile;
-    this.particleScale = particleScale;
     this.qualityLevel = qualityLevel;
+    this.particleBudget = particleBudget;
   }
 
   setCallbacks(cb: FinaleSceneCallbacks): void {
@@ -208,12 +228,9 @@ export class FinaleTransformationScene {
     );
     this.scene.add(this.stars);
 
-    const rawCapacity = Math.round(
-      (this.mobile ? 800 : this.reducedMotion ? 500 : 2800) * this.particleScale
-    );
     this.particleCapacity = resolveParticleCapacity({
       objects: [],
-      capacity: rawCapacity,
+      capacity: this.particleBudget,
       quality: this.qualityLevel,
       reducedMotion: this.reducedMotion,
       mobile: this.mobile
@@ -315,20 +332,19 @@ export class FinaleTransformationScene {
   cancel(): void {
     this.lifecycle.cancel();
     this.timelineRunning = false;
-    if (this.secretTimeout) {
-      clearTimeout(this.secretTimeout);
-      this.secretTimeout = undefined;
-    }
+    this.stop();
   }
 
   triggerSecretExplosion(): void {
     if (this.disposed) return;
     this.particles.beginBurst();
-    this.targetCameraZ = 7;
-    if (this.secretTimeout) clearTimeout(this.secretTimeout);
-    this.secretTimeout = setTimeout(() => {
-      if (!this.disposed) this.particles.formSmallHeart();
-    }, 2200);
+    this.targetCameraZ = 5;
+    this.lifecycle.scheduleTimeout(() => {
+      if (!this.disposed) {
+        this.particles.formSmallHeart(0.62);
+        this.particles.setSize(this.mobile ? 40 : 52);
+      }
+    }, 1800);
   }
 
   resize(): void {
@@ -382,6 +398,7 @@ export class FinaleTransformationScene {
       gen,
       duration,
       t => {
+        if (this.disposed) return;
         this.heartGlow = t;
         this.heartMat.emissiveIntensity = 0.22 + t * 0.45;
       }
@@ -413,10 +430,12 @@ export class FinaleTransformationScene {
       gen,
       duration,
       t => {
+        if (this.disposed) return;
         this.heartMat.opacity = 0.96 * (1 - t);
         this.heartMesh.scale.setScalar(0.38 * (1 + t * 0.15));
       },
       () => {
+        if (this.disposed) return;
         this.heartVisible = false;
         this.heartRoot.visible = false;
       }
@@ -459,15 +478,15 @@ export class FinaleTransformationScene {
   }
 
   private async pulseHeart(count: number, gen: number): Promise<void> {
-    const baseSize = this.mobile ? 32 : 42;
     for (let i = 0; i < count; i++) {
-      if (!this.lifecycle.isActive(gen)) return;
+      if (!this.lifecycle.isActive(gen) || this.disposed) return;
       this.callbacks.onPulse?.();
       await this.lifecycle.animate(gen, 600, t => {
+        if (this.disposed) return;
         const pulse = Math.sin(Math.min(t, 1) * Math.PI) * 0.12;
         this.particles.pulseSize(1 + pulse);
       });
-      this.particles.pulseSize(1);
+      if (!this.disposed) this.particles.pulseSize(1);
       await this.lifecycle.wait(400, gen);
     }
   }
@@ -481,6 +500,7 @@ export class FinaleTransformationScene {
   ): Promise<void> {
     const startScale = group.scale.x;
     return this.lifecycle.animate(gen, duration, t => {
+      if (this.disposed) return;
       const eased = 1 - Math.pow(1 - t, 3);
       group.position.lerpVectors(from, to, eased);
       group.scale.setScalar(startScale * (1 - eased * 0.2));
@@ -492,7 +512,7 @@ export class FinaleTransformationScene {
   private animate = (): void => {
     if (!this.running || this.disposed) return;
     this.animationId = requestAnimationFrame(this.animate);
-    if (!this.visible) return;
+    if (!this.visible || this.disposed) return;
 
     const dt = this.clock.getDelta();
     const elapsed = this.clock.getElapsedTime();

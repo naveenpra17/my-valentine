@@ -57,3 +57,18 @@
   0%, 100% { transform: scale(1); opacity: 0.6; }
   50% { transform: scale(1.3); opacity: 1; }
 }
+
+// Finale secret — bulb heart canvas (mounted on document.body)
+.finale-bulb-heart-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  pointer-events: none;
+  background: rgba(5, 3, 8, 0.96);
+}
+
+.finale-bulb-heart-overlay__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
