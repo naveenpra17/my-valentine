@@ -14,6 +14,8 @@ import { ApiService } from '../../core/services/api.service';
 import { SessionService } from '../../core/services/session.service';
 import { MotionService } from '../../core/services/motion.service';
 import { LiveAnnouncerService } from '../../core/services/live-announcer.service';
+import { ExperienceStateService } from '../../core/experience/experience-state.service';
+import { SoundDesignService } from '../../core/services/sound-design.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { LoveBomb } from '../../core/models';
 
@@ -31,6 +33,7 @@ interface MiniParticle {
 interface GameHeart {
   id: number;
   left: number;
+  top: number;
 }
 
 @Component({
@@ -47,11 +50,16 @@ export class LoveBombComponent implements OnDestroy {
 
   readonly title = input('Love Bomb Attack');
   readonly subtitle = input('Catch the hearts before they fade');
+  readonly introLine1 = input('Okay.');
+  readonly introLine2 = input('Enough being sentimental.');
+  readonly introLine3 = input('You\'ve been warned.');
 
   private readonly api = inject(ApiService);
   private readonly session = inject(SessionService);
   private readonly motion = inject(MotionService);
   private readonly announcer = inject(LiveAnnouncerService);
+  private readonly experienceState = inject(ExperienceStateService);
+  private readonly sounds = inject(SoundDesignService);
   private readonly scenes = inject(SceneManagerService);
 
   readonly hearts = signal<GameHeart[]>([]);
@@ -62,6 +70,7 @@ export class LoveBombComponent implements OnDestroy {
   readonly totalCaught = signal(0);
   readonly streak = signal(0);
   readonly playing = signal(false);
+  readonly introDone = signal(false);
   readonly reducedMotion = this.motion.prefersReducedMotion();
 
   private particles: MiniParticle[] = [];
@@ -101,6 +110,9 @@ export class LoveBombComponent implements OnDestroy {
   async catchHeart(heart: GameHeart, event: MouseEvent): Promise<void> {
     if (this.loading()) return;
 
+    this.sounds.enable();
+    this.sounds.play('love-bomb');
+
     event.stopPropagation();
     this.removeHeart(heart.id);
 
@@ -113,6 +125,33 @@ export class LoveBombComponent implements OnDestroy {
     }
 
     await this.fetchLoveBomb();
+  }
+
+  onHeartPointerDown(heart: GameHeart, event: PointerEvent): void {
+    if (this.loading()) return;
+    const el = event.currentTarget as HTMLElement;
+    const arena = this.arenaRef?.nativeElement;
+    if (!arena) return;
+
+    const tween = this.heartTweens.get(heart.id);
+    tween?.pause();
+
+    const onMove = (e: PointerEvent): void => {
+      const rect = arena.getBoundingClientRect();
+      const left = ((e.clientX - rect.left) / rect.width) * 100;
+      const top = ((e.clientY - rect.top) / rect.height) * 100;
+      el.style.left = `${Math.max(5, Math.min(95, left))}%`;
+      el.style.top = `${Math.max(5, Math.min(95, top))}%`;
+    };
+
+    const onUp = (): void => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      tween?.resume();
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
   }
 
   async dropBomb(): Promise<void> {
@@ -159,6 +198,7 @@ export class LoveBombComponent implements OnDestroy {
     this.showMessage.set(true);
     const bomb = this.currentBomb();
     if (bomb?.message) {
+      this.experienceState.triggerLoveBomb(bomb.id, bomb.message);
       this.announcer.announce(bomb.message);
     }
 
@@ -196,7 +236,19 @@ export class LoveBombComponent implements OnDestroy {
   }
 
   private startGame(): void {
-    if (this.playing() || this.motion.prefersReducedMotion()) return;
+    if (this.motion.prefersReducedMotion()) return;
+    if (!this.introDone()) {
+      setTimeout(() => {
+        this.introDone.set(true);
+        this.beginPlayground();
+      }, 3200);
+      return;
+    }
+    this.beginPlayground();
+  }
+
+  private beginPlayground(): void {
+    if (this.playing()) return;
     this.playing.set(true);
     this.spawnHeart();
     this.spawnTimer = setInterval(() => {
@@ -220,7 +272,7 @@ export class LoveBombComponent implements OnDestroy {
   private spawnHeart(): void {
     const id = this.nextHeartId++;
     const left = 12 + Math.random() * 76;
-    const heart: GameHeart = { id, left };
+    const heart: GameHeart = { id, left, top: -12 };
     this.hearts.update(list => [...list, heart]);
 
     requestAnimationFrame(() => {

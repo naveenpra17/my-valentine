@@ -14,9 +14,11 @@
       </div>
 
       @if (showFinal()) {
+        <p class="finale__personal cine-intimate" #personalEl>{{ personalLine() }}</p>
         <blockquote class="finale__final cine-letter" #finalMsg>
           {{ finalMessage() }}
         </blockquote>
+        <p class="finale__for cine-micro">Made just for you, {{ herName() }}. ❤️</p>
       }
 
       @if (showButton()) {

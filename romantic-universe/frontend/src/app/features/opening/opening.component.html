@@ -1,5 +1,5 @@
 <div class="void" #container [class.void--exiting]="exiting()">
-  <app-starfield [density]="60" />
+  <div class="void__light" #lightPoint aria-hidden="true"></div>
 
   <div class="void__vignette"></div>
   <div class="void__grain" aria-hidden="true"></div>
@@ -9,13 +9,15 @@
 
     @if (showCta()) {
       <button
-        class="void__enter cine-enter-btn"
+        class="void__invitation"
         #ctaEl
+        type="button"
         (click)="onEnter()"
         [disabled]="exiting()"
         aria-label="Enter the experience"
       >
-        {{ ctaLabel() }}
+        <span class="void__invitation-core" aria-hidden="true"></span>
+        <span class="void__invitation-halo" aria-hidden="true"></span>
       </button>
     }
   </div>

@@ -59,6 +59,18 @@
   transition: transform 0.8s var(--ease-cine);
 }
 
+.polaroid--discovered::after {
+  content: '';
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--champagne);
+  box-shadow: 0 0 8px var(--champagne);
+}
+
 .polaroid {
   position: absolute;
   width: 220px;

@@ -28,6 +28,7 @@
             <figure
               class="polaroid"
               [class.polaroid--active]="activeIndex() === i"
+              [class.polaroid--discovered]="isDiscovered(photo.id)"
               [style.transform]="getCardTransform(i)"
               (click)="openPhoto(photo, $event)"
               (keydown.enter)="openPhoto(photo, $event)"

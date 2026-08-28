@@ -14,6 +14,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
+import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { LiveAnnouncerService } from '../../core/services/live-announcer.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { Quote } from '../../core/models';
@@ -45,6 +46,7 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly motion = inject(MotionService);
   private readonly visibility = inject(VisibilityService);
+  private readonly experienceState = inject(ExperienceStateService);
   private readonly announcer = inject(LiveAnnouncerService);
   private readonly scenes = inject(SceneManagerService);
   private observer?: IntersectionObserver;
@@ -210,6 +212,7 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
   private selectStar(star: StarNode): void {
     this.selectedQuote.set(star.quote);
     star.pulse = 1;
+    this.experienceState.activateQuote(star.quote.id, star.quote.text);
     this.announcer.announce(star.quote.text);
 
     if (!this.heartRevealed()) {
@@ -238,7 +241,8 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
     }
 
     if (this.revealProgress < 1) {
-      this.revealProgress = Math.min(1, this.revealProgress + 0.008);
+      const boost = this.experienceState.hasEnoughForConstellation() ? 0.012 : 0.008;
+      this.revealProgress = Math.min(1, this.revealProgress + boost);
       if (this.revealProgress >= 1) {
         this.heartRevealed.set(true);
       }

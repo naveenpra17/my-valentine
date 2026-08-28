@@ -37,6 +37,33 @@
   }
 }
 
+.reasons__intro {
+  text-align: center;
+  padding: clamp(3rem, 10vh, 6rem) 1.5rem;
+  min-height: 40vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.reasons__intro-line,
+.reasons__intro-line2 {
+  margin: 0;
+}
+
+.reasons__intro-line2 {
+  max-width: 32ch;
+}
+
+.reasons__field--hidden {
+  opacity: 0;
+  pointer-events: none;
+  height: 0;
+  overflow: hidden;
+}
+
 .reasons__field {
   position: relative;
   min-height: clamp(420px, 65vh, 560px);

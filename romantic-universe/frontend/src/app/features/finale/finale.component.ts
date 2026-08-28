@@ -12,6 +12,8 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
+import { ExperienceStateService } from '../../core/experience/experience-state.service';
+import { SoundDesignService } from '../../core/services/sound-design.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -50,11 +52,15 @@ export class FinaleComponent implements OnDestroy {
   readonly line2 = input('I just wanted you to know...');
   readonly line3 = input('You are incredibly special.');
   readonly line4 = input('And I\'m really glad you exist.');
+  readonly personalLine = input('Something that exists because you were here.');
   readonly finalMessage = input('You mean more to me than words on a screen could ever say — but I tried anyway.');
   readonly footerCredit = input('Made with ❤️, caffeine, Java, and way too many thoughts about you.');
+  readonly herName = input('Beautiful');
 
   private readonly motion = inject(MotionService);
   private readonly visibility = inject(VisibilityService);
+  private readonly experienceState = inject(ExperienceStateService);
+  private readonly sounds = inject(SoundDesignService);
   private readonly scenes = inject(SceneManagerService);
 
   readonly sequenceStarted = signal(false);
@@ -94,6 +100,8 @@ export class FinaleComponent implements OnDestroy {
   triggerSurprise(): void {
     if (this.surpriseTriggered()) return;
     this.surpriseTriggered.set(true);
+    this.sounds.enable();
+    this.sounds.play('finale');
     this.spawnGrandBurst();
   }
 
@@ -253,11 +261,12 @@ export class FinaleComponent implements OnDestroy {
     const w = canvas.width / (window.devicePixelRatio || 1);
     const h = canvas.height / (window.devicePixelRatio || 1);
     const colors = ['#c9a0a8', '#9a8fa8', '#c4b08a', '#f5f0e8'];
+    const heartObjectCount = this.experienceState.selectedHeartObjects().length;
     const count = this.motion.prefersReducedMotion()
       ? 30
       : this.motion.isMobile()
-        ? 70
-        : 140;
+        ? 70 + heartObjectCount * 3
+        : 140 + heartObjectCount * 5;
 
     this.particles = Array.from({ length: count }, (_, i) => {
       const edge = Math.floor(Math.random() * 4);

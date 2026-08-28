@@ -25,32 +25,46 @@
       <app-opening
         [void1]="config.get('OPENING_VOID_1', 'Hey...')"
         [void2]="config.get('OPENING_VOID_2', 'You.')"
-        [void3]="config.get('OPENING_VOID_3', 'Yes, you.')"
-        [void4]="config.get('OPENING_VOID_4', 'I made something for you.')"
-        [ctaLabel]="config.get('OPENING_CTA', 'Enter')"
+        [void3]="config.get('OPENING_VOID_3', 'I made a little world for you.')"
+        [void4]="config.get('OPENING_VOID_4', 'Will you come in?')"
         (enter)="onOpeningEnter()"
       />
     </div>
   }
 
   @if (showMain()) {
+    <app-chapter-progress [hidden]="transitioning()" />
+    <app-memory-constellation-tracker />
+
     <main class="experience-main" id="main-content" #mainContent tabindex="-1">
       <app-love-universe
-        [line1]="config.get('UNIVERSE_LINE_1', 'You found something...')"
-        [line2]="config.get('UNIVERSE_LINE_2', 'A little universe.')"
+        [line1]="config.get('UNIVERSE_LINE_1', 'The light expands...')"
+        [line2]="config.get('UNIVERSE_LINE_2', 'Welcome to our universe.')"
       />
+
       <app-hero
         [herName]="config.get('HER_NAME', 'Beautiful')"
-        [title]="config.get('HERO_TITLE', 'Look at This Beautiful Human')"
+        [title]="config.get('HERO_TITLE', 'Her.')"
+        [discoverLine1]="config.get('CHAPTER_2_LINE_1', 'Somewhere in this universe...')"
+        [discoverLine2]="config.get('CHAPTER_2_LINE_2', '...there is someone very special.')"
         [line1]="config.get('HERO_LINE_1')"
         [line2]="config.get('HERO_LINE_2')"
         [imageUrl]="config.get('HERO_IMAGE_URL', '/assets/images/hero/hero.jpg')"
       />
 
       @defer (on viewport; prefetch on idle) {
+        <app-photo-gallery
+          [title]="config.get('GALLERY_TITLE', 'Discover Our Moments')"
+          [subtitle]="config.get('GALLERY_SUBTITLE', 'Each photograph waits in the void')"
+        />
+      } @placeholder {
+        <div class="section-skeleton section-skeleton--tall" aria-hidden="true"></div>
+      }
+
+      @defer (on viewport; prefetch on idle) {
         <app-memory-timeline
           [title]="config.get('MEMORIES_TITLE', 'Things I Remember')"
-          [subtitle]="config.get('MEMORIES_SUBTITLE', 'Little moments that stayed with me')"
+          [subtitle]="config.get('MEMORIES_SUBTITLE', 'Every beautiful story leaves something behind')"
         />
       } @placeholder {
         <div class="section-skeleton" aria-hidden="true"></div>
@@ -58,47 +72,52 @@
 
       @defer (on viewport; prefetch on idle) {
         <app-reasons
-          [title]="config.get('REASONS_TITLE', 'Things I Adore About You')"
+          [title]="config.get('REASONS_TITLE', 'What I Love About You')"
           [subtitle]="config.get('REASONS_SUBTITLE', 'Tap a whisper to hear more')"
+          [introLine1]="config.get('REASONS_INTRO_1', 'There are things I love about you...')"
+          [introLine2]="config.get('REASONS_INTRO_2', 'The little things you probably don\'t even notice.')"
         />
       } @placeholder {
         <div class="section-skeleton" aria-hidden="true"></div>
       }
 
       @defer (on viewport; prefetch on idle) {
+        <app-quote-constellation
+          [title]="config.get('CONSTELLATION_TITLE', 'Messages Written in Stars')"
+          [subtitle]="config.get('CONSTELLATION_SUBTITLE', 'Your discoveries form a constellation')"
+        />
+      } @placeholder {
+        <div class="section-skeleton section-skeleton--tall" aria-hidden="true"></div>
+      }
+
+      @defer (on viewport; prefetch on idle) {
         <app-love-bomb
-          [title]="config.get('LOVE_BOMB_TITLE', 'Love Bomb Attack')"
-          [subtitle]="config.get('LOVE_BOMB_SUBTITLE', 'Catch the hearts before they fade')"
+          [title]="config.get('LOVE_BOMB_TITLE', 'Love Bomb Mode')"
+          [subtitle]="config.get('LOVE_BOMB_SUBTITLE', 'Catch, tap, drag — you\'ve been warned')"
+          [introLine1]="config.get('LOVE_BOMB_INTRO_1', 'Okay.')"
+          [introLine2]="config.get('LOVE_BOMB_INTRO_2', 'Enough being sentimental.')"
+          [introLine3]="config.get('LOVE_BOMB_INTRO_3', 'You\'ve been warned.')"
         />
       } @placeholder {
         <div class="section-skeleton section-skeleton--short" aria-hidden="true"></div>
       }
 
       @defer (on viewport; prefetch on idle) {
+        <app-our-little-heart
+          [title]="config.get('HEART_TITLE', 'Our Little Heart')"
+          [subtitle]="config.get('HEART_SUBTITLE', 'Choose something for our heart.')"
+        />
+      } @placeholder {
+        <div class="section-skeleton section-skeleton--tall" aria-hidden="true"></div>
+      }
+
+      @defer (on viewport; prefetch on idle) {
         <app-open-when
-          [title]="config.get('OPEN_WHEN_TITLE', 'Messages for Different Days')"
-          [subtitle]="config.get('OPEN_WHEN_SUBTITLE', 'Open one whenever you need it')"
+          [title]="config.get('OPEN_WHEN_TITLE', 'Open When...')"
+          [subtitle]="config.get('OPEN_WHEN_SUBTITLE', 'For the quiet moments')"
         />
       } @placeholder {
         <div class="section-skeleton" aria-hidden="true"></div>
-      }
-
-      @defer (on viewport; prefetch on idle) {
-        <app-photo-gallery
-          [title]="config.get('GALLERY_TITLE', 'Our Moments')"
-          [subtitle]="config.get('GALLERY_SUBTITLE', 'Polaroids from our little universe')"
-        />
-      } @placeholder {
-        <div class="section-skeleton section-skeleton--tall" aria-hidden="true"></div>
-      }
-
-      @defer (on viewport; prefetch on idle) {
-        <app-quote-constellation
-          [title]="config.get('CONSTELLATION_TITLE', 'Messages Written in Stars')"
-          [subtitle]="config.get('CONSTELLATION_SUBTITLE', 'Tap a star — they form a heart for you')"
-        />
-      } @placeholder {
-        <div class="section-skeleton section-skeleton--tall" aria-hidden="true"></div>
       }
 
       @defer (on viewport; prefetch on idle) {
@@ -109,6 +128,15 @@
         />
       } @placeholder {
         <div class="section-skeleton section-skeleton--short" aria-hidden="true"></div>
+      }
+
+      @defer (on viewport; prefetch on idle) {
+        <app-universe-remembers
+          [intro]="config.get('REMEMBERS_INTRO', 'You\'ve been exploring for a while...')"
+          [reveal]="config.get('REMEMBERS_REVEAL', 'Look what you created.')"
+        />
+      } @placeholder {
+        <div class="section-skeleton section-skeleton--finale" aria-hidden="true"></div>
       }
 
       @defer (on viewport; prefetch on idle) {
@@ -123,10 +151,12 @@
 
       @defer (on viewport; prefetch on idle) {
         <app-finale
+          [herName]="config.get('HER_NAME', 'Beautiful')"
           [line1]="config.get('FINAL_LINE_1')"
           [line2]="config.get('FINAL_LINE_2')"
           [line3]="config.get('FINAL_LINE_3')"
           [line4]="config.get('FINAL_LINE_4')"
+          [personalLine]="config.get('FINALE_PERSONAL_LINE', 'Something that exists because you were here.')"
           [finalMessage]="config.get('FINAL_MESSAGE')"
           [footerCredit]="config.get('FOOTER_CREDIT')"
         />

@@ -1,7 +1,9 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { ExperienceStateService } from '../experience/experience-state.service';
 
 @Injectable({ providedIn: 'root' })
 export class EasterEggService {
+  private readonly experienceState = inject(ExperienceStateService);
   readonly secretHeartFound = signal(
     localStorage.getItem('egg_secret_heart') === 'true'
   );
@@ -45,21 +47,25 @@ export class EasterEggService {
   markSecretHeartFound(): void {
     localStorage.setItem('egg_secret_heart', 'true');
     this.secretHeartFound.set(true);
+    this.experienceState.discoverSecret('secret-heart');
   }
 
   markVoidWhisperFound(): void {
     localStorage.setItem('egg_void_whisper', 'true');
     this.voidWhisperFound.set(true);
+    this.experienceState.discoverSecret('void-whisper');
   }
 
   markHiddenStarFound(): void {
     localStorage.setItem('egg_hidden_star', 'true');
     this.hiddenStarFound.set(true);
+    this.experienceState.discoverSecret('hidden-star');
   }
 
   markTitleClicked(): void {
     localStorage.setItem('egg_title_click', 'true');
     this.titleClicked.set(true);
+    this.experienceState.discoverSecret('title-click');
   }
 
   triggerVoidWhisper(message?: string): void {

@@ -18,6 +18,8 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
 import { LiveAnnouncerService } from '../../core/services/live-announcer.service';
+import { SoundDesignService } from '../../core/services/sound-design.service';
+import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { Memory } from '../../core/models';
 import { CinematicLightboxComponent } from '../../shared/components/cinematic-lightbox/cinematic-lightbox.component';
@@ -41,6 +43,8 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly motion = inject(MotionService);
   private readonly announcer = inject(LiveAnnouncerService);
+  private readonly sounds = inject(SoundDesignService);
+  private readonly experienceState = inject(ExperienceStateService);
   private readonly scenes = inject(SceneManagerService);
   private observer?: IntersectionObserver;
   private scrollTriggers: ScrollTrigger[] = [];
@@ -88,6 +92,9 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
     this.selected.set(memory);
     this.lightboxOpen.set(true);
     document.body.style.overflow = 'hidden';
+    this.experienceState.discoverMemory(memory.id, memory.title, memory.imageUrl);
+    this.sounds.enable();
+    this.sounds.play('memory');
     this.announcer.announce(`Opened memory: ${memory.title}`);
   }
 

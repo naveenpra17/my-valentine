@@ -11,12 +11,10 @@ import {
 } from '@angular/core';
 import gsap from 'gsap';
 import { MotionService } from '../../core/services/motion.service';
-import { StarfieldComponent } from '../../shared/components/starfield/starfield.component';
 
 @Component({
   selector: 'app-opening',
   standalone: true,
-  imports: [StarfieldComponent],
   templateUrl: './opening.component.html',
   styleUrl: './opening.component.scss'
 })
@@ -24,12 +22,13 @@ export class OpeningComponent implements OnDestroy {
   @ViewChild('container') containerRef!: ElementRef<HTMLElement>;
   @ViewChild('linesWrap') linesWrapRef!: ElementRef<HTMLElement>;
   @ViewChild('ctaEl') ctaRef!: ElementRef<HTMLElement>;
+  @ViewChild('lightPoint') lightRef!: ElementRef<HTMLElement>;
 
   readonly void1 = input('Hey...');
   readonly void2 = input('You.');
-  readonly void3 = input('Yes, you.');
-  readonly void4 = input('I made something for you.');
-  readonly ctaLabel = input('Enter');
+  readonly void3 = input('I made a little world for you.');
+  readonly void4 = input('Will you come in?');
+  readonly ctaLabel = input('');
 
   readonly enter = output<void>();
 
@@ -38,9 +37,6 @@ export class OpeningComponent implements OnDestroy {
 
   readonly exiting = signal(false);
   readonly showCta = signal(false);
-  readonly visibleLines = signal<string[]>([]);
-
-  private allLines: string[] = [];
 
   constructor() {
     afterNextRender(() => this.runSequence());
@@ -53,51 +49,64 @@ export class OpeningComponent implements OnDestroy {
   onEnter(): void {
     if (this.exiting()) return;
     this.exiting.set(true);
+    this.playEnterExpansion();
     this.enter.emit();
   }
 
   private runSequence(): void {
-    this.allLines = [this.void1(), this.void2(), this.void3(), this.void4()];
+    const lines = [this.void1(), this.void2(), this.void3(), this.void4()];
 
     if (this.motion.prefersReducedMotion()) {
-      this.visibleLines.set(this.allLines);
+      this.showAllLines(lines);
       this.showCta.set(true);
       gsap.set(this.ctaRef.nativeElement, { opacity: 1 });
       return;
     }
 
-    this.playVoidSequence();
+    this.playVoidSequence(lines);
   }
 
-  private playVoidSequence(): void {
+  private showAllLines(lines: string[]): void {
+    const wrap = this.linesWrapRef.nativeElement;
+    wrap.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'void-line void-line--invite';
+    p.textContent = lines[lines.length - 1];
+    wrap.appendChild(p);
+  }
+
+  private playVoidSequence(lines: string[]): void {
     const wrap = this.linesWrapRef.nativeElement;
     wrap.innerHTML = '';
 
     this.timeline = gsap.timeline({
       defaults: { ease: 'power3.out' },
-      onComplete: () => this.revealCta()
+      onComplete: () => this.revealInvitation()
     });
 
-    this.allLines.forEach((text, index) => {
-      this.timeline!.add(() => this.showLine(wrap, text, index === 0), index === 0 ? 0 : '+=1.4');
-      this.timeline!.add(() => this.hideLine(wrap), '+=1.6');
+    lines.forEach((text, index) => {
+      const pause = index === 0 ? 0 : '+=1.8';
+      this.timeline!.add(() => this.showLine(wrap, text, index), pause);
+      if (index < lines.length - 1) {
+        this.timeline!.add(() => this.hideLine(wrap), '+=1.8');
+      }
     });
   }
 
-  private showLine(container: HTMLElement, text: string, isFirst: boolean): void {
+  private showLine(container: HTMLElement, text: string, index: number): void {
     container.innerHTML = '';
     const p = document.createElement('p');
-    p.className = indexClass(text);
+    p.className = lineClass(text, index);
     p.textContent = text;
     p.style.opacity = '0';
-    p.style.filter = 'blur(8px)';
+    p.style.filter = 'blur(10px)';
     container.appendChild(p);
 
     gsap.to(p, {
       opacity: 1,
       filter: 'blur(0px)',
       y: 0,
-      duration: isFirst ? 1.8 : 1.2,
+      duration: index === 0 ? 2 : 1.4,
       ease: 'power3.out'
     });
   }
@@ -107,23 +116,37 @@ export class OpeningComponent implements OnDestroy {
     if (!p) return;
     gsap.to(p, {
       opacity: 0,
-      filter: 'blur(6px)',
-      y: -8,
-      duration: 0.8,
+      filter: 'blur(8px)',
+      y: -6,
+      duration: 0.9,
       ease: 'power2.in'
     });
   }
 
-  private revealCta(): void {
+  private revealInvitation(): void {
     this.showCta.set(true);
     gsap.fromTo(this.ctaRef.nativeElement, {
       opacity: 0,
-      y: 12
+      scale: 0.6
     }, {
       opacity: 1,
-      y: 0,
-      duration: 1.2,
+      scale: 1,
+      duration: 1.6,
       ease: 'power3.out'
+    });
+  }
+
+  private playEnterExpansion(): void {
+    if (this.motion.prefersReducedMotion()) return;
+
+    const light = this.lightRef?.nativeElement;
+    if (!light) return;
+
+    gsap.to(light, {
+      scale: 120,
+      opacity: 1,
+      duration: 1.8,
+      ease: 'power2.inOut'
     });
   }
 
@@ -143,7 +166,8 @@ export class OpeningComponent implements OnDestroy {
   }
 }
 
-function indexClass(text: string): string {
-  if (text.length <= 6) return 'void-line void-line--pulse';
+function lineClass(text: string, index: number): string {
+  if (index === 0 || text.length <= 6) return 'void-line void-line--pulse';
+  if (index >= 2) return 'void-line void-line--invite';
   return 'void-line void-line--whisper';
 }

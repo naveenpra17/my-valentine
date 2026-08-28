@@ -16,6 +16,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
+import { ExperienceStateService } from '../../core/experience/experience-state.service';
+import { SoundDesignService } from '../../core/services/sound-design.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { Reason } from '../../core/models';
 
@@ -51,9 +53,13 @@ export class ReasonsComponent implements OnInit, OnDestroy {
 
   readonly title = input('Things I Adore About You');
   readonly subtitle = input('Tap a whisper to hear more');
+  readonly introLine1 = input('There are things I love about you...');
+  readonly introLine2 = input('The little things you probably don\'t even notice.');
 
   private readonly api = inject(ApiService);
   private readonly motion = inject(MotionService);
+  private readonly experienceState = inject(ExperienceStateService);
+  private readonly sounds = inject(SoundDesignService);
   private readonly scenes = inject(SceneManagerService);
   private observer?: IntersectionObserver;
   private scrollTriggers: ScrollTrigger[] = [];
@@ -63,6 +69,7 @@ export class ReasonsComponent implements OnInit, OnDestroy {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly focusedId = signal<number | null>(null);
+  readonly introComplete = signal(false);
 
   constructor() {
     afterNextRender(() => {
@@ -109,6 +116,12 @@ export class ReasonsComponent implements OnInit, OnDestroy {
     const next = this.focusedId() === reason.id ? null : reason.id;
     this.focusedId.set(next);
 
+    if (next !== null) {
+      this.sounds.enable();
+      this.sounds.play('star');
+      this.experienceState.discoverReason(reason.id, reason.shortLabel);
+    }
+
     if (!this.motion.prefersReducedMotion() && next !== null && this.focusPanelRef) {
       gsap.fromTo(this.focusPanelRef.nativeElement, {
         opacity: 0,
@@ -130,6 +143,7 @@ export class ReasonsComponent implements OnInit, OnDestroy {
       ([entry]) => {
         if (entry.isIntersecting) {
           this.scenes.setScene('reasons');
+          this.playIntro();
         }
       },
       { threshold: 0.2 }
@@ -193,5 +207,14 @@ export class ReasonsComponent implements OnInit, OnDestroy {
       });
       this.floatTweens.push(tween);
     });
+  }
+
+  private playIntro(): void {
+    if (this.introComplete()) return;
+    if (this.motion.prefersReducedMotion()) {
+      this.introComplete.set(true);
+      return;
+    }
+    setTimeout(() => this.introComplete.set(true), 3200);
   }
 }

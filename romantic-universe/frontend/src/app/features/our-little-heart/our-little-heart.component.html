@@ -1,0 +1,39 @@
+<section class="little-heart cine-scene" #section id="our-heart" data-act="6">
+  <div class="little-heart__vignette cine-vignette"></div>
+  <div class="cine-fade-edge cine-fade-edge--top"></div>
+
+  <header class="little-heart__header">
+    <p class="act-marker">Chapter VI</p>
+    <h2 class="cine-editorial-sm little-heart__title">{{ title() }}</h2>
+    <p class="cine-whisper little-heart__subtitle">{{ subtitle() }}</p>
+  </header>
+
+  <div class="little-heart__stage">
+    <div class="little-heart__canvas" #canvasHost aria-hidden="true"></div>
+
+    @if (hintVisible() && floatingChoices().length > 0) {
+      <p class="little-heart__hint cine-discovery-hint" #hintEl>Drag to explore · tap to add</p>
+    }
+
+    <div class="little-heart__floats" role="list" aria-label="Objects to add to the heart">
+      @for (obj of floatingChoices(); track obj.type + '-' + obj.referenceId) {
+        <button
+          class="little-heart__chip"
+          type="button"
+          role="listitem"
+          (click)="attachObject(obj)"
+          [attr.aria-label]="'Add ' + (obj.label || obj.type) + ' to heart'"
+        >
+          <span class="little-heart__chip-dot" [attr.data-type]="obj.type"></span>
+          <span class="little-heart__chip-label">{{ obj.label || obj.type }}</span>
+        </button>
+      }
+    </div>
+
+    @if (floatingChoices().length === 0) {
+      <p class="little-heart__empty cine-body">Explore the universe first — your discoveries become part of this heart.</p>
+    }
+  </div>
+
+  <div class="cine-fade-edge cine-fade-edge--bottom"></div>
+</section>

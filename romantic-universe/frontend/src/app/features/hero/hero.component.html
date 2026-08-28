@@ -26,11 +26,13 @@
       </div>
 
       <div class="hero__text" #textBlock>
-        <p class="act-marker">Act III</p>
-        <h2 class="cine-statement hero__title">{{ title() }}</h2>
-        <blockquote class="cine-letter hero__quote">{{ line1() }}</blockquote>
+        <p class="act-marker">Chapter II</p>
+        <p class="cine-whisper hero__discover">{{ discoverLine1() }}</p>
+        <p class="cine-editorial-sm hero__discover2">{{ discoverLine2() }}</p>
+        <h2 class="cine-editorial hero__title">{{ title() }}</h2>
+        <blockquote class="cine-intimate hero__quote">{{ line1() }}</blockquote>
         <p class="cine-body hero__line2">{{ line2() }}</p>
-        <p class="hero__name">— for {{ herName() }}</p>
+        <p class="hero__name cine-micro">— for {{ herName() }}</p>
       </div>
     </div>
   </div>

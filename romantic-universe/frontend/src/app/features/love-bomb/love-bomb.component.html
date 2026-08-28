@@ -3,10 +3,18 @@
   <div class="cine-fade-edge cine-fade-edge--top"></div>
 
   <header class="love-bomb__header">
-    <p class="act-marker">Act VI</p>
+    <p class="act-marker">Chapter V</p>
     <h2 class="cine-statement love-bomb__title">{{ title() }}</h2>
     <p class="cine-whisper love-bomb__subtitle">{{ subtitle() }}</p>
   </header>
+
+  @if (!introDone() && !reducedMotion) {
+    <div class="love-bomb__intro" aria-live="polite">
+      <p class="cine-editorial-sm love-bomb__intro-line">{{ introLine1() }}</p>
+      <p class="cine-intimate love-bomb__intro-line">{{ introLine2() }}</p>
+      <p class="cine-whisper love-bomb__intro-line">{{ introLine3() }}</p>
+    </div>
+  }
 
   @if (!reducedMotion) {
     <div class="love-bomb__arena" #arena>
@@ -18,8 +26,10 @@
           type="button"
           [attr.data-heart-id]="heart.id"
           [style.left.%]="heart.left"
+          [style.top.%]="heart.top"
           [disabled]="loading()"
           (click)="catchHeart(heart, $event)"
+          (pointerdown)="onHeartPointerDown(heart, $event)"
           aria-label="Catch heart for a love bomb"
         >
           <span class="love-bomb__heart-icon" aria-hidden="true">💗</span>

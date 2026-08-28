@@ -13,6 +13,8 @@ import gsap from 'gsap';
 import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
+import { ExperienceStateService } from '../../core/experience/experience-state.service';
+import { SoundDesignService } from '../../core/services/sound-design.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { LoveUniverseScene } from './love-universe-scene';
 
@@ -34,6 +36,8 @@ export class LoveUniverseComponent implements OnDestroy {
   private readonly visibility = inject(VisibilityService);
   private readonly api = inject(ApiService);
   private readonly scenes = inject(SceneManagerService);
+  private readonly experienceState = inject(ExperienceStateService);
+  private readonly sounds = inject(SoundDesignService);
 
   private scene?: LoveUniverseScene;
   private observer?: IntersectionObserver;
@@ -64,6 +68,12 @@ export class LoveUniverseComponent implements OnDestroy {
       this.motion.prefersReducedMotion()
     );
     this.scene.init();
+    this.scene.setPhotoDiscoverHandler((id, title) => {
+      this.sounds.enable();
+      this.sounds.play('photo');
+      this.experienceState.discoverPhoto(id, title);
+    });
+    this.scene.playEntryFromVoid();
     this.scene.start();
 
     try {

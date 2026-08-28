@@ -1,0 +1,42 @@
+<section class="remembers cine-scene cine-scene-silence" #section id="remembers" data-act="8">
+  <div class="remembers__vignette cine-vignette"></div>
+
+  <div class="remembers__content">
+    <p class="cine-editorial-sm remembers__intro" #introEl>{{ intro() }}</p>
+    <p class="cine-intimate remembers__reveal" #recapEl>{{ reveal() }}</p>
+
+    <canvas class="remembers__constellation" #canvas aria-hidden="true"></canvas>
+
+    <div class="remembers__stats">
+      @if (recap().photos > 0) {
+        <span class="remembers__stat cine-micro">{{ recap().photos }} photos</span>
+      }
+      @if (recap().memories > 0) {
+        <span class="remembers__stat cine-micro">{{ recap().memories }} memories</span>
+      }
+      @if (recap().reasons > 0) {
+        <span class="remembers__stat cine-micro">{{ recap().reasons }} whispers</span>
+      }
+      @if (recap().quotes > 0) {
+        <span class="remembers__stat cine-micro">{{ recap().quotes }} stars</span>
+      }
+      @if (recap().bombs > 0) {
+        <span class="remembers__stat cine-micro">{{ recap().bombs }} love bombs</span>
+      }
+      @if (recap().heartObjects > 0) {
+        <span class="remembers__stat cine-micro">{{ recap().heartObjects }} on your heart</span>
+      }
+    </div>
+
+    @if (recap().heartObjects > 0) {
+      <button
+        class="cine-enter-btn remembers__share"
+        type="button"
+        [disabled]="sharing()"
+        (click)="keepHeart()"
+      >
+        {{ sharing() ? 'Creating...' : 'Keep this little heart' }}
+      </button>
+    }
+  </div>
+</section>

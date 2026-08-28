@@ -14,6 +14,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
+import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { Photo } from '../../core/models';
 import { CinematicLightboxComponent } from '../../shared/components/cinematic-lightbox/cinematic-lightbox.component';
@@ -36,6 +37,7 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
 
   private readonly api = inject(ApiService);
   private readonly motion = inject(MotionService);
+  private readonly experienceState = inject(ExperienceStateService);
   private readonly scenes = inject(SceneManagerService);
   private observer?: IntersectionObserver;
 
@@ -50,6 +52,10 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
 
   private touchStartX = 0;
   private isMobile = false;
+
+  isDiscovered(id: number): boolean {
+    return this.experienceState.isPhotoDiscovered(id);
+  }
 
   constructor() {
     afterNextRender(() => {
@@ -84,6 +90,7 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
     this.selected.set(photo);
     this.lightboxOpen.set(true);
     document.body.style.overflow = 'hidden';
+    this.experienceState.discoverPhoto(photo.id, photo.caption ?? photo.title ?? undefined, photo.imageUrl);
   }
 
   closeLightbox(): void {

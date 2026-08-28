@@ -1,0 +1,54 @@
+// Phase 3.0 — Editorial typography layer
+
+.cine-editorial {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 8vw, 5.5rem);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--ivory);
+}
+
+.cine-editorial-sm {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4.5vw, 3rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ivory);
+}
+
+.cine-reveal-line {
+  display: block;
+  will-change: opacity, transform, filter;
+}
+
+.cine-scene-silence {
+  .cine-grain,
+  .particle-burst,
+  .chapter-progress {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.cine-discovery-hint {
+  font-family: var(--font-body);
+  font-size: var(--text-micro);
+  font-weight: 300;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ivory-ghost);
+  opacity: 0.5;
+}
+
+.cine-intimate {
+  font-family: var(--font-letter);
+  font-size: clamp(1.1rem, 2.2vw, 1.35rem);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 2.1;
+  color: var(--ivory-dim);
+  max-width: 38ch;
+  margin-inline: auto;
+}

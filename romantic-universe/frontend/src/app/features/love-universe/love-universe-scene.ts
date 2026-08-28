@@ -8,6 +8,7 @@ interface PhotoOrb {
   orbitPhase: number;
   orbitRadius: number;
   id: number;
+  title?: string;
 }
 
 export class LoveUniverseScene {
@@ -44,6 +45,9 @@ export class LoveUniverseScene {
 
   private cameraBaseZ = 12;
   private cameraTarget = new THREE.Vector3(0, 0, 0);
+  private entering = false;
+  private entryProgress = 0;
+  private onPhotoDiscovered?: (id: number, title?: string) => void;
 
   private onMouseMove = (e: MouseEvent | TouchEvent): void => {
     const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -132,6 +136,16 @@ export class LoveUniverseScene {
 
   setScrollProgress(progress: number): void {
     this.scrollProgress = Math.max(0, Math.min(1, progress));
+  }
+
+  setPhotoDiscoverHandler(handler: (id: number, title?: string) => void): void {
+    this.onPhotoDiscovered = handler;
+  }
+
+  playEntryFromVoid(): void {
+    this.entering = true;
+    this.entryProgress = 0;
+    this.camera.position.z = 26;
   }
 
   start(): void {
@@ -428,7 +442,8 @@ export class LoveUniverseScene {
       basePosition,
       orbitPhase: angle,
       orbitRadius,
-      id: photo.id
+      id: photo.id,
+      title: photo.title ?? undefined
     };
   }
 
@@ -446,7 +461,11 @@ export class LoveUniverseScene {
     if (hits.length > 0) {
       const hitMesh = hits[0].object as THREE.Mesh;
       const orb = this.photoOrbs.find(o => o.mesh === hitMesh) ?? null;
-      this.focusOrb = this.focusOrb === orb ? null : orb;
+      const wasFocused = this.focusOrb === orb;
+      this.focusOrb = wasFocused ? null : orb;
+      if (orb && !wasFocused) {
+        this.onPhotoDiscovered?.(orb.id, orb.title);
+      }
     }
   }
 
@@ -482,6 +501,16 @@ export class LoveUniverseScene {
 
     let targetZ = this.cameraBaseZ - scrollPull;
     let lookAt = this.cameraTarget.clone();
+
+    if (this.entering) {
+      this.entryProgress = Math.min(1, this.entryProgress + 0.005);
+      const ease = 1 - Math.pow(1 - this.entryProgress, 3);
+      targetZ = THREE.MathUtils.lerp(26, this.cameraBaseZ - scrollPull, ease);
+      lookAt.set(0, 0, -2);
+      if (this.entryProgress >= 1) {
+        this.entering = false;
+      }
+    }
 
     if (this.focusOrb) {
       this.focusAmount = Math.min(1, this.focusAmount + 0.02);

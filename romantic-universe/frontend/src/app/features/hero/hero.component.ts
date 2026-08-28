@@ -31,6 +31,8 @@ export class HeroComponent implements OnDestroy {
 
   readonly herName = input('Beautiful');
   readonly title = input('Look at This Beautiful Human');
+  readonly discoverLine1 = input('Somewhere in this universe...');
+  readonly discoverLine2 = input('...there is someone very special.');
   readonly line1 = input('Some people make the world beautiful just by being in it.');
   readonly line2 = input('And somehow, I got lucky enough to find you.');
   readonly imageUrl = input('/assets/images/hero/hero.jpg');

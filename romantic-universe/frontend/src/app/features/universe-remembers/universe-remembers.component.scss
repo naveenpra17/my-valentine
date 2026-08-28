@@ -1,0 +1,48 @@
+.remembers {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(4rem, 14vh, 8rem) 1.5rem;
+  background: var(--void);
+  text-align: center;
+}
+
+.remembers__content {
+  max-width: 640px;
+  width: 100%;
+}
+
+.remembers__intro {
+  margin: 0 0 2rem;
+}
+
+.remembers__reveal {
+  margin: 0 0 3rem;
+}
+
+.remembers__constellation {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  height: 280px;
+  margin: 0 auto 2.5rem;
+}
+
+.remembers__stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.remembers__stat {
+  opacity: 0.55;
+}
+
+.remembers__share {
+  margin-top: 0.5rem;
+}
