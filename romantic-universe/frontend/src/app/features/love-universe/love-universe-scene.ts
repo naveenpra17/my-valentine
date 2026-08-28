@@ -48,6 +48,14 @@ export class LoveUniverseScene {
   private entering = false;
   private entryProgress = 0;
   private onPhotoDiscovered?: (id: number, title?: string) => void;
+  private cameraMotion: {
+    fromZ: number;
+    toZ: number;
+    lookAt: THREE.Vector3;
+    progress: number;
+    duration: number;
+    resolve?: () => void;
+  } | null = null;
 
   private onMouseMove = (e: MouseEvent | TouchEvent): void => {
     const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -146,6 +154,45 @@ export class LoveUniverseScene {
     this.entering = true;
     this.entryProgress = 0;
     this.camera.position.z = 26;
+  }
+
+  approach(target: { x: number; y: number; z: number }, durationMs = 2000): Promise<void> {
+    return new Promise(resolve => {
+      this.cameraMotion = {
+        fromZ: this.camera.position.z,
+        toZ: 7,
+        lookAt: new THREE.Vector3(target.x, target.y, target.z),
+        progress: 0,
+        duration: durationMs / 1000,
+        resolve
+      };
+    });
+  }
+
+  pullBack(durationMs = 2200): Promise<void> {
+    return new Promise(resolve => {
+      this.cameraMotion = {
+        fromZ: this.camera.position.z,
+        toZ: this.cameraBaseZ - this.scrollProgress * 4,
+        lookAt: this.cameraTarget.clone(),
+        progress: 0,
+        duration: durationMs / 1000,
+        resolve
+      };
+      this.focusOrb = null;
+    });
+  }
+
+  focusPhotoById(photoId: number, durationMs = 1800): Promise<void> {
+    const orb = this.photoOrbs.find(o => o.id === photoId);
+    if (!orb) return Promise.resolve();
+    const pos = orb.group.position;
+    this.focusOrb = orb;
+    return this.approach({ x: pos.x, y: pos.y, z: pos.z }, durationMs);
+  }
+
+  returnToUniverse(durationMs = 2000): Promise<void> {
+    return this.pullBack(durationMs);
   }
 
   start(): void {
@@ -510,9 +557,20 @@ export class LoveUniverseScene {
       if (this.entryProgress >= 1) {
         this.entering = false;
       }
+    } else if (this.cameraMotion) {
+      const dt = 1 / 60;
+      this.cameraMotion.progress += dt / this.cameraMotion.duration;
+      const t = Math.min(1, this.cameraMotion.progress);
+      const ease = 1 - Math.pow(1 - t, 3);
+      targetZ = THREE.MathUtils.lerp(this.cameraMotion.fromZ, this.cameraMotion.toZ, ease);
+      lookAt.copy(this.cameraMotion.lookAt);
+      if (t >= 1) {
+        this.cameraMotion.resolve?.();
+        this.cameraMotion = null;
+      }
     }
 
-    if (this.focusOrb) {
+    if (this.focusOrb && !this.cameraMotion) {
       this.focusAmount = Math.min(1, this.focusAmount + 0.02);
       const worldPos = new THREE.Vector3();
       this.focusOrb.group.getWorldPosition(worldPos);

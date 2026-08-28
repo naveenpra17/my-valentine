@@ -3,7 +3,6 @@ import {
   ElementRef,
   OnDestroy,
   ViewChild,
-  afterNextRender,
   effect,
   inject,
   input,
@@ -154,25 +153,23 @@ export class CinematicLightboxComponent implements OnDestroy {
   private wasOpen = false;
 
   constructor() {
-    afterNextRender(() => {
-      effect(() => {
-        const isOpen = this.open();
-        if (isOpen && !this.wasOpen) {
-          this.wasOpen = true;
-          document.body.style.overflow = 'hidden';
-          requestAnimationFrame(() => {
-            this.playOpen();
-            const overlay = this.overlayRef?.nativeElement;
-            if (overlay) {
-              this.focusTrap.activate(overlay, () => this.requestClose());
-            }
-          });
-        } else if (!isOpen && this.wasOpen) {
-          this.wasOpen = false;
-          document.body.style.overflow = '';
-          this.focusTrap.deactivate();
-        }
-      });
+    effect(() => {
+      const isOpen = this.open();
+      if (isOpen && !this.wasOpen) {
+        this.wasOpen = true;
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
+          this.playOpen();
+          const overlay = this.overlayRef?.nativeElement;
+          if (overlay) {
+            this.focusTrap.activate(overlay, () => this.requestClose());
+          }
+        });
+      } else if (!isOpen && this.wasOpen) {
+        this.wasOpen = false;
+        document.body.style.overflow = '';
+        this.focusTrap.deactivate();
+      }
     });
   }
 

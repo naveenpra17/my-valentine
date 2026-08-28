@@ -1,0 +1,59 @@
+// Director's Cut — hide website chrome, reinforce cinematic flow
+
+.act-marker {
+  display: none !important;
+}
+
+.cine-scene {
+  scroll-margin-top: 0;
+}
+
+.chapter-veil {
+  pointer-events: none;
+}
+
+.experience-main {
+  scroll-snap-type: y proximity;
+}
+
+.cine-scene-silence {
+  .chapter-progress {
+    opacity: 0 !important;
+  }
+}
+
+.finale-secret {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  background: rgba(5, 3, 8, 0.97);
+  text-align: center;
+  padding: 2rem;
+}
+
+.finale-secret__light {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: var(--champagne);
+  box-shadow: 0 0 20px rgba(196, 176, 138, 0.8);
+  cursor: pointer;
+  animation: secret-light-breathe 3s ease-in-out infinite;
+
+  &:focus-visible {
+    outline: 2px solid var(--rose);
+    outline-offset: 6px;
+  }
+}
+
+@keyframes secret-light-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 1; }
+}

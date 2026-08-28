@@ -1,5 +1,8 @@
 export type ChapterId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
+/** Director's Cut chapter map (0–12). */
+export type DirectorChapterId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+
 export type HeartObjectType =
   | 'photo'
   | 'memory'
@@ -35,8 +38,12 @@ export interface SerializedExperienceState {
   activatedQuotes: number[];
   triggeredLoveBombs: number[];
   foundSecrets: string[];
+  openedEnvelopes: number[];
   selectedHeartObjects: HeartObject[];
+  heartPool: HeartObject[];
   constellationStars: ConstellationStar[];
   currentChapter: ChapterId;
   musicEnabled: boolean;
+  experienceStarted: boolean;
+  experienceCompleted: boolean;
 }

@@ -16,8 +16,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
-import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
+import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
+import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { OpenWhenMessage } from '../../core/models';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -45,6 +46,7 @@ export class OpenWhenComponent implements OnInit, OnDestroy {
   private readonly motion = inject(MotionService);
   private readonly scenes = inject(SceneManagerService);
   private readonly sounds = inject(SoundDesignService);
+  private readonly controller = inject(ExperienceControllerService);
   private observer?: IntersectionObserver;
   private scrollTriggers: ScrollTrigger[] = [];
 
@@ -98,6 +100,7 @@ export class OpenWhenComponent implements OnInit, OnDestroy {
 
     this.sounds.enable();
     this.sounds.play('envelope');
+    this.controller.openEnvelope(msg.id);
 
     const mood = this.getMood(index);
     this.activeMood.set(mood);

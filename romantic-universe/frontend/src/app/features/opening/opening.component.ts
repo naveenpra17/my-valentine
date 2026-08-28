@@ -26,8 +26,8 @@ export class OpeningComponent implements OnDestroy {
 
   readonly void1 = input('Hey...');
   readonly void2 = input('You.');
-  readonly void3 = input('I made a little world for you.');
-  readonly void4 = input('Will you come in?');
+  readonly void3 = input('I made something for you.');
+  readonly void4 = input('Come see.');
   readonly ctaLabel = input('');
 
   readonly enter = output<void>();
@@ -37,6 +37,7 @@ export class OpeningComponent implements OnDestroy {
 
   readonly exiting = signal(false);
   readonly showCta = signal(false);
+  readonly invitationVisible = signal(false);
 
   constructor() {
     afterNextRender(() => this.runSequence());
@@ -47,10 +48,14 @@ export class OpeningComponent implements OnDestroy {
   }
 
   onEnter(): void {
-    if (this.exiting()) return;
+    if (this.exiting() || !this.showCta()) return;
     this.exiting.set(true);
     this.playEnterExpansion();
     this.enter.emit();
+  }
+
+  onStageActivate(): void {
+    this.onEnter();
   }
 
   private runSequence(): void {
@@ -59,7 +64,7 @@ export class OpeningComponent implements OnDestroy {
     if (this.motion.prefersReducedMotion()) {
       this.showAllLines(lines);
       this.showCta.set(true);
-      gsap.set(this.ctaRef.nativeElement, { opacity: 1 });
+      this.scheduleInvitationReveal();
       return;
     }
 
@@ -125,15 +130,49 @@ export class OpeningComponent implements OnDestroy {
 
   private revealInvitation(): void {
     this.showCta.set(true);
-    gsap.fromTo(this.ctaRef.nativeElement, {
+    this.scheduleInvitationReveal();
+  }
+
+  /** Wait for @if block to render the CTA before animating it. */
+  private scheduleInvitationReveal(): void {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => this.animateInvitation());
+    });
+  }
+
+  private animateInvitation(): void {
+    const el = this.ctaRef?.nativeElement;
+    if (!el) {
+      this.invitationVisible.set(true);
+      return;
+    }
+
+    if (this.motion.prefersReducedMotion()) {
+      gsap.set(el, { opacity: 1, scale: 1 });
+      this.invitationVisible.set(true);
+      return;
+    }
+
+    gsap.fromTo(el, {
       opacity: 0,
       scale: 0.6
     }, {
       opacity: 1,
       scale: 1,
       duration: 1.6,
-      ease: 'power3.out'
+      ease: 'power3.out',
+      onComplete: () => this.invitationVisible.set(true)
     });
+
+    const light = this.lightRef?.nativeElement;
+    if (light) {
+      gsap.to(light, {
+        scale: 2.5,
+        opacity: 1,
+        duration: 1.4,
+        ease: 'power3.out'
+      });
+    }
   }
 
   private playEnterExpansion(): void {

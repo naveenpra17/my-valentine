@@ -1,14 +1,14 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   OnDestroy,
+  AfterViewInit,
   ViewChild,
-  afterNextRender,
   inject,
   input,
   signal
 } from '@angular/core';
-import gsap from 'gsap';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { SessionService } from '../../core/services/session.service';
@@ -19,34 +19,24 @@ import { SoundDesignService } from '../../core/services/sound-design.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { LoveBomb } from '../../core/models';
 
-interface MiniParticle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  maxLife: number;
-  size: number;
-  color: string;
-}
-
 interface GameHeart {
   id: number;
   left: number;
   top: number;
+  speed: number;
 }
 
 @Component({
   selector: 'app-love-bomb',
   standalone: true,
   templateUrl: './love-bomb.component.html',
-  styleUrl: './love-bomb.component.scss'
+  styleUrl: './love-bomb.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class LoveBombComponent implements OnDestroy {
+export class LoveBombComponent implements OnDestroy, AfterViewInit {
   @ViewChild('section') sectionRef!: ElementRef<HTMLElement>;
   @ViewChild('arena') arenaRef!: ElementRef<HTMLElement>;
   @ViewChild('burstCanvas') burstCanvasRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('messageEl') messageElRef?: ElementRef<HTMLElement>;
 
   readonly title = input('Love Bomb Attack');
   readonly subtitle = input('Catch the hearts before they fade');
@@ -70,100 +60,110 @@ export class LoveBombComponent implements OnDestroy {
   readonly totalCaught = signal(0);
   readonly streak = signal(0);
   readonly playing = signal(false);
-  readonly introDone = signal(false);
-  readonly reducedMotion = this.motion.prefersReducedMotion();
 
-  private particles: MiniParticle[] = [];
-  private animationId = 0;
+  private burstFrameId = 0;
+  private gameFrameId = 0;
   private ctx?: CanvasRenderingContext2D;
   private nextHeartId = 1;
   private spawnTimer?: ReturnType<typeof setInterval>;
-  private heartTweens = new Map<number, gsap.core.Animation>();
   private observer?: IntersectionObserver;
+  private removingIds = new Set<number>();
+  // Do not use a guessed height here. Until the arena has been laid out, a
+  // guessed value lets hearts fall out of a zero-height clipped container.
+  private arenaHeight = 0;
+  private lastGameFrameAt = 0;
 
-  private readonly maxHearts = 5;
-  private readonly spawnIntervalMs = 1400;
+  private readonly maxHearts = 10;
+  private readonly spawnIntervalMs = 700;
 
   constructor() {
     const stored = sessionStorage.getItem('love_bombs_count');
     if (stored) this.totalCaught.set(parseInt(stored, 10));
+  }
 
-    afterNextRender(() => {
-      const canvas = this.burstCanvasRef?.nativeElement;
-      if (canvas) {
-        this.ctx = canvas.getContext('2d')!;
-        this.resizeCanvas();
-        window.addEventListener('resize', this.resizeCanvas);
-      }
-      this.initSceneObserver();
+  ngAfterViewInit(): void {
+    const canvas = this.burstCanvasRef?.nativeElement;
+    if (canvas) {
+      this.ctx = canvas.getContext('2d')!;
+      this.resizeCanvas();
+      window.addEventListener('resize', this.resizeCanvas);
+    }
+
+    this.measureArena();
+    this.initSceneObserver();
+
+    // Always start shortly after view init — do not rely on intersection alone
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => this.startPlayground());
     });
   }
 
   ngOnDestroy(): void {
-    cancelAnimationFrame(this.animationId);
+    cancelAnimationFrame(this.burstFrameId);
+    cancelAnimationFrame(this.gameFrameId);
     window.removeEventListener('resize', this.resizeCanvas);
     this.observer?.disconnect();
     this.stopGame();
-    this.heartTweens.forEach(t => t.kill());
   }
 
-  async catchHeart(heart: GameHeart, event: MouseEvent): Promise<void> {
-    if (this.loading()) return;
+  startPlayground(): void {
+    this.sounds.enable();
+    this.measureArena();
+    if (this.arenaHeight < 80) {
+      requestAnimationFrame(() => this.startPlayground());
+      return;
+    }
+    if (this.playing()) {
+      if (this.hearts().length === 0) {
+        this.spawnHeart();
+        this.spawnHeart();
+        this.spawnHeart();
+      }
+      return;
+    }
 
+    this.playing.set(true);
+    this.error.set(null);
+    this.spawnHeart();
+    this.spawnHeart();
+    this.spawnHeart();
+    this.spawnHeart();
+
+    if (this.spawnTimer) clearInterval(this.spawnTimer);
+    this.spawnTimer = setInterval(() => {
+      if (this.hearts().length < this.maxHearts) {
+        this.spawnHeart();
+      }
+    }, this.spawnIntervalMs);
+
+    if (!this.gameFrameId) {
+      this.startGameLoop();
+    }
+  }
+
+  catchHeart(heart: GameHeart, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (this.loading() || this.removingIds.has(heart.id)) return;
+
+    this.removingIds.add(heart.id);
     this.sounds.enable();
     this.sounds.play('love-bomb');
-
-    event.stopPropagation();
-    this.removeHeart(heart.id);
+    this.hearts.update(list => list.filter(h => h.id !== heart.id));
 
     const arena = this.arenaRef?.nativeElement;
-    if (arena) {
+    if (arena && this.ctx) {
       const rect = arena.getBoundingClientRect();
       const x = (heart.left / 100) * rect.width;
-      const y = rect.height * 0.5;
-      this.spawnBurst(x, y);
+      this.spawnBurst(x, heart.top);
     }
 
-    await this.fetchLoveBomb();
+    void this.fetchLoveBomb();
   }
 
-  onHeartPointerDown(heart: GameHeart, event: PointerEvent): void {
-    if (this.loading()) return;
-    const el = event.currentTarget as HTMLElement;
-    const arena = this.arenaRef?.nativeElement;
-    if (!arena) return;
-
-    const tween = this.heartTweens.get(heart.id);
-    tween?.pause();
-
-    const onMove = (e: PointerEvent): void => {
-      const rect = arena.getBoundingClientRect();
-      const left = ((e.clientX - rect.left) / rect.width) * 100;
-      const top = ((e.clientY - rect.top) / rect.height) * 100;
-      el.style.left = `${Math.max(5, Math.min(95, left))}%`;
-      el.style.top = `${Math.max(5, Math.min(95, top))}%`;
-    };
-
-    const onUp = (): void => {
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
-      tween?.resume();
-    };
-
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
-  }
-
-  async dropBomb(): Promise<void> {
-    if (this.loading()) return;
-
-    const arena = this.arenaRef?.nativeElement;
-    if (arena) {
-      const rect = arena.getBoundingClientRect();
-      this.spawnBurst(rect.width / 2, rect.height / 2);
-    }
-
-    await this.fetchLoveBomb();
+  dismissMessage(): void {
+    this.showMessage.set(false);
+    this.currentBomb.set(null);
   }
 
   private async fetchLoveBomb(): Promise<void> {
@@ -180,7 +180,11 @@ export class LoveBombComponent implements OnDestroy {
         return next;
       });
       this.streak.update(s => s + 1);
-      this.revealMessage();
+      this.showMessage.set(true);
+      if (bomb?.message) {
+        this.experienceState.triggerLoveBomb(bomb.id, bomb.message);
+        this.announcer.announce(bomb.message);
+      }
     } catch {
       this.error.set('The love bomb fizzled... try again?');
       this.streak.set(0);
@@ -189,73 +193,60 @@ export class LoveBombComponent implements OnDestroy {
     }
   }
 
-  dismissMessage(): void {
-    this.showMessage.set(false);
-    this.currentBomb.set(null);
-  }
-
-  private revealMessage(): void {
-    this.showMessage.set(true);
-    const bomb = this.currentBomb();
-    if (bomb?.message) {
-      this.experienceState.triggerLoveBomb(bomb.id, bomb.message);
-      this.announcer.announce(bomb.message);
-    }
-
-    if (!this.motion.prefersReducedMotion() && this.messageElRef) {
-      gsap.fromTo(this.messageElRef.nativeElement, {
-        opacity: 0,
-        scale: 0.9,
-        y: 24,
-        filter: 'blur(8px)'
-      }, {
-        opacity: 1,
-        scale: 1,
-        y: 0,
-        filter: 'blur(0px)',
-        duration: 0.8,
-        ease: 'power3.out'
-      });
-    }
-  }
-
   private initSceneObserver(): void {
-    if (!this.sectionRef) return;
+    if (!this.sectionRef?.nativeElement) return;
     this.observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           this.scenes.setScene('love-bomb');
-          this.startGame();
-        } else {
-          this.stopGame();
+          this.startPlayground();
         }
       },
-      { threshold: 0.25 }
+      { threshold: 0.1 }
     );
     this.observer.observe(this.sectionRef.nativeElement);
   }
 
-  private startGame(): void {
-    if (this.motion.prefersReducedMotion()) return;
-    if (!this.introDone()) {
-      setTimeout(() => {
-        this.introDone.set(true);
-        this.beginPlayground();
-      }, 3200);
-      return;
-    }
-    this.beginPlayground();
+  private measureArena(): void {
+    const arena = this.arenaRef?.nativeElement;
+    if (!arena) return;
+    const height = arena.getBoundingClientRect().height;
+    if (height > 0) this.arenaHeight = height;
+    this.resizeCanvas();
   }
 
-  private beginPlayground(): void {
-    if (this.playing()) return;
-    this.playing.set(true);
-    this.spawnHeart();
-    this.spawnTimer = setInterval(() => {
-      if (this.hearts().length < this.maxHearts) {
-        this.spawnHeart();
+  private startGameLoop(): void {
+    cancelAnimationFrame(this.gameFrameId);
+    this.lastGameFrameAt = performance.now();
+    const tick = (now: number): void => {
+      if (!this.playing()) {
+        this.gameFrameId = 0;
+        return;
       }
-    }, this.spawnIntervalMs);
+
+      // Use elapsed time instead of pixels per animation frame. This keeps hearts
+      // visible at the same pace on fast displays and after a tab resumes.
+      const elapsedSeconds = Math.min((now - this.lastGameFrameAt) / 1000, 0.1);
+      this.lastGameFrameAt = now;
+      const limit = this.arenaHeight + 80;
+      const next = this.hearts()
+        .map(h => ({ ...h, top: h.top + h.speed * elapsedSeconds }))
+        .filter(h => {
+          if (h.top > limit) {
+            this.streak.set(0);
+            this.removingIds.delete(h.id);
+            return false;
+          }
+          return true;
+        });
+
+      if (next.length !== this.hearts().length || next.some((h, i) => h.top !== this.hearts()[i]?.top)) {
+        this.hearts.set(next);
+      }
+
+      this.gameFrameId = requestAnimationFrame(tick);
+    };
+    this.gameFrameId = requestAnimationFrame(tick);
   }
 
   private stopGame(): void {
@@ -264,59 +255,19 @@ export class LoveBombComponent implements OnDestroy {
       clearInterval(this.spawnTimer);
       this.spawnTimer = undefined;
     }
-    this.heartTweens.forEach(t => t.kill());
-    this.heartTweens.clear();
+    cancelAnimationFrame(this.gameFrameId);
+    this.gameFrameId = 0;
     this.hearts.set([]);
+    this.removingIds.clear();
   }
 
   private spawnHeart(): void {
     const id = this.nextHeartId++;
-    const left = 12 + Math.random() * 76;
-    const heart: GameHeart = { id, left, top: -12 };
-    this.hearts.update(list => [...list, heart]);
-
-    requestAnimationFrame(() => {
-      const el = this.arenaRef?.nativeElement.querySelector(
-        `[data-heart-id="${id}"]`
-      ) as HTMLElement | null;
-      if (!el) return;
-
-      gsap.set(el, { top: '-12%', opacity: 0, scale: 0.6 });
-      const tween = gsap.timeline()
-        .to(el, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)' })
-        .to(el, {
-          top: '108%',
-          duration: 5 + Math.random() * 2,
-          ease: 'none',
-          onComplete: () => {
-            this.missHeart(id);
-          }
-        }, 0)
-        .to(el, {
-          x: `+=${Math.random() > 0.5 ? 20 : -20}`,
-          duration: 2.5,
-          ease: 'sine.inOut',
-          yoyo: true,
-          repeat: -1
-        }, 0);
-
-      this.heartTweens.set(id, tween);
-    });
-  }
-
-  private missHeart(id: number): void {
-    if (!this.hearts().some(h => h.id === id)) return;
-    this.streak.set(0);
-    this.removeHeart(id);
-  }
-
-  private removeHeart(id: number): void {
-    const tween = this.heartTweens.get(id);
-    if (tween) {
-      tween.kill();
-      this.heartTweens.delete(id);
-    }
-    this.hearts.update(list => list.filter(h => h.id !== id));
+    const left = 8 + Math.random() * 84;
+    const speed = this.motion.prefersReducedMotion() ? 70 : 100 + Math.random() * 50;
+    // `top` is an explicit pixel coordinate. It avoids transform composition
+    // issues that can leave a newly-created heart outside the clipped arena.
+    this.hearts.update(list => [...list, { id, left, top: -48, speed }]);
   }
 
   private resizeCanvas = (): void => {
@@ -325,8 +276,8 @@ export class LoveBombComponent implements OnDestroy {
     if (!canvas || !arena || !this.ctx) return;
     const rect = arena.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio, 2);
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    canvas.width = Math.max(rect.width, 1) * dpr;
+    canvas.height = Math.max(rect.height, 1) * dpr;
     canvas.style.width = `${rect.width}px`;
     canvas.style.height = `${rect.height}px`;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -334,11 +285,11 @@ export class LoveBombComponent implements OnDestroy {
 
   private spawnBurst(x: number, y: number): void {
     if (!this.ctx) return;
+    const canvas = this.burstCanvasRef?.nativeElement;
+    if (!canvas) return;
 
     const colors = ['#c9a0a8', '#9a8fa8', '#c4b08a', '#f5f0e8', '#d4b0b8'];
-    const count = this.motion.prefersReducedMotion() ? 12 : 40;
-
-    this.particles = Array.from({ length: count }, () => {
+    const particles = Array.from({ length: 30 }, () => {
       const angle = Math.random() * Math.PI * 2;
       const speed = Math.random() * 5 + 2;
       return {
@@ -347,41 +298,37 @@ export class LoveBombComponent implements OnDestroy {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - 2,
         life: 0,
-        maxLife: Math.random() * 45 + 25,
-        size: Math.random() * 5 + 2,
+        maxLife: 40,
+        size: 4,
         color: colors[Math.floor(Math.random() * colors.length)]
       };
     });
 
-    cancelAnimationFrame(this.animationId);
-    this.animateBurst();
+    cancelAnimationFrame(this.burstFrameId);
+    const animate = (): void => {
+      if (!this.ctx) return;
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      const h = canvas.height / (window.devicePixelRatio || 1);
+      this.ctx.clearRect(0, 0, w, h);
+      let alive = false;
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.1;
+        p.life += 1;
+        if (p.life < p.maxLife) {
+          alive = true;
+          this.ctx.globalAlpha = 1 - p.life / p.maxLife;
+          this.ctx.fillStyle = p.color;
+          this.ctx.beginPath();
+          this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+      }
+      if (alive) {
+        this.burstFrameId = requestAnimationFrame(animate);
+      }
+    };
+    animate();
   }
-
-  private animateBurst = (): void => {
-    const canvas = this.burstCanvasRef?.nativeElement;
-    if (!canvas || !this.ctx) return;
-
-    const w = canvas.width / (window.devicePixelRatio || 1);
-    const h = canvas.height / (window.devicePixelRatio || 1);
-    this.ctx.clearRect(0, 0, w, h);
-
-    for (const p of this.particles) {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.1;
-      p.life += 1;
-
-      const alpha = 1 - p.life / p.maxLife;
-      this.ctx.globalAlpha = Math.max(0, alpha);
-      this.ctx.fillStyle = p.color;
-      this.ctx.beginPath();
-      this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      this.ctx.fill();
-    }
-
-    this.particles = this.particles.filter(p => p.life < p.maxLife);
-    if (this.particles.length > 0) {
-      this.animationId = requestAnimationFrame(this.animateBurst);
-    }
-  };
 }

@@ -66,12 +66,18 @@ export class OurLittleHeartScene {
   };
 
   private onResize = (): void => {
-    const w = this.container.clientWidth;
-    const h = this.container.clientHeight;
+    this.resize();
+  };
+
+  resize(): void {
+    if (!this.renderer || !this.camera) return;
+    const w = Math.max(this.container.clientWidth, 1);
+    const h = Math.max(this.container.clientHeight, 1);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
-  };
+    this.renderer.render(this.scene, this.camera);
+  }
 
   constructor(container: HTMLElement, reducedMotion = false) {
     this.container = container;
@@ -79,8 +85,8 @@ export class OurLittleHeartScene {
   }
 
   init(): void {
-    const w = this.container.clientWidth;
-    const h = this.container.clientHeight;
+    const w = Math.max(this.container.clientWidth, 1);
+    const h = Math.max(this.container.clientHeight, 1);
 
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.FogExp2(0x050308, 0.04);
@@ -92,6 +98,9 @@ export class OurLittleHeartScene {
     this.renderer.setSize(w, h);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setClearColor(0x050308, 0);
+    this.renderer.domElement.style.display = 'block';
+    this.renderer.domElement.style.width = '100%';
+    this.renderer.domElement.style.height = '100%';
     this.container.appendChild(this.renderer.domElement);
 
     this.scene.add(new THREE.AmbientLight(0xf5f0e8, 0.3));
@@ -124,6 +133,7 @@ export class OurLittleHeartScene {
     this.renderer.domElement.addEventListener('pointerup', this.onPointerUp);
     this.renderer.domElement.addEventListener('pointercancel', this.onPointerUp);
     window.addEventListener('resize', this.onResize);
+    requestAnimationFrame(() => this.resize());
   }
 
   syncObjects(objects: HeartObject[]): void {
@@ -181,7 +191,10 @@ export class OurLittleHeartScene {
 
   setVisible(visible: boolean): void {
     this.visible = visible;
-    if (visible && !this.running) this.start();
+    if (visible) {
+      this.resize();
+      if (!this.running) this.start();
+    }
   }
 
   dispose(): void {

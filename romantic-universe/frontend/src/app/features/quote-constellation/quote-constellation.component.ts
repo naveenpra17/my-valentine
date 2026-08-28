@@ -1,6 +1,7 @@
 import {
   Component,
   ElementRef,
+  Injector,
   OnDestroy,
   OnInit,
   ViewChild,
@@ -64,10 +65,10 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
   private resizeObserver?: ResizeObserver;
   private quotes: Quote[] = [];
   private revealProgress = 0;
+  private canvasReady = false;
+  private readonly injector = inject(Injector);
 
-  constructor() {
-    afterNextRender(() => this.initCanvas());
-  }
+  constructor() {}
 
   ngOnDestroy(): void {
     cancelAnimationFrame(this.animationId);
@@ -84,11 +85,11 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
     try {
       this.quotes = await firstValueFrom(this.api.getQuotes());
       this.layoutStars();
-      if (this.ctx) this.draw(performance.now());
     } catch {
       this.error.set('Could not load quotes.');
     } finally {
       this.loading.set(false);
+      afterNextRender(() => this.tryInitCanvas(), { injector: this.injector });
       this.initSceneObserver();
     }
   }
@@ -104,7 +105,7 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
         this.inView = entry.isIntersecting;
         if (entry.isIntersecting) {
           this.scenes.setScene('constellation');
-          if (!this.animationId && !this.motion.prefersReducedMotion()) {
+          if (this.canvasReady && !this.animationId && !this.motion.prefersReducedMotion()) {
             this.animate();
           }
         }
@@ -114,15 +115,30 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
     this.observer.observe(this.sectionRef.nativeElement);
   }
 
+  private tryInitCanvas(): void {
+    if (this.canvasReady || !this.canvasRef?.nativeElement || !this.sectionRef?.nativeElement) {
+      return;
+    }
+    this.initCanvas();
+  }
+
   private initCanvas(): void {
-    const canvas = this.canvasRef.nativeElement;
+    const canvas = this.canvasRef?.nativeElement;
+    const section = this.sectionRef?.nativeElement;
+    if (!canvas || !section) return;
+
+    this.canvasReady = true;
     this.ctx = canvas.getContext('2d')!;
     this.resize();
+    this.layoutStars();
     this.resizeObserver = new ResizeObserver(() => {
       this.resize();
       this.layoutStars();
+      if (this.canvasReady) {
+        this.draw(performance.now());
+      }
     });
-    this.resizeObserver.observe(this.sectionRef.nativeElement);
+    this.resizeObserver.observe(section);
 
     canvas.addEventListener('click', this.onCanvasClick);
     canvas.addEventListener('touchstart', this.onCanvasTouch, { passive: true });
@@ -137,8 +153,9 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
   }
 
   private resize(): void {
-    const canvas = this.canvasRef.nativeElement;
-    const parent = this.sectionRef.nativeElement;
+    const canvas = this.canvasRef?.nativeElement;
+    const parent = this.sectionRef?.nativeElement;
+    if (!canvas || !parent || !this.ctx) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = parent.clientWidth * dpr;
     canvas.height = parent.clientHeight * dpr;
@@ -154,7 +171,8 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
   }
 
   private layoutStars(): void {
-    const canvas = this.canvasRef.nativeElement;
+    const canvas = this.canvasRef?.nativeElement;
+    if (!canvas) return;
     const w = canvas.width / (window.devicePixelRatio || 1);
     const h = canvas.height / (window.devicePixelRatio || 1);
     const cx = w / 2;
@@ -235,6 +253,11 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
   }
 
   private animate = (): void => {
+    if (!this.canvasReady || !this.ctx) {
+      this.animationId = 0;
+      return;
+    }
+
     if (!this.inView || !this.visibility.pageVisible()) {
       this.animationId = requestAnimationFrame(this.animate);
       return;
@@ -252,7 +275,8 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
   };
 
   private draw(time: number): void {
-    const canvas = this.canvasRef.nativeElement;
+    const canvas = this.canvasRef?.nativeElement;
+    if (!canvas || !this.ctx) return;
     const w = canvas.width / (window.devicePixelRatio || 1);
     const h = canvas.height / (window.devicePixelRatio || 1);
 

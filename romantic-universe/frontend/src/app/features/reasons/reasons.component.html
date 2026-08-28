@@ -7,6 +7,7 @@
       <p class="act-marker">Act V</p>
       <h2 class="cine-statement reasons__title">{{ title() }}</h2>
       <p class="cine-whisper reasons__subtitle">{{ subtitle() }}</p>
+      <p class="cine-micro reasons__intro-copy">{{ introLine1() }} {{ introLine2() }}</p>
     </header>
 
     @if (loading()) {
@@ -14,14 +15,7 @@
     } @else if (error()) {
       <div class="reasons__state reasons__state--error cine-body">{{ error() }}</div>
     } @else {
-      @if (!introComplete()) {
-        <div class="reasons__intro">
-          <p class="cine-editorial-sm reasons__intro-line">{{ introLine1() }}</p>
-          <p class="cine-intimate reasons__intro-line2">{{ introLine2() }}</p>
-        </div>
-      }
-
-      <div class="reasons__field" [class.reasons__field--dimmed]="focusedId() !== null" [class.reasons__field--hidden]="!introComplete()">
+      <div class="reasons__field" [class.reasons__field--dimmed]="focusedId() !== null">
         @for (reason of reasons(); track reason.id; let i = $index) {
           <button
             class="reason-float"

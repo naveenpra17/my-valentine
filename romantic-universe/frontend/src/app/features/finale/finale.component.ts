@@ -12,8 +12,10 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
+import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
+import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -34,6 +36,7 @@ interface FinaleParticle {
 @Component({
   selector: 'app-finale',
   standalone: true,
+  imports: [ChapterVisitDirective],
   templateUrl: './finale.component.html',
   styleUrl: './finale.component.scss'
 })
@@ -60,6 +63,7 @@ export class FinaleComponent implements OnDestroy {
   private readonly motion = inject(MotionService);
   private readonly visibility = inject(VisibilityService);
   private readonly experienceState = inject(ExperienceStateService);
+  private readonly controller = inject(ExperienceControllerService);
   private readonly sounds = inject(SoundDesignService);
   private readonly scenes = inject(SceneManagerService);
 
@@ -68,6 +72,8 @@ export class FinaleComponent implements OnDestroy {
   readonly showButton = signal(false);
   readonly surpriseTriggered = signal(false);
   readonly heartFormed = signal(false);
+  readonly showFinalSecret = signal(false);
+  readonly secretTriggered = signal(false);
 
   private ctx!: CanvasRenderingContext2D;
   private particles: FinaleParticle[] = [];
@@ -103,6 +109,56 @@ export class FinaleComponent implements OnDestroy {
     this.sounds.enable();
     this.sounds.play('finale');
     this.spawnGrandBurst();
+    this.spawnHeartDissolve();
+
+    setTimeout(() => {
+      if (!this.motion.prefersReducedMotion()) {
+        this.showFinalSecret.set(true);
+      } else {
+        this.controller.completeExperience();
+      }
+    }, 4500);
+  }
+
+  triggerFinalSecret(): void {
+    if (this.secretTriggered()) return;
+    this.secretTriggered.set(true);
+    this.controller.showFinaleSecret();
+    this.sounds.play('finale');
+    this.spawnGrandBurst();
+    this.spawnGrandBurst();
+
+    setTimeout(() => {
+      this.showFinalSecret.set(false);
+      this.controller.completeExperience();
+    }, 3000);
+  }
+
+  private spawnHeartDissolve(): void {
+    const canvas = this.canvasRef.nativeElement;
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+    const cx = w / 2;
+    const cy = h * 0.36;
+    const colors = ['#c9a0a8', '#9a8fa8', '#c4b08a', '#f5f0e8'];
+
+    const dissolve: FinaleParticle[] = Array.from({ length: 80 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 4 + 1;
+      return {
+        x: cx + (Math.random() - 0.5) * 40,
+        y: cy + (Math.random() - 0.5) * 40,
+        targetX: cx,
+        targetY: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 2 + Math.random() * 3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        arrived: false,
+        isBurst: true
+      };
+    });
+    this.particles = [...this.particles, ...dissolve];
   }
 
   private initCanvas(): void {

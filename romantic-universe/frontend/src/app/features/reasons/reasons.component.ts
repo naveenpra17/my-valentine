@@ -20,6 +20,7 @@ import { ExperienceStateService } from '../../core/experience/experience-state.s
 import { SoundDesignService } from '../../core/services/sound-design.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { Reason } from '../../core/models';
+import { finalizeScrollReveal, revealOnScroll } from '../../core/utils/scroll-reveal';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -143,7 +144,6 @@ export class ReasonsComponent implements OnInit, OnDestroy {
       ([entry]) => {
         if (entry.isIntersecting) {
           this.scenes.setScene('reasons');
-          this.playIntro();
         }
       },
       { threshold: 0.2 }
@@ -158,34 +158,36 @@ export class ReasonsComponent implements OnInit, OnDestroy {
     this.scrollTriggers = [];
 
     const header = this.sectionRef.nativeElement.querySelector('.reasons__header');
+    const revealTargets: Element[] = [];
     if (header) {
-      const st = gsap.from(header, {
-        scrollTrigger: { trigger: header, start: 'top 85%' },
+      revealTargets.push(header);
+      const st = revealOnScroll(header, {
         opacity: 0,
         y: 30,
         duration: 1,
         ease: 'power3.out'
-      }).scrollTrigger;
+      }, { trigger: header, start: 'top 85%' });
       if (st) this.scrollTriggers.push(st);
     }
 
     const floats = this.floatRefs?.toArray() ?? [];
     floats.forEach((ref, i) => {
-      const st = gsap.from(ref.nativeElement, {
-        scrollTrigger: {
-          trigger: this.sectionRef.nativeElement,
-          start: 'top 75%',
-          toggleActions: 'play none none reverse'
-        },
+      revealTargets.push(ref.nativeElement);
+      const st = revealOnScroll(ref.nativeElement, {
         opacity: 0,
         scale: 0.8,
         filter: 'blur(10px)',
         duration: 1,
         delay: i * 0.12,
         ease: 'power3.out'
-      }).scrollTrigger;
+      }, {
+        trigger: this.sectionRef.nativeElement,
+        start: 'top 75%'
+      });
       if (st) this.scrollTriggers.push(st);
     });
+
+    finalizeScrollReveal(...revealTargets);
   }
 
   private initFloatMotion(): void {
@@ -215,6 +217,6 @@ export class ReasonsComponent implements OnInit, OnDestroy {
       this.introComplete.set(true);
       return;
     }
-    setTimeout(() => this.introComplete.set(true), 3200);
+    setTimeout(() => this.introComplete.set(true), 2200);
   }
 }

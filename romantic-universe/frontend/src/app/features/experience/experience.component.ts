@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { ExperienceEngineService } from '../../core/cinematic/experience-engine.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
+import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { ConfigService } from '../../core/services/config.service';
 import { EasterEggService } from '../../core/services/easter-egg.service';
@@ -35,6 +36,8 @@ import { FinaleComponent } from '../finale/finale.component';
 import { OurLittleHeartComponent } from '../our-little-heart/our-little-heart.component';
 import { UniverseRemembersComponent } from '../universe-remembers/universe-remembers.component';
 import { ChapterProgressComponent } from '../../shared/components/chapter-progress/chapter-progress.component';
+import { ConstellationCeremonyComponent } from '../constellation-ceremony/constellation-ceremony.component';
+import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
 import { MemoryConstellationTrackerComponent } from '../../shared/components/memory-constellation-tracker/memory-constellation-tracker.component';
 
 @Component({
@@ -61,6 +64,8 @@ import { MemoryConstellationTrackerComponent } from '../../shared/components/mem
     FinaleComponent,
     OurLittleHeartComponent,
     UniverseRemembersComponent,
+    ConstellationCeremonyComponent,
+    ChapterVisitDirective,
     ChapterProgressComponent,
     MemoryConstellationTrackerComponent
   ],
@@ -76,6 +81,7 @@ export class ExperienceComponent implements OnDestroy {
   readonly config = inject(ConfigService);
   private readonly session = inject(SessionService);
   private readonly engine = inject(ExperienceEngineService);
+  readonly controller = inject(ExperienceControllerService);
   private readonly experienceState = inject(ExperienceStateService);
   private readonly easterEggs = inject(EasterEggService);
   readonly scenes = inject(SceneManagerService);
@@ -99,6 +105,7 @@ export class ExperienceComponent implements OnDestroy {
       this.scenes.setScene('opening');
     } else {
       this.scenes.setScene('universe');
+      this.controller.restoreForReturningVisitor();
     }
 
     this.easterEggs.initHiddenWorld();
@@ -117,6 +124,7 @@ export class ExperienceComponent implements OnDestroy {
     await this.engine.fadeToBlack();
 
     this.session.markEntered();
+    this.controller.startExperience();
     this.experienceState.setChapter(1);
     this.showMain.set(true);
     this.burstActive.set(false);

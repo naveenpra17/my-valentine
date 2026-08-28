@@ -3,7 +3,6 @@ import {
   ElementRef,
   OnDestroy,
   ViewChild,
-  afterNextRender,
   effect,
   inject,
   input
@@ -73,19 +72,17 @@ export class VoidWhisperComponent implements OnDestroy {
   private readonly focusTrap = inject(FocusTrapService);
 
   constructor() {
-    afterNextRender(() => {
-      effect(() => {
-        if (this.easterEggs.showVoidWhisper()) {
-          requestAnimationFrame(() => {
-            const el = this.dialogRef?.nativeElement;
-            if (el) {
-              this.focusTrap.activate(el, () => this.dismiss());
-            }
-          });
-        } else {
-          this.focusTrap.deactivate();
-        }
-      });
+    effect(() => {
+      if (this.easterEggs.showVoidWhisper()) {
+        requestAnimationFrame(() => {
+          const el = this.dialogRef?.nativeElement;
+          if (el) {
+            this.focusTrap.activate(el, () => this.dismiss());
+          }
+        });
+      } else {
+        this.focusTrap.deactivate();
+      }
     });
   }
 

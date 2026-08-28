@@ -1,19 +1,39 @@
-<div class="void" #container [class.void--exiting]="exiting()">
-  <div class="void__light" #lightPoint aria-hidden="true"></div>
+<div class="void" #container [class.void--exiting]="exiting()" [class.void--ready]="showCta()">
+  <button
+    class="void__light-hit"
+    type="button"
+    [class.void__light-hit--active]="showCta()"
+    [disabled]="!showCta() || exiting()"
+    (click)="onStageActivate()"
+    aria-label="Enter the experience"
+  >
+    <span class="void__light" #lightPoint aria-hidden="true"></span>
+  </button>
 
   <div class="void__vignette"></div>
   <div class="void__grain" aria-hidden="true"></div>
 
   <div class="void__stage">
-    <div class="void__lines" #linesWrap aria-live="polite"></div>
+    <div
+      class="void__lines"
+      #linesWrap
+      aria-live="polite"
+      [class.void__lines--tappable]="showCta()"
+      (click)="showCta() ? onStageActivate() : null"
+    ></div>
 
     @if (showCta()) {
+      <p class="void__hint cine-micro" [class.void__hint--visible]="invitationVisible()">
+        Tap the light
+      </p>
+
       <button
         class="void__invitation"
         #ctaEl
         type="button"
         (click)="onEnter()"
         [disabled]="exiting()"
+        [class.void__invitation--visible]="invitationVisible()"
         aria-label="Enter the experience"
       >
         <span class="void__invitation-core" aria-hidden="true"></span>

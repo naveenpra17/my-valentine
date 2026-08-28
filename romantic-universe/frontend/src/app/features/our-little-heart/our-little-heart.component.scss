@@ -27,21 +27,47 @@
 }
 
 .little-heart__canvas {
+  position: relative;
   width: 100%;
   height: min(55vh, 420px);
+  min-height: 320px;
+  border: 1px solid rgba(245, 240, 232, 0.08);
   border-radius: 2px;
   overflow: hidden;
   cursor: grab;
+  background: radial-gradient(ellipse at center, rgba(201, 160, 168, 0.08), transparent 70%);
 
   &:active {
     cursor: grabbing;
   }
 
-  :host ::ng-deep canvas {
+  canvas {
     display: block;
     width: 100% !important;
     height: 100% !important;
   }
+}
+
+.little-heart__canvas-loading,
+.little-heart__canvas-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.little-heart__fallback-heart {
+  font-size: clamp(4rem, 14vw, 7rem);
+  color: #c9a0a8;
+  text-shadow: 0 0 40px rgba(201, 160, 168, 0.5);
+  animation: heartPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes heartPulse {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.06); opacity: 1; }
 }
 
 .little-heart__hint {

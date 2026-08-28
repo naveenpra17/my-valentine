@@ -23,6 +23,7 @@ import { ExperienceStateService } from '../../core/experience/experience-state.s
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { Memory } from '../../core/models';
 import { CinematicLightboxComponent } from '../../shared/components/cinematic-lightbox/cinematic-lightbox.component';
+import { finalizeScrollReveal, revealOnScroll } from '../../core/utils/scroll-reveal';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -39,6 +40,9 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
 
   readonly title = input('Things I Remember');
   readonly subtitle = input('Little moments that stayed with me');
+  readonly introLine1 = input('Some moments disappear.');
+  readonly introLine2 = input('Some stay.');
+  readonly introLine3 = input('I kept these.');
 
   private readonly api = inject(ApiService);
   private readonly motion = inject(MotionService);
@@ -56,6 +60,11 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
   readonly lightboxOpen = signal(false);
   readonly sourceRect = signal<DOMRect | null>(null);
   readonly imageErrors = signal<Set<number>>(new Set());
+  readonly introComplete = signal(false);
+  readonly introLineIndex = signal(0);
+
+  private introPlayed = false;
+  private lastOpenedIndex = -1;
 
   constructor() {
     afterNextRender(() => {
@@ -87,7 +96,16 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
   }
 
   openMemory(memory: Memory, event: Event): void {
-    const target = (event.currentTarget as HTMLElement).querySelector('.memory-card__image-wrap');
+    const cards = this.cardRefs?.toArray() ?? [];
+    const index = cards.findIndex(ref => ref.nativeElement.contains(event.currentTarget as Node));
+    const cardEl = (event.currentTarget as HTMLElement);
+
+    if (!this.motion.prefersReducedMotion() && index >= 0 && this.lastOpenedIndex >= 0 && index !== this.lastOpenedIndex) {
+      this.playMemoryTransition(cardEl, index);
+    }
+    this.lastOpenedIndex = index;
+
+    const target = cardEl.querySelector('.memory-card__image-wrap');
     this.sourceRect.set(target?.getBoundingClientRect() ?? null);
     this.selected.set(memory);
     this.lightboxOpen.set(true);
@@ -126,6 +144,72 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
     this.observer.observe(this.sectionRef.nativeElement);
   }
 
+  private playIntro(): void {
+    if (this.introPlayed) return;
+    this.introPlayed = true;
+
+    if (this.motion.prefersReducedMotion()) {
+      this.introComplete.set(true);
+      return;
+    }
+
+    const lines = [this.introLine1(), this.introLine2(), this.introLine3()];
+    let i = 0;
+    const step = (): void => {
+      this.introLineIndex.set(i);
+      i += 1;
+      if (i < lines.length) {
+        setTimeout(step, 1200);
+      } else {
+        setTimeout(() => this.introComplete.set(true), 800);
+      }
+    };
+    step();
+  }
+
+  private playMemoryTransition(cardEl: HTMLElement, index: number): void {
+    const imageWrap = cardEl.querySelector('.memory-card__image-wrap');
+    if (!imageWrap) return;
+
+    const mode = index % 3;
+    if (mode === 0) {
+      gsap.fromTo(imageWrap, {
+        opacity: 0.4,
+        scale: 0.92,
+        filter: 'blur(12px)'
+      }, {
+        opacity: 1,
+        scale: 1,
+        filter: 'blur(0px)',
+        duration: 0.9,
+        ease: 'power3.out'
+      });
+    } else if (mode === 1) {
+      gsap.fromTo(imageWrap, {
+        rotationY: -18,
+        transformPerspective: 800,
+        opacity: 0.5
+      }, {
+        rotationY: 0,
+        opacity: 1,
+        duration: 1,
+        ease: 'power3.out'
+      });
+    } else {
+      gsap.fromTo(imageWrap, {
+        y: 24,
+        opacity: 0,
+        filter: 'blur(6px)'
+      }, {
+        y: 0,
+        opacity: 1,
+        filter: 'blur(0px)',
+        duration: 0.85,
+        ease: 'power2.out'
+      });
+    }
+  }
+
   private initScrollAnimations(): void {
     if (this.motion.prefersReducedMotion() || !this.sectionRef) return;
 
@@ -134,21 +218,20 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
 
     const header = this.sectionRef.nativeElement.querySelector('.memories__header');
     if (header) {
-      const st = gsap.from(header, {
-        scrollTrigger: {
-          trigger: header,
-          start: 'top 85%'
-        },
+      const st = revealOnScroll(header, {
         opacity: 0,
         y: 30,
         duration: 1,
         ease: 'power3.out'
-      }).scrollTrigger;
+      }, { trigger: header, start: 'top 85%' });
       if (st) this.scrollTriggers.push(st);
     }
 
     const cards = this.cardRefs?.toArray() ?? [];
+    const revealTargets: Element[] = [header].filter(Boolean) as Element[];
+
     cards.forEach((card, i) => {
+      revealTargets.push(card.nativeElement);
       const imageWrap = card.nativeElement.querySelector('.memory-card__image-wrap');
       const body = card.nativeElement.querySelector('.memory-card__body');
 
@@ -156,26 +239,30 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
         scrollTrigger: {
           trigger: card.nativeElement,
           start: 'top 88%',
-          toggleActions: 'play none none reverse'
+          once: true,
+          toggleActions: 'play none none none'
         }
       })
         .from(card.nativeElement, {
           opacity: 0,
           y: 60,
           duration: 0.9,
-          ease: 'power3.out'
+          ease: 'power3.out',
+          immediateRender: false
         })
         .from(imageWrap, {
           scale: 0.85,
           filter: 'blur(8px)',
           duration: 1,
-          ease: 'power3.out'
+          ease: 'power3.out',
+          immediateRender: false
         }, '-=0.6')
         .from(body, {
           opacity: 0,
           x: i % 2 === 0 ? -20 : 20,
           duration: 0.7,
-          ease: 'power3.out'
+          ease: 'power3.out',
+          immediateRender: false
         }, '-=0.5')
         .scrollTrigger;
 
@@ -194,5 +281,7 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
 
       if (parallax) this.scrollTriggers.push(parallax);
     });
+
+    finalizeScrollReveal(...revealTargets);
   }
 }

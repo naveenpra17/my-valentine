@@ -12,6 +12,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MotionService } from '../../core/services/motion.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
+import { finalizeScrollReveal, revealOnScroll } from '../../core/utils/scroll-reveal';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -31,8 +32,11 @@ export class HeroComponent implements OnDestroy {
 
   readonly herName = input('Beautiful');
   readonly title = input('Look at This Beautiful Human');
-  readonly discoverLine1 = input('Somewhere in this universe...');
-  readonly discoverLine2 = input('...there is someone very special.');
+  readonly discoverLine1 = input('Somewhere in this little universe...');
+  readonly discoverLine2 = input('...there\'s someone I wanted you to meet.');
+  readonly pauseLine1 = input('Beautiful?');
+  readonly pauseLine2 = input('Obviously.');
+  readonly pauseLine3 = input('But that\'s not even the best part.');
   readonly line1 = input('Some people make the world beautiful just by being in it.');
   readonly line2 = input('And somehow, I got lucky enough to find you.');
   readonly imageUrl = input('/assets/images/hero/hero.jpg');
@@ -58,6 +62,8 @@ export class HeroComponent implements OnDestroy {
   }
 
   private bootstrap(): void {
+    if (!this.sectionRef?.nativeElement) return;
+
     this.scenes.setScene('hero');
 
     this.observer = new IntersectionObserver(
@@ -66,122 +72,43 @@ export class HeroComponent implements OnDestroy {
           this.scenes.setScene('hero');
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.2 }
     );
     this.observer.observe(this.sectionRef.nativeElement);
 
-    if (this.motion.prefersReducedMotion()) {
-      gsap.set(
-        [this.photoInnerRef.nativeElement, this.textBlockRef.nativeElement],
-        { opacity: 1 }
-      );
-      return;
-    }
+    const photoInner = this.photoInnerRef?.nativeElement;
+    const textBlock = this.textBlockRef?.nativeElement;
+    const dust = this.dustLayerRef?.nativeElement;
+    if (!photoInner || !textBlock) return;
 
-    if (this.motion.isMobile()) {
-      this.initMobileReveal();
-      return;
-    }
-
-    this.initPinnedReveal();
-  }
-
-  private initMobileReveal(): void {
-    const section = this.sectionRef.nativeElement;
-    const photoInner = this.photoInnerRef.nativeElement;
-    const textBlock = this.textBlockRef.nativeElement;
-    const dust = this.dustLayerRef.nativeElement;
     const children = Array.from(textBlock.children) as HTMLElement[];
+    const revealTargets = [photoInner, ...children];
 
-    gsap.set(photoInner, { opacity: 0, scale: 0.92, y: 24 });
-    gsap.set(children, { opacity: 0, y: 20 });
-    gsap.set(dust, { opacity: 0 });
+    // Content is always visible — scroll animations are optional polish only
+    gsap.set(revealTargets, { opacity: 1, y: 0, x: 0, scale: 1, filter: 'none' });
+    if (dust) gsap.set(dust, { opacity: 0.35 });
 
-    const st = ScrollTrigger.create({
-      trigger: section,
-      start: 'top 78%',
-      once: true,
-      onEnter: () => {
-        gsap.timeline()
-          .to(photoInner, {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            duration: 1,
-            ease: 'power3.out'
-          })
-          .to(dust, { opacity: 0.45, duration: 0.6 }, '-=0.5')
-          .to(children, {
-            opacity: 1,
-            y: 0,
-            stagger: 0.12,
-            duration: 0.8,
-            ease: 'power3.out'
-          }, '-=0.5');
-      }
-    });
+    if (this.motion.prefersReducedMotion()) return;
 
-    this.scrollTriggers.push(st);
-  }
+    revealOnScroll(photoInner, {
+      opacity: 0.4,
+      y: 24,
+      duration: 1,
+      ease: 'power3.out'
+    }, { trigger: this.sectionRef.nativeElement, start: 'top 85%' });
 
-  private initPinnedReveal(): void {
-    const section = this.sectionRef.nativeElement;
-    const photoInner = this.photoInnerRef.nativeElement;
-    const textBlock = this.textBlockRef.nativeElement;
-    const dust = this.dustLayerRef.nativeElement;
-    const children = Array.from(textBlock.children) as HTMLElement[];
-
-    gsap.set(photoInner, { scale: 0.72, opacity: 0, filter: 'blur(12px)' });
-    gsap.set(children, { opacity: 0, y: 28, filter: 'blur(6px)' });
-    gsap.set(dust, { opacity: 0 });
-
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: 'top top',
-        end: '+=130%',
-        pin: this.pinWrapRef.nativeElement,
-        scrub: 1.2,
-        anticipatePin: 1
-      }
-    });
-
-    tl.to(photoInner, {
-      scale: 1,
-      opacity: 1,
-      filter: 'blur(0px)',
-      duration: 0.5,
-      ease: 'power2.out'
-    })
-      .to(dust, { opacity: 0.6, duration: 0.3 }, '-=0.2')
-      .to(children, {
-        opacity: 1,
-        y: 0,
-        filter: 'blur(0px)',
-        stagger: 0.08,
-        duration: 0.35,
+    children.forEach((child, i) => {
+      const st = revealOnScroll(child, {
+        opacity: 0,
+        y: 20,
+        duration: 0.8,
+        delay: i * 0.06,
         ease: 'power3.out'
-      }, '-=0.1')
-      .to(photoInner, {
-        scale: 1.06,
-        duration: 0.4,
-        ease: 'none'
-      });
-
-    const parallax = gsap.to(photoInner, {
-      y: -30,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: section,
-        start: 'top bottom',
-        end: 'bottom top',
-        scrub: true
-      }
+      }, { trigger: child, start: 'top 92%' });
+      if (st) this.scrollTriggers.push(st);
     });
 
-    this.scrollTriggers.push(
-      tl.scrollTrigger!,
-      parallax.scrollTrigger!
-    );
+    finalizeScrollReveal(...revealTargets);
+    ScrollTrigger.refresh();
   }
 }

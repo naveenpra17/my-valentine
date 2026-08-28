@@ -1,0 +1,31 @@
+.constellation-ceremony {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(4rem, 12vh, 7rem) 1.5rem;
+  background: var(--void);
+  text-align: center;
+}
+
+.constellation-ceremony__content {
+  max-width: 640px;
+  width: 100%;
+}
+
+.constellation-ceremony__line {
+  margin: 0 0 2rem;
+}
+
+.constellation-ceremony__look {
+  margin: 0 0 2.5rem;
+}
+
+.constellation-ceremony__canvas {
+  display: block;
+  width: 100%;
+  height: min(50vh, 360px);
+  margin: 0 auto;
+}

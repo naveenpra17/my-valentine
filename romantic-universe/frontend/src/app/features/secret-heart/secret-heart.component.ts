@@ -3,7 +3,6 @@ import {
   ElementRef,
   OnDestroy,
   ViewChild,
-  afterNextRender,
   effect,
   inject,
   input,
@@ -34,19 +33,17 @@ export class SecretHeartComponent implements OnDestroy {
   readonly showModal = signal(false);
 
   constructor() {
-    afterNextRender(() => {
-      effect(() => {
-        if (this.showModal()) {
-          requestAnimationFrame(() => {
-            const el = this.modalRef?.nativeElement;
-            if (el) {
-              this.focusTrap.activate(el, () => this.close());
-            }
-          });
-        } else {
-          this.focusTrap.deactivate();
-        }
-      });
+    effect(() => {
+      if (this.showModal()) {
+        requestAnimationFrame(() => {
+          const el = this.modalRef?.nativeElement;
+          if (el) {
+            this.focusTrap.activate(el, () => this.close());
+          }
+        });
+      } else {
+        this.focusTrap.deactivate();
+      }
     });
   }
 

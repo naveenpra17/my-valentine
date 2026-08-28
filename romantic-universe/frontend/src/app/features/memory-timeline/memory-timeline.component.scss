@@ -1,6 +1,6 @@
 .memories {
   position: relative;
-  min-height: 100vh;
+  min-height: auto;
   background: radial-gradient(ellipse at 50% 0%, var(--night-soft) 0%, var(--void) 60%);
   padding: var(--scene-padding) 0;
 }
@@ -26,12 +26,58 @@
   margin: 0;
 }
 
+.memories__intro-copy {
+  margin: 0.75rem auto 0;
+  max-width: 36ch;
+  opacity: 0.55;
+}
+
 .memories__state {
   text-align: center;
   padding: 3rem;
 
   &--error {
     color: var(--rose);
+  }
+}
+
+.memories__intro {
+  text-align: center;
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: clamp(2rem, 8vh, 4rem) 1.5rem;
+}
+
+.memories__intro-line {
+  margin: 0;
+  animation: memoryIntroIn 1.1s ease both;
+}
+
+.memories__intro-line--final {
+  margin-top: 0.5rem;
+}
+
+.memories__timeline--dimmed {
+  opacity: 0.25;
+  pointer-events: none;
+  filter: blur(1px);
+}
+
+@keyframes memoryIntroIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
   }
 }
 

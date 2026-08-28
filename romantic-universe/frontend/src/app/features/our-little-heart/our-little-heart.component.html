@@ -9,10 +9,19 @@
   </header>
 
   <div class="little-heart__stage">
-    <div class="little-heart__canvas" #canvasHost aria-hidden="true"></div>
+    <div class="little-heart__canvas" #canvasHost>
+      @if (!sceneReady() && !sceneFailed()) {
+        <div class="little-heart__canvas-loading cine-micro" aria-hidden="true">Loading heart...</div>
+      }
+      @if (sceneFailed()) {
+        <div class="little-heart__canvas-fallback" aria-hidden="true">
+          <span class="little-heart__fallback-heart">♥</span>
+        </div>
+      }
+    </div>
 
     @if (hintVisible() && floatingChoices().length > 0) {
-      <p class="little-heart__hint cine-discovery-hint" #hintEl>Drag to explore · tap to add</p>
+      <p class="little-heart__hint cine-discovery-hint" #hintEl>Tap a memory below to add it to the heart</p>
     }
 
     <div class="little-heart__floats" role="list" aria-label="Objects to add to the heart">
@@ -31,7 +40,13 @@
     </div>
 
     @if (floatingChoices().length === 0) {
-      <p class="little-heart__empty cine-body">Explore the universe first — your discoveries become part of this heart.</p>
+      <p class="little-heart__empty cine-body">
+        @if (discoveryCount() === 0) {
+          Explore photos, memories, and reasons above — your discoveries become part of this heart.
+        } @else {
+          You've collected {{ discoveryCount() }} discoveries. Drag the heart above to explore it.
+        }
+      </p>
     }
   </div>
 

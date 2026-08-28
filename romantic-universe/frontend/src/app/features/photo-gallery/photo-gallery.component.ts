@@ -16,8 +16,10 @@ import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
+import { SoundDesignService } from '../../core/services/sound-design.service';
 import { Photo } from '../../core/models';
 import { CinematicLightboxComponent } from '../../shared/components/cinematic-lightbox/cinematic-lightbox.component';
+import { finalizeScrollReveal, revealOnScroll } from '../../core/utils/scroll-reveal';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -39,6 +41,7 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
   private readonly motion = inject(MotionService);
   private readonly experienceState = inject(ExperienceStateService);
   private readonly scenes = inject(SceneManagerService);
+  private readonly sounds = inject(SoundDesignService);
   private observer?: IntersectionObserver;
 
   readonly photos = signal<Photo[]>([]);
@@ -76,6 +79,7 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
     try {
       const data = await firstValueFrom(this.api.getPhotos());
       this.photos.set(data);
+      setTimeout(() => this.initAnimations(), 50);
     } catch {
       this.error.set('Could not load photos.');
     } finally {
@@ -90,7 +94,11 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
     this.selected.set(photo);
     this.lightboxOpen.set(true);
     document.body.style.overflow = 'hidden';
-    this.experienceState.discoverPhoto(photo.id, photo.caption ?? photo.title ?? undefined, photo.imageUrl);
+    const isNew = this.experienceState.discoverPhoto(photo.id, photo.caption ?? photo.title ?? undefined, photo.imageUrl);
+    if (isNew) {
+      this.sounds.enable();
+      this.sounds.play('photo');
+    }
   }
 
   closeLightbox(): void {
@@ -173,25 +181,28 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
 
     const header = this.sectionRef.nativeElement.querySelector('.photo-gallery__header');
     const stage = this.sectionRef.nativeElement.querySelector('.photo-gallery__stage');
+    const revealTargets: Element[] = [];
 
     if (header) {
-      gsap.from(header, {
-        scrollTrigger: { trigger: this.sectionRef.nativeElement, start: 'top 80%' },
+      revealTargets.push(header);
+      revealOnScroll(header, {
         opacity: 0,
         y: 30,
         duration: 0.9,
         ease: 'power3.out'
-      });
+      }, { trigger: this.sectionRef.nativeElement, start: 'top 80%' });
     }
 
     if (stage) {
-      gsap.from(stage, {
-        scrollTrigger: { trigger: stage, start: 'top 85%' },
+      revealTargets.push(stage);
+      revealOnScroll(stage, {
         opacity: 0,
         scale: 0.92,
         duration: 1.2,
         ease: 'power3.out'
-      });
+      }, { trigger: stage, start: 'top 85%' });
     }
+
+    finalizeScrollReveal(...revealTargets);
   }
 }

@@ -3,63 +3,42 @@
   <div class="cine-fade-edge cine-fade-edge--top"></div>
 
   <header class="love-bomb__header">
-    <p class="act-marker">Chapter V</p>
     <h2 class="cine-statement love-bomb__title">{{ title() }}</h2>
     <p class="cine-whisper love-bomb__subtitle">{{ subtitle() }}</p>
+    <p class="cine-micro love-bomb__tease">{{ introLine1() }} {{ introLine2() }}</p>
   </header>
 
-  @if (!introDone() && !reducedMotion) {
-    <div class="love-bomb__intro" aria-live="polite">
-      <p class="cine-editorial-sm love-bomb__intro-line">{{ introLine1() }}</p>
-      <p class="cine-intimate love-bomb__intro-line">{{ introLine2() }}</p>
-      <p class="cine-whisper love-bomb__intro-line">{{ introLine3() }}</p>
-    </div>
-  }
+  <div class="love-bomb__arena" #arena>
+    <canvas class="love-bomb__burst" #burstCanvas aria-hidden="true"></canvas>
 
-  @if (!reducedMotion) {
-    <div class="love-bomb__arena" #arena>
-      <canvas class="love-bomb__burst" #burstCanvas aria-hidden="true"></canvas>
-
-      @for (heart of hearts(); track heart.id) {
-        <button
-          class="love-bomb__heart"
-          type="button"
-          [attr.data-heart-id]="heart.id"
-          [style.left.%]="heart.left"
-          [style.top.%]="heart.top"
-          [disabled]="loading()"
-          (click)="catchHeart(heart, $event)"
-          (pointerdown)="onHeartPointerDown(heart, $event)"
-          aria-label="Catch heart for a love bomb"
-        >
-          <span class="love-bomb__heart-icon" aria-hidden="true">💗</span>
-        </button>
-      }
-
-      @if (hearts().length === 0 && !showMessage() && playing()) {
-        <p class="love-bomb__hint cine-micro">Hearts incoming...</p>
-      }
-
-      @if (!playing()) {
-        <p class="love-bomb__hint cine-micro">Scroll here to play</p>
-      }
-    </div>
-  } @else {
-    <div class="love-bomb__arena love-bomb__arena--static" #arena>
-      <canvas class="love-bomb__burst" #burstCanvas aria-hidden="true"></canvas>
+    @for (heart of hearts(); track heart.id) {
       <button
-        class="cine-enter-btn love-bomb__fallback"
+        class="love-bomb__heart"
         type="button"
+        [style.left.%]="heart.left"
+        [style.top.px]="heart.top"
         [disabled]="loading()"
-        (click)="dropBomb()"
+        (pointerup)="catchHeart(heart, $event)"
+        (click)="catchHeart(heart, $event)"
+        aria-label="Catch heart for a love bomb"
       >
-        {{ loading() ? 'Loading...' : 'Tap for a love bomb' }}
+        <svg class="love-bomb__heart-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
       </button>
-    </div>
-  }
+    }
+
+    @if (!playing()) {
+      <button class="cine-enter-btn love-bomb__start" type="button" (click)="startPlayground()">
+        Start catching hearts
+      </button>
+    } @else if (hearts().length === 0 && !showMessage()) {
+      <p class="love-bomb__hint cine-micro">Hearts incoming...</p>
+    }
+  </div>
 
   @if (showMessage() && currentBomb(); as bomb) {
-    <div class="love-bomb__reveal" #messageEl>
+    <div class="love-bomb__reveal">
       <blockquote class="love-bomb__message">
         <p class="cine-letter">{{ bomb.message }}</p>
       </blockquote>

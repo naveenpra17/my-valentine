@@ -13,14 +13,18 @@ import gsap from 'gsap';
 import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
-import { ExperienceStateService } from '../../core/experience/experience-state.service';
+import { CameraDirectorService } from '../../core/cinematic/camera-director.service';
+import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
+import { ExperienceStateService } from '../../core/experience/experience-state.service';
+import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
 import { LoveUniverseScene } from './love-universe-scene';
 
 @Component({
   selector: 'app-love-universe',
   standalone: true,
+  imports: [ChapterVisitDirective],
   templateUrl: './love-universe.component.html',
   styleUrl: './love-universe.component.scss'
 })
@@ -38,6 +42,8 @@ export class LoveUniverseComponent implements OnDestroy {
   private readonly scenes = inject(SceneManagerService);
   private readonly experienceState = inject(ExperienceStateService);
   private readonly sounds = inject(SoundDesignService);
+  private readonly cameraDirector = inject(CameraDirectorService);
+  private readonly controller = inject(ExperienceControllerService);
 
   private scene?: LoveUniverseScene;
   private observer?: IntersectionObserver;
@@ -57,6 +63,7 @@ export class LoveUniverseComponent implements OnDestroy {
       window.removeEventListener('scroll', this.scrollHandler);
     }
     this.observer?.disconnect();
+    this.cameraDirector.unregister();
     this.scene?.dispose();
   }
 
@@ -75,6 +82,13 @@ export class LoveUniverseComponent implements OnDestroy {
     });
     this.scene.playEntryFromVoid();
     this.scene.start();
+
+    this.cameraDirector.register({
+      approach: (t, d) => this.scene!.approach(t, d),
+      pullBack: (d) => this.scene!.pullBack(d),
+      focusPhoto: (id, d) => this.scene!.focusPhotoById(id, d),
+      returnToUniverse: (d) => this.scene!.returnToUniverse(d)
+    });
 
     try {
       const photos = await firstValueFrom(this.api.getPhotos());

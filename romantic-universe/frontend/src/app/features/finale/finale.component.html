@@ -1,4 +1,4 @@
-<section class="finale cine-scene" #section id="finale" data-act="10">
+<section class="finale cine-scene" #section id="finale" data-act="10" appChapterVisit="12">
   <div class="finale__pin" #pinWrap>
     <div class="finale__vignette cine-vignette"></div>
     <canvas class="finale__canvas" #canvas aria-hidden="true"></canvas>
@@ -38,3 +38,15 @@
     </div>
   </div>
 </section>
+
+@if (showFinalSecret()) {
+  <div class="finale-secret" role="dialog" aria-label="One last thing">
+    <p class="cine-intimate finale-secret__text">One last thing...</p>
+    <button
+      class="finale-secret__light"
+      type="button"
+      aria-label="Trigger final surprise"
+      (click)="triggerFinalSecret()"
+    ></button>
+  </div>
+}
