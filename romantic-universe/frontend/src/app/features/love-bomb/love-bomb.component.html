@@ -1,36 +1,74 @@
-<section class="love-bomb section" #section id="love-bombs">
-  <canvas class="love-bomb__burst" #burstCanvas aria-hidden="true"></canvas>
+<section class="love-bomb cine-scene" #section id="love-bombs" data-act="6">
+  <div class="love-bomb__vignette cine-vignette"></div>
+  <div class="cine-fade-edge cine-fade-edge--top"></div>
 
-  <p class="love-bomb__chapter">Chapter 6</p>
-  <h2 class="section-title">Love Bomb Attack</h2>
-  <p class="section-subtitle">Warning: may cause uncontrollable smiling</p>
+  <header class="love-bomb__header">
+    <p class="act-marker">Act VI</p>
+    <h2 class="cine-statement love-bomb__title">{{ title() }}</h2>
+    <p class="cine-whisper love-bomb__subtitle">{{ subtitle() }}</p>
+  </header>
 
-  <div class="love-bomb__arena">
-    <button
-      class="love-bomb__btn"
-      (click)="dropBomb()"
-      [disabled]="loading()"
-      aria-label="Tap for a love bomb"
-    >
-      @if (loading()) {
-        <span class="love-bomb__btn-text">Loading...</span>
-      } @else {
-        <span class="love-bomb__btn-text">Tap for a Love Bomb 💗</span>
+  @if (!reducedMotion) {
+    <div class="love-bomb__arena" #arena>
+      <canvas class="love-bomb__burst" #burstCanvas aria-hidden="true"></canvas>
+
+      @for (heart of hearts(); track heart.id) {
+        <button
+          class="love-bomb__heart"
+          type="button"
+          [attr.data-heart-id]="heart.id"
+          [style.left.%]="heart.left"
+          [disabled]="loading()"
+          (click)="catchHeart(heart, $event)"
+          aria-label="Catch heart for a love bomb"
+        >
+          <span class="love-bomb__heart-icon" aria-hidden="true">💗</span>
+        </button>
       }
-    </button>
 
-    @if (showMessage() && currentBomb(); as bomb) {
-      <blockquote class="love-bomb__message glass-card" #messageEl>
-        <p>{{ bomb.message }}</p>
+      @if (hearts().length === 0 && !showMessage() && playing()) {
+        <p class="love-bomb__hint cine-micro">Hearts incoming...</p>
+      }
+
+      @if (!playing()) {
+        <p class="love-bomb__hint cine-micro">Scroll here to play</p>
+      }
+    </div>
+  } @else {
+    <div class="love-bomb__arena love-bomb__arena--static" #arena>
+      <canvas class="love-bomb__burst" #burstCanvas aria-hidden="true"></canvas>
+      <button
+        class="cine-enter-btn love-bomb__fallback"
+        type="button"
+        [disabled]="loading()"
+        (click)="dropBomb()"
+      >
+        {{ loading() ? 'Loading...' : 'Tap for a love bomb' }}
+      </button>
+    </div>
+  }
+
+  @if (showMessage() && currentBomb(); as bomb) {
+    <div class="love-bomb__reveal" #messageEl>
+      <blockquote class="love-bomb__message">
+        <p class="cine-letter">{{ bomb.message }}</p>
       </blockquote>
-    }
+      <button class="cine-enter-btn" type="button" (click)="dismissMessage()">Keep playing</button>
+    </div>
+  }
 
-    @if (error()) {
-      <p class="love-bomb__error" role="alert">{{ error() }}</p>
-    }
+  @if (error()) {
+    <p class="love-bomb__error cine-body" role="alert">{{ error() }}</p>
+  }
 
-    @if (totalBombs() > 0) {
-      <p class="love-bomb__counter">{{ totalBombs() }} love bomb{{ totalBombs() === 1 ? '' : 's' }} dropped this visit</p>
+  <div class="love-bomb__stats">
+    @if (totalCaught() > 0) {
+      <span class="cine-micro">{{ totalCaught() }} caught</span>
+    }
+    @if (streak() > 1) {
+      <span class="love-bomb__streak cine-micro">{{ streak() }} streak</span>
     }
   </div>
+
+  <div class="cine-fade-edge cine-fade-edge--bottom"></div>
 </section>

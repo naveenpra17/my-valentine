@@ -1,0 +1,21 @@
+<section class="universe cine-scene" #section id="universe" data-act="2">
+  <div class="universe__vignette cine-vignette"></div>
+  <div class="cine-fade-edge cine-fade-edge--bottom"></div>
+
+  <div class="universe__canvas-wrap" #canvasHost></div>
+
+  @if (introVisible()) {
+    <div class="universe__intro" #introText>
+      <p class="cine-whisper universe__intro-line">{{ line1() }}</p>
+      <p class="cine-statement universe__intro-line">{{ line2() }}</p>
+    </div>
+  }
+
+  <div class="universe__overlay">
+    <p class="universe__hint cine-micro">Move slowly · tap a photograph</p>
+    <div class="universe__scroll-hint">
+      <span class="cine-micro">Continue</span>
+      <div class="universe__chevron" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>

@@ -1,34 +1,38 @@
-<section class="finale" #section id="finale">
-  <canvas class="finale__canvas" #canvas aria-hidden="true"></canvas>
+<section class="finale cine-scene" #section id="finale" data-act="10">
+  <div class="finale__pin" #pinWrap>
+    <div class="finale__vignette cine-vignette"></div>
+    <canvas class="finale__canvas" #canvas aria-hidden="true"></canvas>
 
-  <div class="finale__content">
-    @if (showLines()) {
-      <div class="finale__lines">
-        <p class="finale__line" #line1El>{{ line1() }}</p>
-        <p class="finale__line" #line2El>{{ line2() }}</p>
-        <p class="finale__line" #line3El>{{ line3() }}</p>
-        <p class="finale__line" #line4El>{{ line4() }}</p>
+    <div class="finale__content">
+      <p class="act-marker">Act X · Finale</p>
+
+      <div class="finale__lines" [class.finale__lines--visible]="sequenceStarted()">
+        <p class="finale__line cine-statement" #line1El>{{ line1() }}</p>
+        <p class="finale__line cine-statement" #line2El>{{ line2() }}</p>
+        <p class="finale__line cine-statement" #line3El>{{ line3() }}</p>
+        <p class="finale__line cine-statement" #line4El>{{ line4() }}</p>
       </div>
-    }
 
-    @if (showFinal()) {
-      <blockquote class="finale__final" #finalMsg>
-        {{ finalMessage() }}
-      </blockquote>
-    }
+      @if (showFinal()) {
+        <blockquote class="finale__final cine-letter" #finalMsg>
+          {{ finalMessage() }}
+        </blockquote>
+      }
 
-    @if (showButton()) {
-      <button
-        class="finale__surprise btn-primary"
-        (click)="triggerSurprise()"
-        [disabled]="surpriseTriggered()"
-      >
-        {{ surpriseTriggered() ? '✨ Surprise delivered!' : 'One last surprise ✨' }}
-      </button>
-    }
+      @if (showButton()) {
+        <button
+          class="finale__surprise cine-enter-btn"
+          type="button"
+          (click)="triggerSurprise()"
+          [disabled]="surpriseTriggered()"
+        >
+          {{ surpriseTriggered() ? 'Surprise delivered' : 'One last surprise' }}
+        </button>
+      }
 
-    <footer class="finale__credit">
-      <p>{{ footerCredit() }}</p>
-    </footer>
+      <footer class="finale__credit" #creditEl>
+        <p class="cine-micro">{{ footerCredit() }}</p>
+      </footer>
+    </div>
   </div>
 </section>

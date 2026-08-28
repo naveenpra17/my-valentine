@@ -1,16 +1,19 @@
-<section class="photo-gallery section" #section id="gallery">
+<section class="photo-gallery cine-scene" #section id="gallery" data-act="4b">
+  <div class="photo-gallery__vignette cine-vignette"></div>
+  <div class="cine-fade-edge cine-fade-edge--top"></div>
+
   <div class="photo-gallery__header">
-    <p class="photo-gallery__chapter">Chapter 8</p>
-    <h2 class="section-title">Our Moments in 3D</h2>
-    <p class="section-subtitle">Polaroids from our little universe</p>
+    <p class="act-marker">Act IV · Gallery</p>
+    <h2 class="cine-statement photo-gallery__title">{{ title() }}</h2>
+    <p class="cine-whisper photo-gallery__subtitle">{{ subtitle() }}</p>
   </div>
 
   @if (loading()) {
-    <div class="photo-gallery__state">Loading photos...</div>
+    <div class="photo-gallery__state cine-body">Loading photos...</div>
   } @else if (error()) {
-    <div class="photo-gallery__state photo-gallery__state--error">{{ error() }}</div>
+    <div class="photo-gallery__state photo-gallery__state--error cine-body">{{ error() }}</div>
   } @else if (photos().length === 0) {
-    <div class="photo-gallery__state">No photos yet — add some in data.sql!</div>
+    <div class="photo-gallery__state cine-body">No photos yet — add some in data.sql!</div>
   } @else {
     <div
       class="photo-gallery__stage"
@@ -26,8 +29,8 @@
               class="polaroid"
               [class.polaroid--active]="activeIndex() === i"
               [style.transform]="getCardTransform(i)"
-              (click)="openPhoto(photo)"
-              (keydown.enter)="openPhoto(photo)"
+              (click)="openPhoto(photo, $event)"
+              (keydown.enter)="openPhoto(photo, $event)"
               tabindex="0"
               role="button"
               [attr.aria-label]="'View photo: ' + (photo.title || 'Photo')"
@@ -66,12 +69,11 @@
       }
     </div>
 
-    <!-- Mobile horizontal scroll fallback -->
     <div class="photo-gallery__mobile-scroll">
       @for (photo of photos(); track photo.id) {
         <figure
           class="polaroid polaroid--mobile"
-          (click)="openPhoto(photo)"
+          (click)="openPhoto(photo, $event)"
           tabindex="0"
           role="button"
         >
@@ -95,23 +97,25 @@
     </div>
   }
 
-  <app-modal [open]="!!selected()" ariaLabel="Photo detail" (close)="closeModal()">
+  <div class="cine-fade-edge cine-fade-edge--bottom"></div>
+
+  <app-cinematic-lightbox
+    [open]="lightboxOpen()"
+    [imageUrl]="selected()?.imageUrl ?? ''"
+    [title]="selected()?.title ?? ''"
+    [sourceRect]="sourceRect()"
+    ariaLabel="Photo detail"
+    (close)="closeLightbox()"
+  >
     @if (selected(); as photo) {
       <div class="photo-lightbox">
-        <div class="photo-lightbox__image-wrap">
-          @if (!hasImageError(photo.id)) {
-            <img [src]="photo.imageUrl" [alt]="photo.title || 'Photo'" />
-          } @else {
-            <div class="photo-lightbox__placeholder">💕</div>
-          }
-        </div>
         @if (photo.title) {
-          <h3 class="photo-lightbox__title">{{ photo.title }}</h3>
+          <h3 class="photo-lightbox__title cine-statement">{{ photo.title }}</h3>
         }
         @if (photo.caption) {
-          <p class="photo-lightbox__caption">{{ photo.caption }}</p>
+          <p class="photo-lightbox__caption cine-letter">{{ photo.caption }}</p>
         }
       </div>
     }
-  </app-modal>
+  </app-cinematic-lightbox>
 </section>

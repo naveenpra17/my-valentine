@@ -11,6 +11,8 @@ import {
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MotionService } from '../../core/services/motion.service';
+import { VisibilityService } from '../../core/services/visibility.service';
+import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -24,6 +26,7 @@ interface FinaleParticle {
   size: number;
   color: string;
   arrived: boolean;
+  isBurst: boolean;
 }
 
 @Component({
@@ -34,12 +37,14 @@ interface FinaleParticle {
 })
 export class FinaleComponent implements OnDestroy {
   @ViewChild('section') sectionRef!: ElementRef<HTMLElement>;
+  @ViewChild('pinWrap') pinWrapRef!: ElementRef<HTMLElement>;
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('line1El') line1Ref!: ElementRef<HTMLElement>;
   @ViewChild('line2El') line2Ref!: ElementRef<HTMLElement>;
   @ViewChild('line3El') line3Ref!: ElementRef<HTMLElement>;
   @ViewChild('line4El') line4Ref!: ElementRef<HTMLElement>;
   @ViewChild('finalMsg') finalMsgRef!: ElementRef<HTMLElement>;
+  @ViewChild('creditEl') creditRef!: ElementRef<HTMLElement>;
 
   readonly line1 = input('Before you go...');
   readonly line2 = input('I just wanted you to know...');
@@ -49,8 +54,10 @@ export class FinaleComponent implements OnDestroy {
   readonly footerCredit = input('Made with ❤️, caffeine, Java, and way too many thoughts about you.');
 
   private readonly motion = inject(MotionService);
+  private readonly visibility = inject(VisibilityService);
+  private readonly scenes = inject(SceneManagerService);
 
-  readonly showLines = signal(false);
+  readonly sequenceStarted = signal(false);
   readonly showFinal = signal(false);
   readonly showButton = signal(false);
   readonly surpriseTriggered = signal(false);
@@ -61,20 +68,27 @@ export class FinaleComponent implements OnDestroy {
   private animationId = 0;
   private heartPoints: { x: number; y: number }[] = [];
   private scrollTriggered = false;
+  private heartOutlineProgress = 0;
+  private pulsePhase = 0;
+  private scrollTriggers: ScrollTrigger[] = [];
+  private lineTimeline?: gsap.core.Timeline;
+  private inView = false;
+  private visibilityObserver?: IntersectionObserver;
 
   constructor() {
     afterNextRender(() => {
       this.initCanvas();
       this.setupScrollTrigger();
+      this.setupVisibilityObserver();
     });
   }
 
   ngOnDestroy(): void {
     cancelAnimationFrame(this.animationId);
     window.removeEventListener('resize', this.resizeCanvas);
-    ScrollTrigger.getAll().forEach(t => {
-      if (t.trigger === this.sectionRef?.nativeElement) t.kill();
-    });
+    this.visibilityObserver?.disconnect();
+    this.lineTimeline?.kill();
+    this.scrollTriggers.forEach(st => st.kill());
   }
 
   triggerSurprise(): void {
@@ -93,7 +107,7 @@ export class FinaleComponent implements OnDestroy {
 
   private resizeCanvas = (): void => {
     const canvas = this.canvasRef?.nativeElement;
-    const section = this.sectionRef?.nativeElement;
+    const section = this.pinWrapRef?.nativeElement ?? this.sectionRef?.nativeElement;
     if (!canvas || !section) return;
     const dpr = Math.min(window.devicePixelRatio, 2);
     canvas.width = section.clientWidth * dpr;
@@ -110,11 +124,11 @@ export class FinaleComponent implements OnDestroy {
     const w = canvas.width / (window.devicePixelRatio || 1);
     const h = canvas.height / (window.devicePixelRatio || 1);
     const cx = w / 2;
-    const cy = h * 0.38;
-    const scale = Math.min(w, h) * 0.012;
+    const cy = h * 0.36;
+    const scale = Math.min(w, h) * 0.013;
 
     this.heartPoints = [];
-    for (let t = 0; t < Math.PI * 2; t += 0.15) {
+    for (let t = 0; t < Math.PI * 2; t += 0.12) {
       const x = 16 * Math.pow(Math.sin(t), 3);
       const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
       this.heartPoints.push({ x: cx + x * scale, y: cy + y * scale });
@@ -124,81 +138,148 @@ export class FinaleComponent implements OnDestroy {
   private setupScrollTrigger(): void {
     if (!this.sectionRef) return;
 
-    ScrollTrigger.create({
+    const mobile = this.motion.isMobile();
+
+    if (!mobile) {
+      const pin = ScrollTrigger.create({
+        trigger: this.sectionRef.nativeElement,
+        start: 'top top',
+        end: '+=140%',
+        pin: this.pinWrapRef.nativeElement,
+        anticipatePin: 1
+      });
+      this.scrollTriggers.push(pin);
+    }
+
+    const enter = ScrollTrigger.create({
       trigger: this.sectionRef.nativeElement,
-      start: 'top 60%',
+      start: mobile ? 'top 70%' : 'top 55%',
       once: true,
       onEnter: () => {
+        this.scenes.setScene('finale');
         if (this.scrollTriggered) return;
         this.scrollTriggered = true;
         this.startFinale();
       }
     });
+    this.scrollTriggers.push(enter);
+  }
+
+  private setupVisibilityObserver(): void {
+    if (!this.sectionRef) return;
+    this.visibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        this.inView = entry.isIntersecting;
+      },
+      { threshold: 0.08 }
+    );
+    this.visibilityObserver.observe(this.sectionRef.nativeElement);
   }
 
   private startFinale(): void {
-    this.showLines.set(true);
+    this.sequenceStarted.set(true);
     this.spawnConvergenceParticles();
 
     if (this.motion.prefersReducedMotion()) {
+      gsap.set(this.getLineElements(), { opacity: 1, y: 0, filter: 'blur(0px)' });
       this.showFinal.set(true);
       this.showButton.set(true);
       this.heartFormed.set(true);
+      this.heartOutlineProgress = 1;
+      this.drawFrame();
       return;
     }
 
-    setTimeout(() => {
-      const lines = [
-        this.line1Ref?.nativeElement,
-        this.line2Ref?.nativeElement,
-        this.line3Ref?.nativeElement,
-        this.line4Ref?.nativeElement
-      ].filter(Boolean);
+    requestAnimationFrame(() => {
+      const lines = this.getLineElements();
+      gsap.set(lines, { opacity: 0, y: 24, filter: 'blur(8px)' });
 
-      gsap.set(lines, { opacity: 0, y: 20 });
-
-      const tl = gsap.timeline({ delay: 1.5 });
+      this.lineTimeline = gsap.timeline({ delay: 1.8 });
       lines.forEach((el, i) => {
-        tl.to(el, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, i * 1.2);
+        this.lineTimeline!.to(el, {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          duration: 1.2,
+          ease: 'power3.out'
+        }, i * 1.1);
       });
 
-      tl.add(() => {
+      this.lineTimeline.add(() => {
         this.showFinal.set(true);
-        setTimeout(() => {
+        requestAnimationFrame(() => {
           if (this.finalMsgRef) {
-            gsap.from(this.finalMsgRef.nativeElement, {
-              opacity: 0, y: 20, duration: 1, ease: 'power3.out'
+            gsap.fromTo(this.finalMsgRef.nativeElement, {
+              opacity: 0,
+              y: 20,
+              filter: 'blur(6px)'
+            }, {
+              opacity: 1,
+              y: 0,
+              filter: 'blur(0px)',
+              duration: 1.1,
+              ease: 'power3.out'
             });
           }
-        }, 50);
-      }, '+=0.5');
+        });
+      }, '+=0.4');
 
-      tl.add(() => {
+      this.lineTimeline.add(() => {
         this.showButton.set(true);
         this.heartFormed.set(true);
-      }, '+=1');
-    }, 100);
+        if (this.creditRef) {
+          gsap.from(this.creditRef.nativeElement, {
+            opacity: 0,
+            y: 12,
+            duration: 0.9,
+            ease: 'power3.out'
+          });
+        }
+      }, '+=0.8');
+    });
+  }
+
+  private getLineElements(): HTMLElement[] {
+    return [
+      this.line1Ref?.nativeElement,
+      this.line2Ref?.nativeElement,
+      this.line3Ref?.nativeElement,
+      this.line4Ref?.nativeElement
+    ].filter(Boolean) as HTMLElement[];
   }
 
   private spawnConvergenceParticles(): void {
     const canvas = this.canvasRef.nativeElement;
     const w = canvas.width / (window.devicePixelRatio || 1);
     const h = canvas.height / (window.devicePixelRatio || 1);
-    const colors = ['#e8a0bf', '#d4b8e8', '#e8d5b5', '#f8e8ee'];
-    const count = this.motion.prefersReducedMotion() ? 30 : 120;
+    const colors = ['#c9a0a8', '#9a8fa8', '#c4b08a', '#f5f0e8'];
+    const count = this.motion.prefersReducedMotion()
+      ? 30
+      : this.motion.isMobile()
+        ? 70
+        : 140;
 
     this.particles = Array.from({ length: count }, (_, i) => {
-      const target = this.heartPoints[i % this.heartPoints.length] ?? { x: w / 2, y: h / 2 };
+      const edge = Math.floor(Math.random() * 4);
+      let x = Math.random() * w;
+      let y = Math.random() * h;
+      if (edge === 0) y = -10;
+      else if (edge === 1) y = h + 10;
+      else if (edge === 2) x = -10;
+      else x = w + 10;
+
+      const target = this.heartPoints[i % this.heartPoints.length] ?? { x: w / 2, y: h * 0.36 };
       return {
-        x: Math.random() * w,
-        y: Math.random() * h,
+        x,
+        y,
         targetX: target.x,
         targetY: target.y,
         vx: 0,
         vy: 0,
-        size: 2 + Math.random() * 3,
+        size: 1.5 + Math.random() * 2.5,
         color: colors[Math.floor(Math.random() * colors.length)],
-        arrived: false
+        arrived: false,
+        isBurst: false
       };
     });
 
@@ -207,93 +288,122 @@ export class FinaleComponent implements OnDestroy {
   }
 
   private animateConvergence = (): void => {
+    if (!this.inView || !this.visibility.pageVisible()) {
+      this.animationId = requestAnimationFrame(this.animateConvergence);
+      return;
+    }
+
+    this.drawFrame();
+
+    let arrivedCount = 0;
+    for (const p of this.particles) {
+      if (p.isBurst) continue;
+
+      const dx = p.targetX - p.x;
+      const dy = p.targetY - p.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist > 1.5) {
+        const ease = 0.035 + (1 - Math.min(dist / 400, 1)) * 0.02;
+        p.x += dx * ease;
+        p.y += dy * ease;
+      } else {
+        p.arrived = true;
+        p.x = p.targetX;
+        p.y = p.targetY;
+      }
+
+      if (p.arrived) arrivedCount++;
+    }
+
+    const targetProgress = arrivedCount / Math.max(this.particles.filter(p => !p.isBurst).length, 1);
+    this.heartOutlineProgress += (targetProgress - this.heartOutlineProgress) * 0.04;
+
+    if (this.heartOutlineProgress > 0.85 && !this.heartFormed()) {
+      // heart visually formed via particles
+    }
+
+    this.pulsePhase += 0.02;
+    this.animationId = requestAnimationFrame(this.animateConvergence);
+  };
+
+  private drawFrame(): void {
     const canvas = this.canvasRef.nativeElement;
     const w = canvas.width / (window.devicePixelRatio || 1);
     const h = canvas.height / (window.devicePixelRatio || 1);
 
     this.ctx.clearRect(0, 0, w, h);
 
-    let allArrived = true;
-    for (const p of this.particles) {
-      const dx = p.targetX - p.x;
-      const dy = p.targetY - p.y;
-      const dist = Math.hypot(dx, dy);
+    if (this.heartOutlineProgress > 0.05 && this.heartPoints.length > 1) {
+      this.drawHeartOutline();
+    }
 
-      if (dist > 2) {
-        allArrived = false;
-        p.x += dx * 0.04;
-        p.y += dy * 0.04;
-      } else {
-        p.arrived = true;
+    for (const p of this.particles) {
+      if (p.isBurst) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.1;
+        p.vx *= 0.98;
       }
 
-      this.ctx.globalAlpha = p.arrived ? 0.9 : 0.6;
+      const pulse = p.arrived && !p.isBurst
+        ? 1 + Math.sin(this.pulsePhase + p.x * 0.01) * 0.15
+        : 1;
+
+      this.ctx.globalAlpha = p.arrived ? 0.85 : 0.55;
       this.ctx.fillStyle = p.color;
       this.ctx.beginPath();
-      this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      this.ctx.arc(p.x, p.y, p.size * pulse, 0, Math.PI * 2);
       this.ctx.fill();
     }
 
-    if (!allArrived || this.surpriseTriggered()) {
-      this.animationId = requestAnimationFrame(this.animateConvergence);
+    this.particles = this.particles.filter(p => {
+      if (!p.isBurst) return true;
+      return p.y < h + 30 && p.x > -30 && p.x < w + 30;
+    });
+  }
+
+  private drawHeartOutline(): void {
+    const visible = Math.floor(this.heartPoints.length * this.heartOutlineProgress);
+    if (visible < 2) return;
+
+    this.ctx.strokeStyle = `rgba(201, 160, 168, ${0.12 + this.heartOutlineProgress * 0.2})`;
+    this.ctx.lineWidth = 1.5;
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.heartPoints[0].x, this.heartPoints[0].y);
+    for (let i = 1; i < visible; i++) {
+      this.ctx.lineTo(this.heartPoints[i].x, this.heartPoints[i].y);
     }
-  };
+    this.ctx.closePath();
+    this.ctx.stroke();
+  }
 
   private spawnGrandBurst(): void {
     const canvas = this.canvasRef.nativeElement;
     const w = canvas.width / (window.devicePixelRatio || 1);
     const h = canvas.height / (window.devicePixelRatio || 1);
     const cx = w / 2;
-    const cy = h * 0.38;
-    const colors = ['#e8a0bf', '#d4b8e8', '#e8d5b5', '#f8e8ee', '#c77d9e', '#ff8fab'];
+    const cy = h * 0.36;
+    const colors = ['#c9a0a8', '#9a8fa8', '#c4b08a', '#f5f0e8', '#d4b0b8'];
 
-    const burstCount = this.motion.prefersReducedMotion() ? 40 : 200;
-    const burstParticles = Array.from({ length: burstCount }, () => {
+    const burstCount = this.motion.prefersReducedMotion() ? 35 : 160;
+    const burstParticles: FinaleParticle[] = Array.from({ length: burstCount }, () => {
       const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 8 + 3;
+      const speed = Math.random() * 7 + 2;
       return {
         x: cx,
         y: cy,
         targetX: cx,
         targetY: cy,
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 4,
-        size: 2 + Math.random() * 5,
+        vy: Math.sin(angle) * speed - 3,
+        size: 2 + Math.random() * 4,
         color: colors[Math.floor(Math.random() * colors.length)],
-        arrived: false
+        arrived: false,
+        isBurst: true
       };
     });
 
     this.particles = [...this.particles, ...burstParticles];
-
-    const animateBurst = () => {
-      this.ctx.clearRect(0, 0, w, h);
-
-      this.particles = this.particles.filter(p => {
-        if (p.vx !== 0 || p.vy !== 0) {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.vy += 0.1;
-          p.vx *= 0.98;
-          return p.y < h + 20;
-        }
-        return true;
-      });
-
-      for (const p of this.particles) {
-        this.ctx.globalAlpha = 0.8;
-        this.ctx.fillStyle = p.color;
-        this.ctx.beginPath();
-        this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        this.ctx.fill();
-      }
-
-      if (this.particles.some(p => p.vx !== 0)) {
-        this.animationId = requestAnimationFrame(animateBurst);
-      }
-    };
-
-    cancelAnimationFrame(this.animationId);
-    this.animationId = requestAnimationFrame(animateBurst);
   }
 }

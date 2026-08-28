@@ -1,10 +1,12 @@
 import {
   Component,
   ElementRef,
+  OnDestroy,
   OnInit,
   ViewChild,
   afterNextRender,
   inject,
+  input,
   signal
 } from '@angular/core';
 import gsap from 'gsap';
@@ -12,29 +14,37 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
+import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { Photo } from '../../core/models';
-import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { CinematicLightboxComponent } from '../../shared/components/cinematic-lightbox/cinematic-lightbox.component';
 
 gsap.registerPlugin(ScrollTrigger);
 
 @Component({
   selector: 'app-photo-gallery',
   standalone: true,
-  imports: [ModalComponent],
+  imports: [CinematicLightboxComponent],
   templateUrl: './photo-gallery.component.html',
   styleUrl: './photo-gallery.component.scss'
 })
-export class PhotoGalleryComponent implements OnInit {
+export class PhotoGalleryComponent implements OnInit, OnDestroy {
   @ViewChild('section') sectionRef!: ElementRef<HTMLElement>;
   @ViewChild('carousel') carouselRef!: ElementRef<HTMLElement>;
 
+  readonly title = input('Our Moments');
+  readonly subtitle = input('Polaroids from our little universe');
+
   private readonly api = inject(ApiService);
   private readonly motion = inject(MotionService);
+  private readonly scenes = inject(SceneManagerService);
+  private observer?: IntersectionObserver;
 
   readonly photos = signal<Photo[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly selected = signal<Photo | null>(null);
+  readonly lightboxOpen = signal(false);
+  readonly sourceRect = signal<DOMRect | null>(null);
   readonly activeIndex = signal(0);
   readonly imageErrors = signal<Set<number>>(new Set());
 
@@ -45,7 +55,15 @@ export class PhotoGalleryComponent implements OnInit {
     afterNextRender(() => {
       this.isMobile = window.innerWidth < 768;
       this.initAnimations();
+      this.initSceneObserver();
     });
+  }
+
+  ngOnDestroy(): void {
+    this.observer?.disconnect();
+    if (this.lightboxOpen()) {
+      document.body.style.overflow = '';
+    }
   }
 
   async ngOnInit(): Promise<void> {
@@ -59,13 +77,19 @@ export class PhotoGalleryComponent implements OnInit {
     }
   }
 
-  openPhoto(photo: Photo): void {
+  openPhoto(photo: Photo, event: Event): void {
+    const target = (event.currentTarget as HTMLElement).querySelector('.polaroid__image-wrap')
+      ?? event.currentTarget as HTMLElement;
+    this.sourceRect.set(target.getBoundingClientRect());
     this.selected.set(photo);
+    this.lightboxOpen.set(true);
     document.body.style.overflow = 'hidden';
   }
 
-  closeModal(): void {
+  closeLightbox(): void {
+    this.lightboxOpen.set(false);
     this.selected.set(null);
+    this.sourceRect.set(null);
     document.body.style.overflow = '';
   }
 
@@ -124,15 +148,43 @@ export class PhotoGalleryComponent implements OnInit {
     }
   }
 
+  private initSceneObserver(): void {
+    if (!this.sectionRef) return;
+    this.observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          this.scenes.setScene('gallery');
+        }
+      },
+      { threshold: 0.2 }
+    );
+    this.observer.observe(this.sectionRef.nativeElement);
+  }
+
   private initAnimations(): void {
     if (this.motion.prefersReducedMotion() || !this.sectionRef) return;
 
-    gsap.from(this.sectionRef.nativeElement.querySelector('.photo-gallery__header'), {
-      scrollTrigger: { trigger: this.sectionRef.nativeElement, start: 'top 80%' },
-      opacity: 0,
-      y: 30,
-      duration: 0.9,
-      ease: 'power3.out'
-    });
+    const header = this.sectionRef.nativeElement.querySelector('.photo-gallery__header');
+    const stage = this.sectionRef.nativeElement.querySelector('.photo-gallery__stage');
+
+    if (header) {
+      gsap.from(header, {
+        scrollTrigger: { trigger: this.sectionRef.nativeElement, start: 'top 80%' },
+        opacity: 0,
+        y: 30,
+        duration: 0.9,
+        ease: 'power3.out'
+      });
+    }
+
+    if (stage) {
+      gsap.from(stage, {
+        scrollTrigger: { trigger: stage, start: 'top 85%' },
+        opacity: 0,
+        scale: 0.92,
+        duration: 1.2,
+        ease: 'power3.out'
+      });
+    }
   }
 }

@@ -4,130 +4,135 @@ import {
   OnDestroy,
   ViewChild,
   afterNextRender,
-  inject
+  inject,
+  input,
+  signal
 } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import gsap from 'gsap';
+import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
+import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { LoveUniverseScene } from './love-universe-scene';
 
 @Component({
   selector: 'app-love-universe',
   standalone: true,
-  template: `
-    <section class="love-universe" #section>
-      <div class="love-universe__canvas-wrap" #canvasHost></div>
-      <div class="love-universe__overlay">
-        <p class="love-universe__hint">Move your cursor to explore ✨</p>
-        <div class="love-universe__scroll-hint">
-          <span>Scroll to continue</span>
-          <div class="love-universe__chevron"></div>
-        </div>
-      </div>
-    </section>
-  `,
-  styles: [`
-    .love-universe {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-      height: 100dvh;
-      background: radial-gradient(ellipse at 50% 30%, #2a1520 0%, var(--night) 70%);
-      overflow: hidden;
-    }
-
-    .love-universe__canvas-wrap {
-      position: absolute;
-      inset: 0;
-    }
-
-    .love-universe__canvas-wrap ::ng-deep canvas {
-      display: block;
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    .love-universe__overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      padding-bottom: 3rem;
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    .love-universe__hint {
-      font-family: var(--font-display);
-      font-size: clamp(1rem, 2.5vw, 1.25rem);
-      color: rgba(255, 248, 240, 0.6);
-      font-style: italic;
-      margin-bottom: 2rem;
-    }
-
-    .love-universe__scroll-hint {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      color: var(--rose);
-      font-size: 0.85rem;
-      letter-spacing: 0.05em;
-      animation: bob 2s ease-in-out infinite;
-    }
-
-    .love-universe__chevron {
-      width: 20px;
-      height: 20px;
-      border-right: 2px solid var(--rose);
-      border-bottom: 2px solid var(--rose);
-      transform: rotate(45deg);
-      opacity: 0.7;
-    }
-
-    @keyframes bob {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(6px); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .love-universe__scroll-hint {
-        animation: none;
-      }
-    }
-  `]
+  templateUrl: './love-universe.component.html',
+  styleUrl: './love-universe.component.scss'
 })
 export class LoveUniverseComponent implements OnDestroy {
   @ViewChild('canvasHost', { static: true }) canvasHost!: ElementRef<HTMLElement>;
   @ViewChild('section', { static: true }) section!: ElementRef<HTMLElement>;
+  @ViewChild('introText') introTextRef?: ElementRef<HTMLElement>;
+
+  readonly line1 = input('You found something...');
+  readonly line2 = input('A little universe.');
 
   private readonly motion = inject(MotionService);
   private readonly visibility = inject(VisibilityService);
+  private readonly api = inject(ApiService);
+  private readonly scenes = inject(SceneManagerService);
+
   private scene?: LoveUniverseScene;
   private observer?: IntersectionObserver;
   private inViewport = true;
+  private scrollHandler?: () => void;
+
+  readonly introVisible = signal(true);
+  readonly photosLoaded = signal(false);
 
   constructor() {
-    afterNextRender(() => {
-      this.scene = new LoveUniverseScene(
-        this.canvasHost.nativeElement,
-        this.motion.prefersReducedMotion()
-      );
-      this.scene.init();
-      this.scene.start();
+    afterNextRender(() => void this.bootstrap());
+  }
 
-      this.observer = new IntersectionObserver(
-        ([entry]) => {
-          this.inViewport = entry.isIntersecting;
-          this.updateSceneVisibility();
-        },
-        { threshold: 0.1 }
-      );
-      this.observer.observe(this.section.nativeElement);
+  ngOnDestroy(): void {
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    if (this.scrollHandler) {
+      window.removeEventListener('scroll', this.scrollHandler);
+    }
+    this.observer?.disconnect();
+    this.scene?.dispose();
+  }
 
-      document.addEventListener('visibilitychange', this.onVisibilityChange);
+  private async bootstrap(): Promise<void> {
+    this.scenes.setScene('universe');
+
+    this.scene = new LoveUniverseScene(
+      this.canvasHost.nativeElement,
+      this.motion.prefersReducedMotion()
+    );
+    this.scene.init();
+    this.scene.start();
+
+    try {
+      const photos = await firstValueFrom(this.api.getPhotos());
+      await this.scene.loadPhotos(
+        photos.map(p => ({ id: p.id, imageUrl: p.imageUrl, title: p.title }))
+      );
+      this.photosLoaded.set(true);
+    } catch {
+      // Universe works without photos
+    }
+
+    this.observer = new IntersectionObserver(
+      ([entry]) => {
+        this.inViewport = entry.isIntersecting;
+        this.updateSceneVisibility();
+      },
+      { threshold: 0.05 }
+    );
+    this.observer.observe(this.section.nativeElement);
+
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
+    this.scrollHandler = () => this.onScroll();
+    window.addEventListener('scroll', this.scrollHandler, { passive: true });
+
+    this.playIntro();
+  }
+
+  private playIntro(): void {
+    if (this.motion.prefersReducedMotion()) {
+      setTimeout(() => this.introVisible.set(false), 2000);
+      return;
+    }
+
+    const el = this.introTextRef?.nativeElement;
+    if (!el) {
+      setTimeout(() => this.introVisible.set(false), 4000);
+      return;
+    }
+
+    gsap.fromTo(el.children, {
+      opacity: 0,
+      y: 20,
+      filter: 'blur(8px)'
+    }, {
+      opacity: 1,
+      y: 0,
+      filter: 'blur(0px)',
+      duration: 1.4,
+      stagger: 1.2,
+      ease: 'power3.out'
     });
+
+    gsap.to(el, {
+      opacity: 0,
+      y: -12,
+      delay: 5,
+      duration: 1.2,
+      ease: 'power2.in',
+      onComplete: () => this.introVisible.set(false)
+    });
+  }
+
+  private onScroll(): void {
+    if (!this.scene || !this.inViewport) return;
+    const rect = this.section.nativeElement.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const progress = 1 - Math.max(0, Math.min(1, rect.bottom / (rect.height + vh)));
+    this.scene.setScrollProgress(progress);
   }
 
   private onVisibilityChange = (): void => {
@@ -136,11 +141,5 @@ export class LoveUniverseComponent implements OnDestroy {
 
   private updateSceneVisibility(): void {
     this.scene?.setVisible(this.inViewport && this.visibility.pageVisible());
-  }
-
-  ngOnDestroy(): void {
-    document.removeEventListener('visibilitychange', this.onVisibilityChange);
-    this.observer?.disconnect();
-    this.scene?.dispose();
   }
 }

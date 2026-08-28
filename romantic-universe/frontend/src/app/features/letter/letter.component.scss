@@ -1,0 +1,95 @@
+.letter {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: radial-gradient(ellipse at 50% 30%, var(--night-soft) 0%, var(--void) 70%);
+  padding: var(--scene-padding);
+  overflow: hidden;
+}
+
+.letter__glow {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, 80vw);
+  height: min(420px, 80vw);
+  background: radial-gradient(circle, rgba(201, 160, 168, 0.08), transparent 70%);
+  pointer-events: none;
+  animation: letter-glow 6s ease-in-out infinite;
+}
+
+@keyframes letter-glow {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+}
+
+.letter__content {
+  position: relative;
+  z-index: 1;
+  max-width: 580px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.letter__intro {
+  margin: 1rem 0 2.5rem;
+}
+
+.letter__paper {
+  position: relative;
+  padding: clamp(2rem, 5vw, 3rem);
+  border: 1px solid rgba(245, 240, 232, 0.1);
+  background: rgba(5, 3, 8, 0.45);
+  backdrop-filter: blur(10px);
+  text-align: left;
+  will-change: transform, opacity, filter;
+}
+
+.letter__paper-edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201, 160, 168, 0.35), transparent);
+}
+
+.letter__body {
+  position: relative;
+}
+
+.letter__line {
+  margin: 0 0 1.35rem;
+  opacity: 0;
+  will-change: opacity, transform, filter;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &--empty {
+    font-style: italic;
+    opacity: 0.7;
+  }
+}
+
+.letter__sign {
+  margin: 2.5rem 0 0;
+  text-align: right;
+  opacity: 0;
+  will-change: opacity, transform, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .letter__glow {
+    animation: none;
+  }
+
+  .letter__line,
+  .letter__sign,
+  .letter__intro,
+  .letter__paper {
+    opacity: 1 !important;
+  }
+}

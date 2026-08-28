@@ -1,27 +1,42 @@
-<section class="constellation section" #section id="constellation">
-  <p class="constellation__chapter">Chapter 9</p>
-  <h2 class="section-title">Messages Written in Stars</h2>
-  <p class="section-subtitle">Tap a star to reveal its secret</p>
+<section class="constellation cine-scene" #section id="constellation" data-act="8b">
+  <div class="constellation__vignette cine-vignette"></div>
+  <div class="cine-fade-edge cine-fade-edge--top"></div>
+
+  <header class="constellation__header">
+    <p class="act-marker">Act VIII · Stars</p>
+    <h2 class="cine-statement constellation__title">{{ title() }}</h2>
+    <p class="cine-whisper constellation__subtitle">{{ subtitle() }}</p>
+  </header>
 
   @if (loading()) {
-    <div class="constellation__state">Mapping the stars...</div>
+    <div class="constellation__state cine-body">Mapping the stars...</div>
   } @else if (error()) {
-    <div class="constellation__state constellation__state--error">{{ error() }}</div>
+    <div class="constellation__state constellation__state--error cine-body">{{ error() }}</div>
   } @else {
     <div class="constellation__canvas-wrap">
-      <canvas #canvas class="constellation__canvas" aria-label="Interactive quote constellation"></canvas>
+      <canvas #canvas class="constellation__canvas" aria-label="Interactive quote constellation in a heart shape"></canvas>
 
       @if (selectedQuote(); as quote) {
-        <div class="constellation__quote glass-card" #quotePanel>
-          <button class="constellation__close" (click)="closeQuote()" aria-label="Close quote">✕</button>
-          <blockquote class="constellation__text">"{{ quote.text }}"</blockquote>
+        <div class="constellation__quote" #quotePanel role="region">
+          <button class="constellation__close cine-enter-btn" type="button" (click)="closeQuote()" aria-label="Close quote">
+            Close
+          </button>
+          <blockquote class="constellation__text cine-letter">"{{ quote.text }}"</blockquote>
           @if (quote.author) {
-            <cite class="constellation__author">— {{ quote.author }}</cite>
+            <cite class="constellation__author cine-micro">— {{ quote.author }}</cite>
           }
         </div>
       } @else {
-        <p class="constellation__hint">✦ tap a glowing star ✦</p>
+        <p class="constellation__hint cine-micro">
+          @if (heartRevealed()) {
+            Tap a star along the heart
+          } @else {
+            Watch the heart appear
+          }
+        </p>
       }
     </div>
   }
+
+  <div class="cine-fade-edge cine-fade-edge--bottom"></div>
 </section>

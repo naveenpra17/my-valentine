@@ -1,14 +1,16 @@
+<div class="cine-grain" aria-hidden="true"></div>
+<a class="skip-link" href="#main-content">Skip to experience</a>
 <app-particle-burst [active]="burstActive()" />
 
 @if (config.loading()) {
-  <div class="loading-screen">
-    <div class="loading-heart">❤️</div>
-    <p>Preparing something special...</p>
+  <div class="void-loader">
+    <div class="void-loader__pulse"></div>
+    <p class="void-loader__text cine-whisper">Preparing something for you...</p>
   </div>
 } @else if (config.error()) {
-  <div class="error-screen">
-    <p>{{ config.error() }}</p>
-    <button class="btn-primary" (click)="retry()">Try again</button>
+  <div class="void-loader void-loader--error">
+    <p class="cine-body">{{ config.error() }}</p>
+    <button class="cine-enter-btn" (click)="retry()">Try again</button>
   </div>
 } @else {
   @if (showEntryLock()) {
@@ -19,63 +21,104 @@
   }
 
   @if (showOpening()) {
-    <app-opening
-      [line1]="config.get('OPENING_LINE_1', 'Hey beautiful... ❤️')"
-      [line2]="config.get('OPENING_LINE_2', 'I made a little universe for you.')"
-      (enter)="onOpeningEnter()"
-    />
+    <div #openingHost>
+      <app-opening
+        [void1]="config.get('OPENING_VOID_1', 'Hey...')"
+        [void2]="config.get('OPENING_VOID_2', 'You.')"
+        [void3]="config.get('OPENING_VOID_3', 'Yes, you.')"
+        [void4]="config.get('OPENING_VOID_4', 'I made something for you.')"
+        [ctaLabel]="config.get('OPENING_CTA', 'Enter')"
+        (enter)="onOpeningEnter()"
+      />
+    </div>
   }
 
   @if (showMain()) {
-    <main class="experience-main">
-      <app-love-universe />
+    <main class="experience-main" id="main-content" #mainContent tabindex="-1">
+      <app-love-universe
+        [line1]="config.get('UNIVERSE_LINE_1', 'You found something...')"
+        [line2]="config.get('UNIVERSE_LINE_2', 'A little universe.')"
+      />
       <app-hero
         [herName]="config.get('HER_NAME', 'Beautiful')"
+        [title]="config.get('HERO_TITLE', 'Look at This Beautiful Human')"
         [line1]="config.get('HERO_LINE_1')"
         [line2]="config.get('HERO_LINE_2')"
         [imageUrl]="config.get('HERO_IMAGE_URL', '/assets/images/hero/hero.jpg')"
       />
 
       @defer (on viewport; prefetch on idle) {
-        <app-memory-timeline />
+        <app-memory-timeline
+          [title]="config.get('MEMORIES_TITLE', 'Things I Remember')"
+          [subtitle]="config.get('MEMORIES_SUBTITLE', 'Little moments that stayed with me')"
+        />
       } @placeholder {
         <div class="section-skeleton" aria-hidden="true"></div>
       }
 
       @defer (on viewport; prefetch on idle) {
-        <app-reasons />
+        <app-reasons
+          [title]="config.get('REASONS_TITLE', 'Things I Adore About You')"
+          [subtitle]="config.get('REASONS_SUBTITLE', 'Tap a whisper to hear more')"
+        />
       } @placeholder {
         <div class="section-skeleton" aria-hidden="true"></div>
       }
 
       @defer (on viewport; prefetch on idle) {
-        <app-love-bomb />
+        <app-love-bomb
+          [title]="config.get('LOVE_BOMB_TITLE', 'Love Bomb Attack')"
+          [subtitle]="config.get('LOVE_BOMB_SUBTITLE', 'Catch the hearts before they fade')"
+        />
       } @placeholder {
         <div class="section-skeleton section-skeleton--short" aria-hidden="true"></div>
       }
 
       @defer (on viewport; prefetch on idle) {
-        <app-open-when />
+        <app-open-when
+          [title]="config.get('OPEN_WHEN_TITLE', 'Messages for Different Days')"
+          [subtitle]="config.get('OPEN_WHEN_SUBTITLE', 'Open one whenever you need it')"
+        />
       } @placeholder {
         <div class="section-skeleton" aria-hidden="true"></div>
       }
 
       @defer (on viewport; prefetch on idle) {
-        <app-photo-gallery />
+        <app-photo-gallery
+          [title]="config.get('GALLERY_TITLE', 'Our Moments')"
+          [subtitle]="config.get('GALLERY_SUBTITLE', 'Polaroids from our little universe')"
+        />
       } @placeholder {
         <div class="section-skeleton section-skeleton--tall" aria-hidden="true"></div>
       }
 
       @defer (on viewport; prefetch on idle) {
-        <app-quote-constellation />
+        <app-quote-constellation
+          [title]="config.get('CONSTELLATION_TITLE', 'Messages Written in Stars')"
+          [subtitle]="config.get('CONSTELLATION_SUBTITLE', 'Tap a star — they form a heart for you')"
+        />
       } @placeholder {
         <div class="section-skeleton section-skeleton--tall" aria-hidden="true"></div>
       }
 
       @defer (on viewport; prefetch on idle) {
-        <app-flower-surprise [flowerMessage]="config.get('FLOWER_MESSAGE')" />
+        <app-flower-surprise
+          [title]="config.get('FLOWER_TITLE', 'A Little Surprise')"
+          [subtitle]="config.get('FLOWER_SUBTITLE', 'Something is waiting to grow')"
+          [flowerMessage]="config.get('FLOWER_MESSAGE')"
+        />
       } @placeholder {
         <div class="section-skeleton section-skeleton--short" aria-hidden="true"></div>
+      }
+
+      @defer (on viewport; prefetch on idle) {
+        <app-letter
+          [intro]="config.get('LETTER_INTRO', 'A letter for you')"
+          [message]="config.get('LETTER_MESSAGE') || config.get('FINAL_MESSAGE')"
+          [myName]="config.get('MY_NAME', '')"
+        />
+      } @placeholder {
+        <div class="section-skeleton section-skeleton--finale" aria-hidden="true"></div>
       }
 
       @defer (on viewport; prefetch on idle) {
@@ -93,6 +136,8 @@
     </main>
 
     <app-secret-heart [secretMessage]="config.get('SECRET_MESSAGE')" />
+    <app-hidden-star [message]="config.get('HIDDEN_STAR_MESSAGE')" />
+    <app-void-whisper [message]="config.get('VOID_WHISPER_MESSAGE', 'The void heard you. And it whispered back: you are loved.')" />
     <app-music-player [musicUrl]="config.get('MUSIC_URL', '/assets/audio/background.mp3')" />
   }
 }

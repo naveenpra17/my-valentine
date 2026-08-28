@@ -1,80 +1,86 @@
-<section class="memories section" #section id="memories">
-  <p class="memories__chapter">Chapter 4</p>
-  <h2 class="section-title">Things I Remember</h2>
-  <p class="section-subtitle">Little moments that stayed with me</p>
+<section class="memories cine-scene" #section id="memories" data-act="4">
+  <div class="memories__vignette cine-vignette"></div>
+  <div class="cine-fade-edge cine-fade-edge--top"></div>
 
-  @if (loading()) {
-    <div class="memories__state">Loading memories...</div>
-  } @else if (error()) {
-    <div class="memories__state memories__state--error">{{ error() }}</div>
-  } @else {
-    <div class="memories__timeline">
-      @for (memory of memories(); track memory.id; let i = $index) {
-        <article
-          class="memory-card glass-card"
-          [class.memory-card--right]="i % 2 === 1"
-          #memoryCard
-          (click)="openMemory(memory)"
-          (keydown.enter)="openMemory(memory)"
-          tabindex="0"
-          role="button"
-          [attr.aria-label]="'Open memory: ' + memory.title"
-        >
-          <div class="memory-card__image-wrap">
-            @if (!hasImageError(memory.id)) {
-              <img
-                [src]="memory.imageUrl"
-                [alt]="memory.title"
-                loading="lazy"
-                (error)="onImageError(memory.id)"
-              />
-            } @else {
-              <div class="memory-card__placeholder">📸</div>
-            }
-          </div>
-          <div class="memory-card__body">
-            @if (memory.memoryDate) {
-              <time class="memory-card__date" [attr.datetime]="memory.memoryDate">
-                {{ memory.memoryDate | date:'longDate' }}
-              </time>
-            }
-            <h3 class="memory-card__title">{{ memory.title }}</h3>
-            <p class="memory-card__preview">{{ memory.message }}</p>
-            @if (memory.location) {
-              <span class="memory-card__location">📍 {{ memory.location }}</span>
-            }
-            <span class="memory-card__tap">Tap to read more</span>
-          </div>
-        </article>
-      }
-    </div>
-  }
+  <div class="memories__content">
+    <header class="memories__header">
+      <p class="act-marker">Act IV</p>
+      <h2 class="cine-statement memories__title">{{ title() }}</h2>
+      <p class="cine-whisper memories__subtitle">{{ subtitle() }}</p>
+    </header>
 
-  <app-modal
-    [open]="!!selected()"
+    @if (loading()) {
+      <div class="memories__state cine-body">Loading memories...</div>
+    } @else if (error()) {
+      <div class="memories__state memories__state--error cine-body">{{ error() }}</div>
+    } @else {
+      <div class="memories__timeline">
+        @for (memory of memories(); track memory.id; let i = $index) {
+          <article
+            class="memory-card"
+            [class.memory-card--right]="i % 2 === 1"
+            #memoryCard
+            (click)="openMemory(memory, $event)"
+            (keydown.enter)="openMemory(memory, $event)"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Open memory: ' + memory.title"
+          >
+            <div class="memory-card__image-wrap">
+              @if (!hasImageError(memory.id)) {
+                <img
+                  [src]="memory.imageUrl"
+                  [alt]="memory.title"
+                  loading="lazy"
+                  (error)="onImageError(memory.id)"
+                />
+              } @else {
+                <div class="memory-card__placeholder">📸</div>
+              }
+              <div class="memory-card__image-glow"></div>
+            </div>
+            <div class="memory-card__body">
+              @if (memory.memoryDate) {
+                <time class="memory-card__date cine-micro" [attr.datetime]="memory.memoryDate">
+                  {{ memory.memoryDate | date:'longDate' }}
+                </time>
+              }
+              <h3 class="memory-card__title">{{ memory.title }}</h3>
+              <p class="memory-card__preview cine-body">{{ memory.message }}</p>
+              @if (memory.location) {
+                <span class="memory-card__location cine-micro">{{ memory.location }}</span>
+              }
+              <span class="memory-card__tap cine-micro">Open memory</span>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="cine-fade-edge cine-fade-edge--bottom"></div>
+
+  <app-cinematic-lightbox
+    [open]="lightboxOpen()"
+    [imageUrl]="selected()?.imageUrl ?? ''"
+    [title]="selected()?.title ?? ''"
+    [sourceRect]="sourceRect()"
     ariaLabel="Memory detail"
-    (close)="closeModal()"
+    (close)="closeLightbox()"
   >
     @if (selected(); as memory) {
-      <div class="memory-modal">
-        <div class="memory-modal__image-wrap">
-          @if (!hasImageError(memory.id)) {
-            <img [src]="memory.imageUrl" [alt]="memory.title" />
-          } @else {
-            <div class="memory-modal__placeholder">💕</div>
-          }
-        </div>
+      <div class="memory-lightbox">
         @if (memory.memoryDate) {
-          <time class="memory-modal__date" [attr.datetime]="memory.memoryDate">
+          <time class="memory-lightbox__date cine-micro" [attr.datetime]="memory.memoryDate">
             {{ memory.memoryDate | date:'longDate' }}
           </time>
         }
         @if (memory.location) {
-          <p class="memory-modal__location">📍 {{ memory.location }}</p>
+          <p class="memory-lightbox__location cine-micro">{{ memory.location }}</p>
         }
-        <h3 class="memory-modal__title">{{ memory.title }}</h3>
-        <p class="memory-modal__message">{{ memory.message }}</p>
+        <h3 class="memory-lightbox__title cine-statement">{{ memory.title }}</h3>
+        <p class="memory-lightbox__message cine-letter">{{ memory.message }}</p>
       </div>
     }
-  </app-modal>
+  </app-cinematic-lightbox>
 </section>

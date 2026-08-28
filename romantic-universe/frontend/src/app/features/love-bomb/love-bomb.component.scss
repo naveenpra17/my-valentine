@@ -1,97 +1,154 @@
 .love-bomb {
   position: relative;
-  background: linear-gradient(180deg, var(--blush) 0%, #f5dce8 40%, var(--cream) 100%);
-  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: radial-gradient(ellipse at 50% 30%, var(--night-soft) 0%, var(--void) 70%);
+  padding: var(--scene-padding);
   text-align: center;
+  overflow: hidden;
+}
+
+.love-bomb__header {
+  position: relative;
+  z-index: 2;
+  margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.love-bomb__title {
+  margin: 0 0 1rem;
+}
+
+.love-bomb__subtitle {
+  margin: 0;
+}
+
+.love-bomb__arena {
+  position: relative;
+  z-index: 1;
+  height: clamp(280px, 45vh, 420px);
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  border: 1px solid rgba(245, 240, 232, 0.08);
+  background: rgba(245, 240, 232, 0.02);
+  overflow: hidden;
+
+  @media (max-width: 767px) {
+    height: clamp(260px, 42vh, 360px);
+    margin-left: 0;
+    margin-right: 0;
+  }
 }
 
 .love-bomb__burst {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
+  z-index: 3;
 }
 
-.love-bomb__chapter {
-  position: relative;
+.love-bomb__heart {
+  position: absolute;
+  top: -12%;
+  transform: translateX(-50%);
   z-index: 2;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--rose-deep);
-  margin-bottom: 0.5rem;
-}
-
-.love-bomb__arena {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-  padding: 2rem 0;
-}
-
-.love-bomb__btn {
-  padding: 1.25rem 2.5rem;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(135deg, var(--rose), #f0a0c0, var(--lavender));
-  color: var(--burgundy);
-  font-weight: 500;
-  font-size: clamp(1rem, 2.5vw, 1.15rem);
-  box-shadow: 0 0 40px var(--glow-rose), 0 8px 32px rgba(92, 26, 46, 0.15);
-  transition: transform var(--transition), box-shadow var(--transition);
-  animation: bomb-glow 2.5s ease-in-out infinite;
+  padding: 0.75rem;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: transform 0.2s var(--ease-cine);
+  will-change: top, transform;
 
   &:hover:not(:disabled) {
-    transform: scale(1.05);
-    box-shadow: 0 0 60px var(--glow-rose), 0 12px 40px rgba(92, 26, 46, 0.2);
-  }
-
-  &:active:not(:disabled) {
-    transform: scale(0.97);
+    transform: translateX(-50%) scale(1.15);
   }
 
   &:disabled {
-    opacity: 0.7;
+    opacity: 0.5;
     cursor: wait;
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--rose);
+    outline-offset: 4px;
+    border-radius: 50%;
   }
 }
 
-.love-bomb__message {
+.love-bomb__heart-icon {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  filter: drop-shadow(0 0 12px rgba(201, 160, 168, 0.5));
+  animation: heart-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes heart-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.love-bomb__hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.love-bomb__reveal {
+  position: relative;
+  z-index: 4;
   max-width: 480px;
-  width: 100%;
-  padding: 2rem 1.5rem;
-  background: rgba(255, 248, 240, 0.85);
-  color: var(--burgundy);
-  margin: 0;
+  margin: 0 auto 1.5rem;
+  padding: 0 1rem;
+}
+
+.love-bomb__message {
+  margin: 0 0 1.5rem;
+  padding: clamp(1.5rem, 4vw, 2rem);
+  border: 1px solid rgba(245, 240, 232, 0.1);
+  background: rgba(5, 3, 8, 0.5);
+  backdrop-filter: blur(10px);
 
   p {
-    font-family: var(--font-quote);
-    font-size: clamp(1.15rem, 3vw, 1.4rem);
-    font-style: italic;
-    line-height: 1.6;
+    margin: 0;
   }
 }
 
 .love-bomb__error {
-  color: #c44;
-  font-size: 0.9rem;
+  color: var(--rose);
+  margin-bottom: 1rem;
 }
 
-.love-bomb__counter {
-  font-size: 0.8rem;
-  color: var(--rose-deep);
-  opacity: 0.7;
+.love-bomb__stats {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
 }
 
-@keyframes bomb-glow {
-  0%, 100% { box-shadow: 0 0 30px var(--glow-rose); }
-  50% { box-shadow: 0 0 55px var(--glow-rose), 0 0 80px rgba(212, 184, 232, 0.25); }
+.love-bomb__streak {
+  color: var(--champagne);
+}
+
+.love-bomb__arena--static {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.love-bomb__fallback {
+  position: relative;
+  z-index: 2;
+  margin-top: 1rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .love-bomb__btn {
+  .love-bomb__heart-icon {
     animation: none;
   }
 }

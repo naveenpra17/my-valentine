@@ -1,37 +1,61 @@
-<section class="open-when section" #section id="open-when">
-  <p class="open-when__chapter">Chapter 7</p>
-  <h2 class="section-title">Messages for Different Days</h2>
-  <p class="section-subtitle">Open one whenever you need it</p>
+<section
+  class="cine-scene"
+  [class]="'open-when open-when--mood-' + activeMood()"
+  #section
+  id="open-when"
+  data-act="7"
+>
+  <div class="open-when__mood-layer" #moodLayer aria-hidden="true"></div>
+  <div class="open-when__vignette cine-vignette"></div>
+  <div class="cine-fade-edge cine-fade-edge--top"></div>
 
-  @if (loading()) {
-    <div class="open-when__state">Preparing envelopes...</div>
-  } @else if (error()) {
-    <div class="open-when__state open-when__state--error">{{ error() }}</div>
-  } @else {
-    <div class="open-when__grid">
-      @for (msg of messages(); track msg.id) {
-        <div
-          class="envelope-wrap"
-          [class.envelope-wrap--open]="isOpen(msg.id)"
-          #envelope
-        >
-          <button
-            class="envelope"
-            (click)="openEnvelope(msg.id)"
-            [attr.aria-expanded]="isOpen(msg.id)"
-            [attr.aria-label]="'Open envelope: ' + msg.envelopeLabel"
+  <div class="open-when__content">
+    <header class="open-when__header">
+      <p class="act-marker">Act VII</p>
+      <h2 class="cine-statement open-when__title">{{ title() }}</h2>
+      <p class="cine-whisper open-when__subtitle">{{ subtitle() }}</p>
+    </header>
+
+    @if (loading()) {
+      <div class="open-when__state cine-body">Preparing envelopes...</div>
+    } @else if (error()) {
+      <div class="open-when__state open-when__state--error cine-body">{{ error() }}</div>
+    } @else {
+      <div class="open-when__grid" [class.open-when__grid--dimmed]="openedId() !== null">
+        @for (msg of messages(); track msg.id; let i = $index) {
+          <div
+            class="envelope-wrap"
+            [class.envelope-wrap--open]="isOpen(msg.id)"
+            [class.envelope-wrap--dimmed]="openedId() !== null && !isOpen(msg.id)"
+            #envelope
           >
-            <div class="envelope__flap"></div>
-            <div class="envelope__body">
-              <span class="envelope__seal">💌</span>
-              <span class="envelope__label">{{ msg.envelopeLabel }}</span>
-            </div>
-            <div class="envelope__letter">
-              <p class="envelope__message">{{ msg.message }}</p>
-            </div>
-          </button>
+            <button
+              class="envelope"
+              type="button"
+              (click)="openEnvelope(msg, i)"
+              [attr.aria-expanded]="isOpen(msg.id)"
+              [attr.aria-label]="'Open envelope: ' + msg.envelopeLabel"
+            >
+              <div class="envelope__glow" aria-hidden="true"></div>
+              <div class="envelope__flap"></div>
+              <div class="envelope__body">
+                <span class="envelope__seal">💌</span>
+                <span class="envelope__label">{{ msg.envelopeLabel }}</span>
+              </div>
+            </button>
+          </div>
+        }
+      </div>
+
+      @if (openedMessage(); as msg) {
+        <div class="open-when__letter-panel" #letterPanel role="region">
+          <p class="open-when__letter-label cine-micro">{{ msg.envelopeLabel }}</p>
+          <p class="open-when__letter-message cine-letter">{{ msg.message }}</p>
+          <button class="cine-enter-btn" type="button" (click)="closeEnvelope()">Fold it away</button>
         </div>
       }
-    </div>
-  }
+    }
+  </div>
+
+  <div class="cine-fade-edge cine-fade-edge--bottom"></div>
 </section>

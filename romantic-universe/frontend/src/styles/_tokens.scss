@@ -1,0 +1,53 @@
+// Romantic Universe 2.0 — Cinematic design tokens
+
+:root {
+  // Core palette — midnight world with romantic accents
+  --void: #050308;
+  --midnight: #0a0610;
+  --night: #100a14;
+  --night-soft: #1a1020;
+  --ivory: #f5f0e8;
+  --ivory-dim: rgba(245, 240, 232, 0.72);
+  --ivory-ghost: rgba(245, 240, 232, 0.38);
+  --rose: #c9a0a8;
+  --rose-soft: rgba(201, 160, 168, 0.55);
+  --dust-pink: #d4b0b8;
+  --lavender-muted: #9a8fa8;
+  --champagne: #c4b08a;
+  --burgundy-deep: #3d1a28;
+
+  // Legacy aliases (backward compat)
+  --blush: #1a1020;
+  --rose-deep: var(--dust-pink);
+  --lavender: var(--lavender-muted);
+  --cream: var(--ivory);
+  --burgundy: var(--ivory);
+  --glass: rgba(245, 240, 232, 0.04);
+  --glow-rose: rgba(201, 160, 168, 0.25);
+
+  // Typography
+  --font-display: 'Cormorant Garamond', 'Georgia', serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-quote: 'Cormorant Garamond', Georgia, serif;
+  --font-letter: 'Cormorant Garamond', Georgia, serif;
+
+  // Scale
+  --text-void: clamp(2.5rem, 8vw, 5.5rem);
+  --text-statement: clamp(1.75rem, 5vw, 3.5rem);
+  --text-whisper: clamp(1rem, 2.5vw, 1.25rem);
+  --text-micro: clamp(0.7rem, 1.5vw, 0.85rem);
+
+  // Spacing & motion
+  --scene-padding: clamp(2rem, 8vw, 6rem);
+  --ease-cine: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-breathe: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-slow: 1.8s;
+  --duration-medium: 1s;
+  --duration-fast: 0.5s;
+
+  --radius-lg: 2px;
+  --radius-pill: 999px;
+  --shadow-soft: none;
+  --shadow-glow: 0 0 60px var(--glow-rose);
+  --transition: var(--duration-fast) var(--ease-breathe);
+}

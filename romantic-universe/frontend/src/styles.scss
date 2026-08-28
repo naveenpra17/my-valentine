@@ -1,27 +1,10 @@
-/* Fonts loaded via index.html */
+/* Romantic Universe 2.0 — Global styles */
 
-:root {
-  --blush: #f8e8ee;
-  --rose: #e8a0bf;
-  --rose-deep: #c77d9e;
-  --lavender: #d4b8e8;
-  --cream: #fff8f0;
-  --champagne: #e8d5b5;
-  --burgundy: #5c1a2e;
-  --night: #1a0f14;
-  --glass: rgba(255, 248, 240, 0.12);
-  --glow-rose: rgba(232, 160, 191, 0.45);
-
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-body: 'Outfit', system-ui, sans-serif;
-  --font-quote: 'Playfair Display', Georgia, serif;
-
-  --radius-lg: 24px;
-  --radius-pill: 999px;
-  --shadow-soft: 0 8px 32px rgba(92, 26, 46, 0.12);
-  --shadow-glow: 0 0 40px var(--glow-rose);
-  --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
+@use './styles/tokens';
+@use './styles/typography';
+@use './styles/cinematic';
+@use './styles/mobile';
+@use './styles/a11y';
 
 *,
 *::before,
@@ -31,6 +14,7 @@
 
 html {
   scroll-behavior: smooth;
+  background: var(--void);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -50,18 +34,22 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   font-family: var(--font-body);
   font-weight: 300;
-  color: var(--burgundy);
-  background: var(--cream);
+  color: var(--ivory);
+  background: var(--void);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
 
 h1, h2, h3, h4 {
   font-family: var(--font-display);
-  font-weight: 500;
-  line-height: 1.2;
+  font-weight: 400;
+  line-height: 1.15;
   margin: 0;
 }
 
@@ -80,57 +68,58 @@ button {
   cursor: pointer;
   border: none;
   background: none;
+  color: inherit;
 }
 
+/* Legacy utilities — gradually migrating */
 .glass-card {
   background: var(--glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(245, 240, 232, 0.08);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
 }
 
 .btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-size: var(--text-micro);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ivory);
   padding: 1rem 2rem;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(135deg, var(--rose), var(--lavender));
-  color: var(--burgundy);
-  font-weight: 500;
-  font-size: 1rem;
-  box-shadow: var(--shadow-glow);
-  transition: transform var(--transition), box-shadow var(--transition);
+  border: 1px solid rgba(245, 240, 232, 0.2);
+  background: linear-gradient(135deg, rgba(201, 160, 168, 0.2), rgba(154, 143, 168, 0.15));
+  transition: color var(--transition), border-color var(--transition), box-shadow var(--duration-medium) var(--ease-cine);
 
-  &:hover {
-    transform: scale(1.03);
-    box-shadow: 0 0 60px var(--glow-rose);
-  }
-
-  &:active {
-    transform: scale(0.98);
+  &:hover:not(:disabled) {
+    border-color: rgba(245, 240, 232, 0.35);
+    box-shadow: 0 0 40px rgba(201, 160, 168, 0.15);
   }
 }
 
 .section {
-  padding: clamp(4rem, 10vw, 8rem) clamp(1rem, 5vw, 4rem);
+  padding: var(--scene-padding);
+  background: var(--void);
+  color: var(--ivory);
 }
 
 .section-title {
-  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-family: var(--font-display);
+  font-size: var(--text-statement);
   text-align: center;
-  margin-bottom: 0.5rem;
-  color: var(--burgundy);
+  margin-bottom: 0.75rem;
+  color: var(--ivory);
+  font-weight: 400;
 }
 
 .section-subtitle {
   text-align: center;
-  color: var(--rose-deep);
+  color: var(--ivory-ghost);
   margin-bottom: 3rem;
-  font-size: clamp(1rem, 2vw, 1.125rem);
+  font-size: var(--text-whisper);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 300;
 }
 
 .sr-only {
@@ -143,4 +132,17 @@ button {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+.cine-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: var(--void);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.experience-main {
+  background: var(--void);
 }

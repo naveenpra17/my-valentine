@@ -1,38 +1,48 @@
-<section class="reasons section" #section id="reasons">
-  <p class="reasons__chapter">Chapter 5</p>
-  <h2 class="section-title">Things I Adore About You</h2>
-  <p class="section-subtitle">Tap a card to reveal why</p>
+<section class="reasons cine-scene" #section id="reasons" data-act="5">
+  <div class="reasons__vignette cine-vignette"></div>
+  <div class="cine-fade-edge cine-fade-edge--top"></div>
 
-  @if (loading()) {
-    <div class="reasons__state">Loading...</div>
-  } @else if (error()) {
-    <div class="reasons__state reasons__state--error">{{ error() }}</div>
-  } @else {
-    <div class="reasons__grid">
-      @for (reason of reasons(); track reason.id) {
-        <article
-          class="reason-card"
-          [class.reason-card--expanded]="isExpanded(reason.id)"
-          #reasonCard
-          appTilt
-          (click)="toggleReason(reason.id)"
-          (keydown.enter)="toggleReason(reason.id)"
-          tabindex="0"
-          role="button"
-          [attr.aria-expanded]="isExpanded(reason.id)"
-        >
-          <div class="reason-card__inner glass-card">
-            <div class="reason-card__front">
-              <span class="reason-card__icon">💗</span>
-              <h3 class="reason-card__label">{{ reason.shortLabel }}</h3>
-              <span class="reason-card__hint">tap me</span>
-            </div>
-            <div class="reason-card__back">
-              <p class="reason-card__message">{{ reason.longMessage }}</p>
-            </div>
-          </div>
-        </article>
+  <div class="reasons__content">
+    <header class="reasons__header">
+      <p class="act-marker">Act V</p>
+      <h2 class="cine-statement reasons__title">{{ title() }}</h2>
+      <p class="cine-whisper reasons__subtitle">{{ subtitle() }}</p>
+    </header>
+
+    @if (loading()) {
+      <div class="reasons__state cine-body">Loading...</div>
+    } @else if (error()) {
+      <div class="reasons__state reasons__state--error cine-body">{{ error() }}</div>
+    } @else {
+      <div class="reasons__field" [class.reasons__field--dimmed]="focusedId() !== null">
+        @for (reason of reasons(); track reason.id; let i = $index) {
+          <button
+            class="reason-float"
+            [class.reason-float--active]="focusedId() === reason.id"
+            [class.reason-float--dimmed]="focusedId() !== null && focusedId() !== reason.id"
+            [style.left.%]="getPosition(i).x"
+            [style.top.%]="getPosition(i).y"
+            #reasonFloat
+            type="button"
+            (click)="focusReason(reason)"
+          >
+            <span class="reason-float__glow" aria-hidden="true"></span>
+            <span class="reason-float__label">{{ reason.shortLabel }}</span>
+          </button>
+        }
+      </div>
+
+      @if (focusedReason(); as reason) {
+        <div class="reason-focus" #focusPanel role="region" [attr.aria-label]="reason.shortLabel">
+          <p class="reason-focus__label cine-micro">{{ reason.shortLabel }}</p>
+          <p class="reason-focus__message cine-letter">{{ reason.longMessage }}</p>
+          <button class="reason-focus__close cine-enter-btn" type="button" (click)="focusReason(reason)">
+            Close
+          </button>
+        </div>
       }
-    </div>
-  }
+    }
+  </div>
+
+  <div class="cine-fade-edge cine-fade-edge--bottom"></div>
 </section>

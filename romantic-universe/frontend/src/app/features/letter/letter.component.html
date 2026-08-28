@@ -1,0 +1,30 @@
+<section class="letter cine-scene" #section id="letter" data-act="9">
+  <div class="letter__vignette cine-vignette"></div>
+  <div class="letter__glow" aria-hidden="true"></div>
+  <div class="cine-fade-edge cine-fade-edge--top"></div>
+
+  <div class="letter__content">
+    <p class="act-marker">Act IX</p>
+    <p class="cine-micro letter__intro" #introEl>{{ intro() }}</p>
+
+    <div class="letter__paper" #paper>
+      <div class="letter__paper-edge" aria-hidden="true"></div>
+      <div class="letter__body">
+        @for (line of lines(); track $index) {
+          <p class="letter__line cine-letter" #lineEl>{{ line }}</p>
+        }
+        @if (lines().length === 0) {
+          <p class="letter__line cine-letter letter__line--empty" #lineEl>
+            Words are hard. But you should know — you matter to me.
+          </p>
+        }
+      </div>
+    </div>
+
+    @if (myName()) {
+      <p class="letter__sign cine-whisper" #signEl>— {{ myName() }}</p>
+    }
+  </div>
+
+  <div class="cine-fade-edge cine-fade-edge--bottom"></div>
+</section>

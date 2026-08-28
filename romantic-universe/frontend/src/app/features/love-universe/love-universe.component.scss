@@ -1,0 +1,91 @@
+.universe {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
+  background: var(--void);
+  overflow: hidden;
+}
+
+.universe__canvas-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+
+  ::ng-deep canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+.universe__intro {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  pointer-events: none;
+  text-align: center;
+  padding: 2rem;
+}
+
+.universe__intro-line {
+  opacity: 0;
+  margin: 0;
+}
+
+.universe__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: clamp(2rem, 6vw, 4rem);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.universe__hint {
+  margin-bottom: 2rem;
+  opacity: 0.5;
+}
+
+.universe__scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  opacity: 0.45;
+  animation: universe-bob 3s ease-in-out infinite;
+}
+
+.universe__chevron {
+  width: 16px;
+  height: 16px;
+  border-right: 1px solid var(--ivory-ghost);
+  border-bottom: 1px solid var(--ivory-ghost);
+  transform: rotate(45deg);
+}
+
+@keyframes universe-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .universe__scroll-hint {
+    animation: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .universe__hint {
+    display: none;
+  }
+}

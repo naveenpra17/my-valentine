@@ -1,38 +1,57 @@
-<section class="flower section" id="flower">
-  <p class="flower__chapter">Chapter 10</p>
-  <h2 class="section-title">A Little Surprise</h2>
-  <p class="section-subtitle">A flower for my favourite person 🌷</p>
+<section class="flower cine-scene" #section id="flower" data-act="8c">
+  <div class="flower__vignette cine-vignette"></div>
+  <div class="cine-fade-edge cine-fade-edge--top"></div>
+
+  <header class="flower__header">
+    <p class="act-marker">Act VIII · Flower</p>
+    <h2 class="cine-statement flower__title">{{ title() }}</h2>
+    <p class="cine-whisper flower__subtitle">{{ subtitle() }}</p>
+  </header>
 
   <div class="flower__stage">
+    <div class="flower__glow" #glow aria-hidden="true"></div>
+    <div class="flower__ground" aria-hidden="true"></div>
+
     <button
       class="flower__plant"
-      [class.flower__plant--bloomed]="bloomed()"
-      (click)="bloom()"
-      [attr.aria-label]="bloomed() ? 'Flower bloomed' : 'Tap the flower to make it bloom'"
-      [disabled]="bloomed()"
+      type="button"
+      [class.flower__plant--bloomed]="phase() === 'bloomed'"
+      [class.flower__plant--growing]="phase() === 'growing'"
+      (click)="plantSeed()"
+      [disabled]="phase() !== 'seed'"
+      [attr.aria-label]="phase() === 'seed' ? 'Plant the seed' : 'Flower growing'"
     >
-      <div class="flower__stem"></div>
-      <div class="flower__leaves">
-        <span class="flower__leaf flower__leaf--left"></span>
-        <span class="flower__leaf flower__leaf--right"></span>
+      <div class="flower__seed" #seed>
+        <span class="flower__seed-body" aria-hidden="true"></span>
       </div>
-      <div class="flower__bloom">
-        <span class="flower__petal flower__petal--1"></span>
-        <span class="flower__petal flower__petal--2"></span>
-        <span class="flower__petal flower__petal--3"></span>
-        <span class="flower__petal flower__petal--4"></span>
-        <span class="flower__petal flower__petal--5"></span>
-        <span class="flower__center"></span>
+
+      <div class="flower__stem" #stem></div>
+
+      <div class="flower__leaves" #leaves>
+        <span class="flower__leaf flower__leaf--left" aria-hidden="true"></span>
+        <span class="flower__leaf flower__leaf--right" aria-hidden="true"></span>
       </div>
-      @if (!bloomed()) {
-        <span class="flower__tap-hint">tap me</span>
+
+      <div class="flower__bloom" #bloom>
+        <span class="flower__petal flower__petal--1" aria-hidden="true"></span>
+        <span class="flower__petal flower__petal--2" aria-hidden="true"></span>
+        <span class="flower__petal flower__petal--3" aria-hidden="true"></span>
+        <span class="flower__petal flower__petal--4" aria-hidden="true"></span>
+        <span class="flower__petal flower__petal--5" aria-hidden="true"></span>
+        <span class="flower__center" aria-hidden="true"></span>
+      </div>
+
+      @if (phase() === 'seed') {
+        <span class="flower__tap-hint cine-micro">plant the seed</span>
       }
     </button>
 
     @if (showMessage()) {
-      <div class="flower__message glass-card">
-        <p>{{ flowerMessage() }}</p>
+      <div class="flower__message" #messageEl>
+        <p class="cine-letter">{{ flowerMessage() }}</p>
       </div>
     }
   </div>
+
+  <div class="cine-fade-edge cine-fade-edge--bottom"></div>
 </section>
