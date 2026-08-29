@@ -39,7 +39,7 @@ export class HeroComponent implements OnDestroy {
   readonly pauseLine3 = input('But that\'s not even the best part.');
   readonly line1 = input('Some people make the world beautiful just by being in it.');
   readonly line2 = input('And somehow, I got lucky enough to find you.');
-  readonly imageUrl = input('/assets/images/hero/hero.jpg');
+  readonly imageUrl = input('/assets/images/hero/hero.png');
 
   private readonly motion = inject(MotionService);
   private readonly scenes = inject(SceneManagerService);
