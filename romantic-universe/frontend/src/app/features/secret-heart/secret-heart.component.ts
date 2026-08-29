@@ -12,6 +12,8 @@ import gsap from 'gsap';
 import { EasterEggService } from '../../core/services/easter-egg.service';
 import { MotionService } from '../../core/services/motion.service';
 import { FocusTrapService } from '../../core/services/focus-trap.service';
+import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
+import { SoundDesignService } from '../../core/services/sound-design.service';
 
 @Component({
   selector: 'app-secret-heart',
@@ -29,6 +31,8 @@ export class SecretHeartComponent implements OnDestroy {
   private readonly easterEggs = inject(EasterEggService);
   private readonly motion = inject(MotionService);
   private readonly focusTrap = inject(FocusTrapService);
+  private readonly music = inject(MusicalChoreographyService);
+  private readonly sounds = inject(SoundDesignService);
 
   readonly showModal = signal(false);
 
@@ -58,6 +62,8 @@ export class SecretHeartComponent implements OnDestroy {
   reveal(): void {
     this.easterEggs.markSecretHeartFound();
     this.showModal.set(true);
+    this.sounds.enable();
+    this.music.onSecretDiscovery();
 
     if (!this.motion.prefersReducedMotion()) {
       requestAnimationFrame(() => {

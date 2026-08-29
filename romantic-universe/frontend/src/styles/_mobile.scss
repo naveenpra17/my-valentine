@@ -17,6 +17,30 @@
   }
 }
 
+@media (max-width: 414px) {
+  :root {
+    --text-statement: clamp(1.2rem, 5.8vw, 1.75rem);
+    --text-void: clamp(1.75rem, 10vw, 2.75rem);
+  }
+
+  .cine-intimate {
+    font-size: clamp(1rem, 4.2vw, 1.15rem);
+    line-height: 1.9;
+    padding-inline: 0.5rem;
+  }
+
+  .cine-editorial-sm {
+    font-size: clamp(1.5rem, 7vw, 2.25rem);
+  }
+}
+
+@media (max-width: 360px) {
+  :root {
+    --scene-padding: 1rem;
+    --text-whisper: 0.8rem;
+  }
+}
+
 @media (max-width: 767px) {
   button,
   [role='button'],

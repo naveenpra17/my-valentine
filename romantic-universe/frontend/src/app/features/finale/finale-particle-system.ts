@@ -43,13 +43,13 @@ const KIND_SIZES: Record<ParticleKind, number> = {
 };
 
 const KIND_ALPHA: Record<ParticleKind, number> = {
-  photo: 0.95,
-  memory: 0.9,
-  quote: 0.85,
-  reason: 0.82,
-  flower: 0.88,
-  secret: 0.92,
-  'love-bomb': 0.8,
+  photo: 0.88,
+  memory: 0.82,
+  quote: 0.78,
+  reason: 0.75,
+  flower: 0.8,
+  secret: 0.72,
+  'love-bomb': 0.7,
   generic: 0.28
 };
 

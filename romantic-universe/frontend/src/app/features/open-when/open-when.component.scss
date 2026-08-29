@@ -3,7 +3,7 @@
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--void);
-  padding: var(--scene-padding) 0;
+  padding: var(--scene-padding) 0 clamp(3rem, 10vh, 5rem);
   overflow: hidden;
   transition: background 1.2s var(--ease-cine);
 
@@ -67,15 +67,12 @@
 
 .open-when__subtitle {
   margin: 0;
+  opacity: 0.65;
 }
 
 .open-when__state {
   text-align: center;
   padding: 3rem;
-
-  &--error {
-    color: var(--rose);
-  }
 }
 
 .open-when__grid {
@@ -95,13 +92,15 @@
   }
 
   &--dimmed {
-    opacity: 0.35;
+    opacity: 0.3;
+    filter: blur(1px);
   }
 }
 
 .envelope-wrap {
   perspective: 800px;
   transition: opacity 0.5s var(--ease-cine);
+  opacity: 1;
 
   &--dimmed {
     pointer-events: none;
@@ -111,9 +110,8 @@
     transform: rotateX(180deg);
   }
 
-  &--open .envelope__seal,
   &--open .envelope__label {
-    opacity: 0;
+    opacity: 0.4;
   }
 
   &--open .envelope__glow {
@@ -151,17 +149,18 @@
 
 .envelope__body {
   position: relative;
-  background: rgba(245, 240, 232, 0.05);
-  border: 1px solid rgba(245, 240, 232, 0.12);
+  background: rgba(245, 240, 232, 0.04);
+  border: 1px solid rgba(245, 240, 232, 0.08);
   border-radius: var(--radius-lg);
   padding: 2.5rem 1rem 1.5rem;
   backdrop-filter: blur(8px);
   transition: border-color var(--transition), box-shadow var(--duration-medium) var(--ease-cine);
   z-index: 1;
 
-  .envelope-wrap:hover & {
-    border-color: rgba(201, 160, 168, 0.3);
-    box-shadow: 0 0 30px var(--mood-accent, var(--glow-rose));
+  .envelope-wrap:hover &,
+  .envelope-wrap:focus-within & {
+    border-color: rgba(201, 160, 168, 0.22);
+    box-shadow: 0 0 36px var(--mood-accent, var(--glow-rose));
   }
 }
 
@@ -171,8 +170,8 @@
   left: 0;
   right: 0;
   height: 56px;
-  background: rgba(245, 240, 232, 0.08);
-  border: 1px solid rgba(245, 240, 232, 0.1);
+  background: rgba(245, 240, 232, 0.06);
+  border: 1px solid rgba(245, 240, 232, 0.08);
   border-bottom: none;
   clip-path: polygon(0 0, 50% 75%, 100% 0);
   transform-origin: top center;
@@ -181,38 +180,73 @@
 }
 
 .envelope__seal {
-  font-size: 1.75rem;
   display: block;
-  margin-bottom: 0.5rem;
-  transition: opacity 0.4s ease;
+  width: 8px;
+  height: 8px;
+  margin: 0 auto 0.75rem;
+  border-radius: 50%;
+  background: var(--champagne);
+  box-shadow: 0 0 12px rgba(196, 176, 138, 0.5);
 }
 
 .envelope__label {
   display: block;
   font-family: var(--font-display);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: var(--ivory-dim);
-  line-height: 1.45;
+  line-height: 1.5;
   transition: opacity 0.4s ease;
 }
 
+.open-when__letter-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(5, 3, 8, 0.82);
+  backdrop-filter: blur(12px);
+  animation: openWhenBackdropIn 0.8s var(--ease-cine) both;
+}
+
 .open-when__letter-panel {
-  margin-top: clamp(2rem, 5vw, 3rem);
-  padding: clamp(2rem, 5vw, 3rem);
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 6vw, 3rem);
+  pointer-events: none;
+}
+
+.open-when__letter-inner {
+  pointer-events: auto;
+  max-width: min(36ch, 92vw);
   text-align: center;
-  border: 1px solid rgba(245, 240, 232, 0.1);
-  background: rgba(5, 3, 8, 0.55);
-  backdrop-filter: blur(14px);
 }
 
 .open-when__letter-label {
   display: block;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.55;
 }
 
 .open-when__letter-message {
-  margin: 0 0 2rem;
-  text-align: left;
+  margin: 0 0 2.25rem;
+  text-align: center;
+}
+
+.open-when__close {
+  min-height: var(--touch-min, 44px);
+}
+
+@keyframes openWhenBackdropIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -221,11 +255,27 @@
   }
 
   .open-when__grid--dimmed {
-    opacity: 1;
+    opacity: 0.5;
+    filter: none;
   }
 
   .envelope-wrap--dimmed {
     opacity: 0.5;
     pointer-events: auto;
+  }
+
+  .open-when__letter-backdrop {
+    animation: none;
+  }
+}
+
+@media (max-width: 414px) {
+  .envelope {
+    min-height: 170px;
+  }
+
+  .open-when__letter-message {
+    font-size: clamp(1rem, 4.5vw, 1.15rem);
+    line-height: 1.85;
   }
 }

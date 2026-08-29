@@ -12,6 +12,7 @@ import {
 import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
+import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { HeartStateService } from '../../core/experience/heart-state.service';
 import { JourneyReplayService, JourneyReplayEvent } from '../../core/experience/journey-replay.service';
@@ -46,6 +47,7 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
   private readonly motion = inject(MotionService);
   private readonly visibility = inject(VisibilityService);
   private readonly sounds = inject(SoundDesignService);
+  private readonly music = inject(MusicalChoreographyService);
   readonly experienceState = inject(ExperienceStateService);
   private readonly heartState = inject(HeartStateService);
   private readonly journey = inject(JourneyReplayService);
@@ -117,9 +119,11 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
       );
       this.scene.setCallbacks({
         onAttachedSelect: obj => this.onObjectInspect(obj),
-        onReconstructItem: () => this.sounds.play('heart'),
+        onReconstructItem: (obj) => {
+          this.music.onHeartObjectRemembered(obj.type);
+        },
         onReconstructComplete: () => {
-          this.sounds.play('memory');
+          this.music.onReconstructionComplete();
           void this.playFinaleLines();
         },
         onPulse: () => this.sounds.play('star')
@@ -150,6 +154,7 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
 
   private async playExperience(): Promise<void> {
     this.sounds.enable();
+    this.music.enterRemembers();
     this.phase.set('intro');
     await this.playIntroSequence();
     await this.playJourneyReplay();
@@ -168,7 +173,7 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
       this.introLineIndex.set(i);
       this.overlayLine.set(lines[i]);
       this.overlaySubtitle.set('');
-      await this.pause(i === 0 ? 2400 : 2000);
+      await this.pause(i === 0 ? 2600 : 2200);
     }
     this.introLineIndex.set(-1);
     this.overlayLine.set('');
@@ -213,10 +218,10 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
     }
 
     this.sounds.play('star');
-    await this.pause(this.motion.prefersReducedMotion() ? 900 : 1600);
+    await this.pause(this.motion.prefersReducedMotion() ? 1100 : 2000);
     this.overlayLine.set('');
     this.overlaySubtitle.set('');
-    await this.pause(400);
+    await this.pause(600);
   }
 
   private async playHeartSequence(): Promise<void> {
@@ -224,9 +229,9 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
 
     this.phase.set('heart-intro');
     this.overlayLine.set('You found all these little things...');
-    await this.pause(2200);
+    await this.pause(2600);
     this.overlayLine.set('...and then you made this.');
-    await this.pause(2000);
+    await this.pause(2400);
     this.overlayLine.set('');
     this.showTitle.set(true);
 
@@ -260,7 +265,7 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
 
     for (const line of lines) {
       this.overlayLine.set(line);
-      await this.pause(2000);
+      await this.pause(2400);
     }
     this.overlayLine.set('');
     this.showTitle.set(true);

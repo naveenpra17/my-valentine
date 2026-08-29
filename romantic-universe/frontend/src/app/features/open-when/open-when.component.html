@@ -11,15 +11,12 @@
 
   <div class="open-when__content">
     <header class="open-when__header">
-      <p class="act-marker">Act VII</p>
-      <h2 class="cine-statement open-when__title">{{ title() }}</h2>
+      <h2 class="cine-statement open-when__title cine-thought">{{ title() }}</h2>
       <p class="cine-whisper open-when__subtitle">{{ subtitle() }}</p>
     </header>
 
     @if (loading()) {
       <div class="open-when__state cine-body">Preparing envelopes...</div>
-    } @else if (error()) {
-      <div class="open-when__state open-when__state--error cine-body">{{ error() }}</div>
     } @else {
       <div class="open-when__grid" [class.open-when__grid--dimmed]="openedId() !== null">
         @for (msg of messages(); track msg.id; let i = $index) {
@@ -39,23 +36,28 @@
               <div class="envelope__glow" aria-hidden="true"></div>
               <div class="envelope__flap"></div>
               <div class="envelope__body">
-                <span class="envelope__seal">💌</span>
+                <span class="envelope__seal" aria-hidden="true"></span>
                 <span class="envelope__label">{{ msg.envelopeLabel }}</span>
               </div>
             </button>
           </div>
         }
       </div>
-
-      @if (openedMessage(); as msg) {
-        <div class="open-when__letter-panel" #letterPanel role="region">
-          <p class="open-when__letter-label cine-micro">{{ msg.envelopeLabel }}</p>
-          <p class="open-when__letter-message cine-letter">{{ msg.message }}</p>
-          <button class="cine-enter-btn" type="button" (click)="closeEnvelope()">Fold it away</button>
-        </div>
-      }
     }
   </div>
+
+  @if (openedMessage(); as msg) {
+    <div class="open-when__letter-backdrop" (click)="closeEnvelope()" aria-hidden="true"></div>
+    <div class="open-when__letter-panel" #letterPanel role="dialog" aria-modal="true">
+      <div class="open-when__letter-inner">
+        <p class="open-when__letter-label cine-micro">{{ msg.envelopeLabel }}</p>
+        <p class="open-when__letter-message cine-letter cine-thought">{{ msg.message }}</p>
+        <button class="cine-enter-btn open-when__close" type="button" (click)="closeEnvelope()">
+          Fold it away
+        </button>
+      </div>
+    </div>
+  }
 
   <div class="cine-fade-edge cine-fade-edge--bottom"></div>
 </section>

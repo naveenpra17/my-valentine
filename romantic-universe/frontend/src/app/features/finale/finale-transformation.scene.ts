@@ -25,6 +25,7 @@ export type FinaleScenePhase =
 
 export interface FinaleSceneCallbacks {
   onPhase?: (phase: FinaleScenePhase) => void;
+  onConvergenceProgress?: (progress: number) => void;
   onDetachObject?: (obj: HeartObject, index: number) => void;
   onPulse?: () => void;
 }
@@ -166,6 +167,8 @@ export class FinaleTransformationScene {
 
   private timelineRunning = false;
   private disposed = false;
+  private convergeStartedAt = 0;
+  private convergeDurationMs = 3200;
 
   constructor(
     container: HTMLElement,
@@ -283,11 +286,11 @@ export class FinaleTransformationScene {
     };
 
     setPhase('hold');
-    await wait(2800);
+    await wait(3400);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('glow');
-    await this.animateGlow(2200, gen);
+    await this.animateGlow(2600, gen);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('detach');
@@ -311,18 +314,20 @@ export class FinaleTransformationScene {
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('silence');
-    await wait(1400);
+    await wait(2200);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('converge');
-    this.particles.beginConverge(this.reducedMotion ? 1.8 : 2.8);
-    await wait(5200);
+    this.convergeStartedAt = performance.now();
+    this.convergeDurationMs = this.reducedMotion ? 1800 : 3200;
+    this.particles.beginConverge(this.reducedMotion ? 1.8 : 3.2);
+    await wait(5800);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('giant');
     this.targetCameraZ = 4.2;
-    await wait(1800);
-    await this.pulseHeart(2, gen);
+    await wait(3200);
+    await this.pulseHeart(3, gen);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('complete');
@@ -529,6 +534,14 @@ export class FinaleTransformationScene {
 
     this.stars.rotation.y = elapsed * 0.006;
     this.particles.update(dt, this.phase === 'silence' ? 0.15 : 1);
+
+    if (this.phase === 'converge' && this.convergeStartedAt > 0) {
+      const progress = Math.min(
+        1,
+        (performance.now() - this.convergeStartedAt) / this.convergeDurationMs
+      );
+      this.callbacks.onConvergenceProgress?.(progress);
+    }
 
     this.renderer.render(this.scene, this.camera);
   };

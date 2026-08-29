@@ -5,7 +5,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--void);
+  background:
+    radial-gradient(1px 1px at 18% 22%, rgba(245, 240, 232, 0.25), transparent),
+    radial-gradient(1px 1px at 72% 38%, rgba(201, 160, 168, 0.18), transparent),
+    radial-gradient(1px 1px at 48% 78%, rgba(196, 176, 138, 0.15), transparent),
+    var(--void);
   overflow: hidden;
 
   &--exiting {

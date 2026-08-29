@@ -10,9 +10,11 @@
 
   <div class="void-loader">
 
+    <div class="void-loader__stars" aria-hidden="true"></div>
+
     <div class="void-loader__pulse"></div>
 
-    <p class="void-loader__text cine-whisper">Preparing something for you...</p>
+    <p class="void-loader__text cine-whisper">A little light in the dark...</p>
 
   </div>
 
@@ -120,7 +122,7 @@
 
 
 
-        <section class="experience-beat experience-beat--spacer" aria-hidden="true"></section>
+        <section class="experience-beat experience-beat--spacer" id="universe-discovery-zone" aria-hidden="true"></section>
 
 
 
@@ -158,13 +160,13 @@
 
 
 
-        <section class="experience-beat" appChapterVisit="8">
+        <section class="experience-beat experience-beat--open-when" appChapterVisit="9">
 
-          <app-our-little-heart
+          <app-open-when
 
-            [title]="config.get('HEART_TITLE', 'Our Little Heart')"
+            [title]="config.get('OPEN_WHEN_TITLE', 'Open When...')"
 
-            [subtitle]="config.get('HEART_SUBTITLE', 'Choose something for our heart.')"
+            [subtitle]="config.get('OPEN_WHEN_SUBTITLE', 'For the quiet moments')"
 
           />
 
@@ -172,13 +174,13 @@
 
 
 
-        <section class="experience-beat" appChapterVisit="9">
+        <section class="experience-beat experience-beat--heart" appChapterVisit="8">
 
-          <app-open-when
+          <app-our-little-heart
 
-            [title]="config.get('OPEN_WHEN_TITLE', 'Open When...')"
+            [title]="config.get('HEART_TITLE', 'Our Little Heart')"
 
-            [subtitle]="config.get('OPEN_WHEN_SUBTITLE', 'For the quiet moments')"
+            [subtitle]="config.get('HEART_SUBTITLE', 'Choose something for our heart.')"
 
           />
 

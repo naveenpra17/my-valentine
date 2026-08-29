@@ -152,7 +152,8 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   aspect-ratio: 3 / 4;
-  border: 1px solid rgba(245, 240, 232, 0.1);
+  border: none;
+  box-shadow: 0 0 48px rgba(201, 160, 168, 0.1);
   will-change: transform;
 
   img {

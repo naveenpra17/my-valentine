@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import gsap from 'gsap';
 import { MotionService } from '../../core/services/motion.service';
+import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 
 @Component({
   selector: 'app-opening',
@@ -33,6 +34,7 @@ export class OpeningComponent implements OnDestroy {
   readonly enter = output<void>();
 
   private readonly motion = inject(MotionService);
+  private readonly music = inject(MusicalChoreographyService);
   private timeline?: gsap.core.Timeline;
 
   readonly exiting = signal(false);
@@ -40,7 +42,10 @@ export class OpeningComponent implements OnDestroy {
   readonly invitationVisible = signal(false);
 
   constructor() {
-    afterNextRender(() => this.runSequence());
+    afterNextRender(() => {
+      this.music.enterOpening();
+      this.runSequence();
+    });
   }
 
   ngOnDestroy(): void {
@@ -90,10 +95,10 @@ export class OpeningComponent implements OnDestroy {
     });
 
     lines.forEach((text, index) => {
-      const pause = index === 0 ? 0 : '+=1.8';
+      const pause = index === 0 ? 0 : '+=2.2';
       this.timeline!.add(() => this.showLine(wrap, text, index), pause);
       if (index < lines.length - 1) {
-        this.timeline!.add(() => this.hideLine(wrap), '+=1.8');
+        this.timeline!.add(() => this.hideLine(wrap), '+=2.2');
       }
     });
   }

@@ -52,16 +52,16 @@ import { SceneMomentService } from '../../../core/cinematic/scene-moment.service
     .discovery-scene__backdrop {
       position: absolute;
       inset: 0;
-      background: rgba(5, 3, 8, 0.82);
-      backdrop-filter: blur(10px);
+      background: rgba(5, 3, 8, 0.9);
+      backdrop-filter: blur(14px);
     }
 
     .discovery-scene__content {
       position: relative;
       z-index: 1;
-      max-width: min(520px, 94vw);
+      max-width: min(480px, 92vw);
       text-align: center;
-      animation: discoveryIn 0.9s ease both;
+      animation: discoveryIn 1.4s var(--ease-cine, ease) both;
     }
 
     .discovery-scene__subtitle {
@@ -100,7 +100,7 @@ import { SceneMomentService } from '../../../core/cinematic/scene-moment.service
     }
 
     @keyframes discoveryIn {
-      from { opacity: 0; transform: translateY(20px); filter: blur(8px); }
+      from { opacity: 0; transform: translateY(18px); filter: blur(10px); }
       to { opacity: 1; transform: translateY(0); filter: blur(0); }
     }
 

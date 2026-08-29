@@ -13,6 +13,7 @@ import {
 import gsap from 'gsap';
 import { MotionService } from '../../core/services/motion.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
+import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 
 @Component({
   selector: 'app-letter',
@@ -33,6 +34,7 @@ export class LetterComponent implements OnDestroy {
 
   private readonly motion = inject(MotionService);
   private readonly scenes = inject(SceneManagerService);
+  private readonly music = inject(MusicalChoreographyService);
   private observer?: IntersectionObserver;
   private timeline?: gsap.core.Timeline;
   private hasPlayed = false;
@@ -82,6 +84,7 @@ export class LetterComponent implements OnDestroy {
         this.inView = entry.isIntersecting;
         if (entry.isIntersecting) {
           this.scenes.setScene('letter');
+          this.music.beginLetter();
           this.tryPlayReveal();
         }
       },

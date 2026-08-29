@@ -8,12 +8,14 @@ import {
   effect,
   inject,
   input,
+  NgZone,
   signal
 } from '@angular/core';
 import gsap from 'gsap';
 import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
+import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { HeartStateService } from '../../core/experience/heart-state.service';
 import { HeartShareService } from '../../core/services/heart-share.service';
@@ -49,11 +51,13 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   private readonly motion = inject(MotionService);
   private readonly visibility = inject(VisibilityService);
   private readonly sounds = inject(SoundDesignService);
+  private readonly music = inject(MusicalChoreographyService);
   readonly experienceState = inject(ExperienceStateService);
   private readonly heartState = inject(HeartStateService);
   private readonly heartShare = inject(HeartShareService);
   private readonly scenes = inject(SceneManagerService);
   private readonly camera = inject(CameraDirectorService);
+  private readonly ngZone = inject(NgZone);
 
   private scene?: OurLittleHeartScene;
   private observer?: IntersectionObserver;
@@ -128,10 +132,23 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   }
 
   beginHeart(): void {
+    this.experienceState.syncHeartPoolFromDiscoveries();
     this.showIntro.set(false);
+    this.scene?.setVisible(true);
     this.scene?.beginCreation();
+    this.phase.set(this.motion.prefersReducedMotion() ? 'creating' : 'entering');
     this.guidance.set(this.poolObjects().length ? 'choose' : 'empty');
+    this.sounds.enable();
     sessionStorage.setItem(INTRO_KEY, '1');
+
+    if (!this.motion.prefersReducedMotion() && this.introRef?.nativeElement) {
+      gsap.to(this.introRef.nativeElement, {
+        opacity: 0,
+        y: -12,
+        duration: 0.6,
+        ease: 'power2.in'
+      });
+    }
   }
 
   async attachFromPool(obj: HeartObject): Promise<void> {
@@ -147,7 +164,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
       await this.scene?.flyAttach(placed);
       this.experienceState.attachHeartObject(placed);
       this.heartShare.clearPreviewCache();
-      this.sounds.play('heart');
+      this.music.onHeartAttach(obj.type);
 
       const isFirst = !sessionStorage.getItem(FIRST_ATTACH_KEY);
       if (isFirst) {
@@ -189,13 +206,48 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   }
 
   finishHeart(): void {
+    if (this.phase() === 'complete') return;
     this.showCompletion.set(true);
     this.guidance.set('done');
     this.scene?.completeCreation();
+    this.music.onHeartComplete();
   }
 
   continueJourney(): void {
-    this.sectionRef.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    if (this.phase() !== 'complete') {
+      this.finishHeart();
+    }
+
+    this.showCompletion.set(false);
+    this.sounds.enable();
+
+    const flower = document.getElementById('flower');
+    const nextBeat = this.sectionRef.nativeElement.closest('.experience-beat')
+      ?.nextElementSibling as HTMLElement | null;
+    const target = flower ?? nextBeat;
+
+    if (target) {
+      target.scrollIntoView({
+        behavior: this.motion.prefersReducedMotion() ? 'auto' : 'smooth',
+        block: 'start'
+      });
+      return;
+    }
+
+    window.scrollBy({
+      top: window.innerHeight,
+      behavior: this.motion.prefersReducedMotion() ? 'auto' : 'smooth'
+    });
+  }
+
+  goFindDiscoveries(): void {
+    this.experienceState.syncHeartPoolFromDiscoveries();
+    const zone = document.getElementById('universe-discovery-zone');
+    if (zone) {
+      zone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   private updateGuidance(): void {
@@ -208,15 +260,17 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
     } else if (count >= 3) {
       this.guidance.set('rich');
     }
-    if (this.canComplete()) {
-      this.showCompletion.set(true);
+    if (this.canComplete() && this.phase() !== 'complete') {
+      this.finishHeart();
     }
   }
 
   private async playIntroSequence(): Promise<void> {
     if (this.introPlayed || sessionStorage.getItem(INTRO_KEY)) {
       this.showIntro.set(false);
+      this.scene?.setVisible(true);
       this.scene?.beginCreation();
+      this.phase.set(this.motion.prefersReducedMotion() ? 'creating' : 'entering');
       this.guidance.set(this.poolObjects().length ? 'choose' : 'empty');
       return;
     }
@@ -258,7 +312,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
       this.scene.setCallbacks({
         onPoolSelect: obj => void this.attachFromPool(obj),
         onAttachedSelect: obj => this.onAttachedTap(obj),
-        onPhaseChange: p => this.phase.set(p),
+        onPhaseChange: p => this.ngZone.run(() => this.phase.set(p)),
         onPulse: () => this.sounds.play('memory')
       });
       this.scene.init();
@@ -273,6 +327,9 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
           this.scene?.setVisible(this.inView && this.visibility.pageVisible());
           if (entry.isIntersecting) {
             this.scenes.setScene('heart');
+            this.music.enterHeart();
+            this.experienceState.syncHeartPoolFromDiscoveries();
+            void this.scene?.setPoolObjects(this.poolObjects());
             void this.camera.focusHeart(1600);
             void this.playIntroSequence();
           }

@@ -86,6 +86,9 @@
 
 @media (max-width: 767px) {
   .universe__hint {
-    display: none;
+    display: block;
+    opacity: 0.7;
+    padding: 0 1rem;
+    text-align: center;
   }
 }

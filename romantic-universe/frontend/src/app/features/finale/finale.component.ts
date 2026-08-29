@@ -17,6 +17,7 @@ import { VisibilityService } from '../../core/services/visibility.service';
 import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
 import { HeartStateService } from '../../core/experience/heart-state.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
+import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
 import { HeartShareOfferComponent } from '../../shared/components/heart-share-offer/heart-share-offer.component';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
@@ -67,6 +68,7 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
   private readonly heartState = inject(HeartStateService);
   private readonly controller = inject(ExperienceControllerService);
   private readonly sounds = inject(SoundDesignService);
+  private readonly music = inject(MusicalChoreographyService);
   private readonly scenes = inject(SceneManagerService);
   private readonly cdr = inject(ChangeDetectorRef);
   private scene?: FinaleTransformationScene;
@@ -139,7 +141,8 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
     this.secretDone.set(true);
     this.clearSecretAutoTimeout();
     this.sounds.enable();
-    this.sounds.play('finale');
+    this.music.onSecretReveal();
+    this.music.onTinyHeart();
 
     this.showSecret.set(false);
     this.overlayLine.set('');
@@ -280,6 +283,7 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
 
   onShareClosed(): void {
     this.showShareOffer.set(false);
+    this.music.endExperience();
   }
 
   private waitForContainerAndBootstrap(attempts = 0): void {
@@ -312,6 +316,7 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
       );
       this.scene.setCallbacks({
         onPhase: phase => this.onScenePhase(phase),
+        onConvergenceProgress: progress => this.music.onConvergenceProgress(progress),
         onDetachObject: () => {
           if (!this.destroyed) this.sounds.play('star');
         },
@@ -382,14 +387,9 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
 
   private async onScenePhase(phase: FinaleScenePhase): Promise<void> {
     if (this.destroyed) return;
-    if (phase === 'glow') {
-      this.sounds.play('memory');
-    }
-    if (phase === 'spread') {
-      this.sounds.play('photo');
-    }
-    if (phase === 'converge') {
-      this.sounds.play('star');
+    this.music.onFinalePhase(phase);
+    if (phase === 'giant') {
+      this.music.giantHeartReveal();
     }
     if (phase === 'complete') {
       await this.playFinalMessages();
@@ -405,7 +405,7 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
       if (!this.isFinaleActive(gen)) return;
       this.lineIndex.set(i);
       this.overlayLine.set(lines[i]);
-      await this.pause(2200, gen);
+      await this.pause(2600, gen);
     }
     if (!this.isFinaleActive(gen)) return;
     this.lineIndex.set(-1);
@@ -413,22 +413,25 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
 
     this.textPhase.set('message');
     this.showMessage.set(true);
-    await this.pause(3200, gen);
+    this.music.onHerName();
+    await this.pause(3800, gen);
     if (!this.isFinaleActive(gen)) return;
 
     this.textPhase.set('signature');
     this.showSignature.set(true);
-    await this.pause(2800, gen);
+    this.music.onFinalMessage();
+    await this.pause(3200, gen);
     if (!this.isFinaleActive(gen)) return;
 
     this.textPhase.set('fade');
     this.showMessage.set(false);
     this.showSignature.set(false);
-    await this.pause(2000, gen);
+    await this.pause(2400, gen);
     if (!this.isFinaleActive(gen)) return;
 
     this.textPhase.set('secret');
     this.showSecret.set(true);
+    this.music.beginSecret();
     this.scheduleSecretAutoTimeout();
   }
 

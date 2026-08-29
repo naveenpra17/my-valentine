@@ -15,6 +15,7 @@ import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
 import { CameraDirectorService } from '../../core/cinematic/camera-director.service';
 import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
+import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { ExperienceFlowService } from '../../core/experience/experience-flow.service';
 import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
@@ -42,6 +43,7 @@ export class LoveUniverseComponent implements OnDestroy {
   private readonly experienceFlow = inject(ExperienceFlowService);
   private readonly cameraDirector = inject(CameraDirectorService);
   private readonly controller = inject(ExperienceControllerService);
+  private readonly music = inject(MusicalChoreographyService);
 
   private scene?: LoveUniverseScene;
   private observer?: IntersectionObserver;
@@ -78,6 +80,7 @@ export class LoveUniverseComponent implements OnDestroy {
     });
     this.scene.playEntryFromVoid();
     this.scene.start();
+    this.music.enterUniverse();
 
     this.cameraDirector.register({
       approach: (t, d) => this.scene!.approach(t, d),
@@ -99,7 +102,15 @@ export class LoveUniverseComponent implements OnDestroy {
       );
       this.photosLoaded.set(true);
     } catch {
-      // Universe works without photos
+      await this.scene.loadPhotos([
+        { id: 1, imageUrl: '/assets/images/gallery/photo-1.jpg', title: 'Us' },
+        { id: 2, imageUrl: '/assets/images/gallery/photo-2.jpg', title: 'Sunset' },
+        { id: 3, imageUrl: '/assets/images/gallery/photo-3.jpg', title: 'Adventure' },
+        { id: 4, imageUrl: '/assets/images/gallery/photo-4.jpg', title: 'Candid' },
+        { id: 5, imageUrl: '/assets/images/gallery/photo-5.jpg', title: 'Together' },
+        { id: 6, imageUrl: '/assets/images/gallery/photo-6.jpg', title: 'Smile' }
+      ]);
+      this.photosLoaded.set(true);
     }
 
     this.observer = new IntersectionObserver(
@@ -132,22 +143,22 @@ export class LoveUniverseComponent implements OnDestroy {
 
     gsap.fromTo(el.children, {
       opacity: 0,
-      y: 20,
+      y: 14,
       filter: 'blur(8px)'
     }, {
       opacity: 1,
       y: 0,
       filter: 'blur(0px)',
-      duration: 1.4,
-      stagger: 1.2,
+      duration: 1.6,
+      stagger: 1.6,
       ease: 'power3.out'
     });
 
     gsap.to(el, {
       opacity: 0,
-      y: -12,
-      delay: 5,
-      duration: 1.2,
+      y: -10,
+      delay: 6.2,
+      duration: 1.4,
       ease: 'power2.in',
       onComplete: () => this.introVisible.set(false)
     });

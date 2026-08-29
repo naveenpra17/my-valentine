@@ -5,6 +5,7 @@ import { CameraDirectorService } from '../cinematic/camera-director.service';
 import { SceneMomentService } from '../cinematic/scene-moment.service';
 import { ExperienceStateService } from './experience-state.service';
 import { SoundDesignService } from '../services/sound-design.service';
+import { MusicalChoreographyService } from '../audio/musical-choreography.service';
 import { MotionService } from '../services/motion.service';
 import { Memory, Photo, Reason } from '../models';
 
@@ -15,6 +16,7 @@ export class ExperienceFlowService {
   private readonly moments = inject(SceneMomentService);
   private readonly state = inject(ExperienceStateService);
   private readonly sounds = inject(SoundDesignService);
+  private readonly music = inject(MusicalChoreographyService);
   private readonly motion = inject(MotionService);
 
   private memoriesCache: Memory[] | null = null;
@@ -31,7 +33,7 @@ export class ExperienceFlowService {
       if (!photo) return;
 
       this.sounds.enable();
-      this.sounds.play('photo');
+      this.music.onPhoto();
 
       if (!this.motion.prefersReducedMotion()) {
         await this.camera.focusPhoto(photoId, 1400);
@@ -73,7 +75,7 @@ export class ExperienceFlowService {
     this.busy = true;
     try {
       this.sounds.enable();
-      this.sounds.play('star');
+      this.music.onReason();
 
       await this.moments.transitionIn({
         kind: 'reason',
@@ -113,7 +115,7 @@ export class ExperienceFlowService {
     }
 
     if (!this.state.isMemoryDiscovered(memory.id)) {
-      this.sounds.play('memory');
+      this.music.onMemory();
       this.state.discoverMemory(memory.id, memory.title, memory.imageUrl);
     }
 
@@ -124,6 +126,8 @@ export class ExperienceFlowService {
     }
 
     await this.moments.transitionOut();
+
+    this.music.onMemoryExit();
 
     const discoveredMemories = this.state.discoveredMemories().size;
     if (discoveredMemories === 1 || discoveredMemories === 3) {

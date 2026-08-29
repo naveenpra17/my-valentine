@@ -79,10 +79,10 @@
   margin-left: -110px;
   margin-top: -150px;
   padding: 0.75rem 0.75rem 2.5rem;
-  background: rgba(245, 240, 232, 0.06);
-  border: 1px solid rgba(245, 240, 232, 0.12);
+  background: rgba(245, 240, 232, 0.04);
+  border: 1px solid rgba(245, 240, 232, 0.06);
   border-radius: var(--radius-lg);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.35);
   cursor: pointer;
   transition: box-shadow var(--transition), filter var(--transition);
   backface-visibility: hidden;

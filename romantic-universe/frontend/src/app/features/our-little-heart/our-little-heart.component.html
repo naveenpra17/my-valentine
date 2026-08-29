@@ -40,9 +40,24 @@
   }
 
   @if (!showIntro() && phase() !== 'intro') {
-    <p class="little-heart__guidance cine-discovery-hint" #guidanceEl aria-live="polite">
-      {{ guidanceText() }}
-    </p>
+    <div class="little-heart__guidance-wrap" #guidanceEl>
+      <p class="little-heart__guidance cine-discovery-hint" aria-live="polite">
+        {{ guidanceText() }}
+      </p>
+      @if (guidance() === 'empty') {
+        <div class="little-heart__empty-help">
+          <p class="little-heart__guidance-steps cine-whisper">
+            1. Scroll up into the starfield<br />
+            2. Tap a floating photograph<br />
+            3. Or catch hearts in Love Bomb<br />
+            4. Come back here to build the heart
+          </p>
+          <button class="cine-enter-btn little-heart__find-btn" type="button" (click)="goFindDiscoveries()">
+            Take me to the stars
+          </button>
+        </div>
+      }
+    </div>
   }
 
   @if (selectedObject(); as obj) {

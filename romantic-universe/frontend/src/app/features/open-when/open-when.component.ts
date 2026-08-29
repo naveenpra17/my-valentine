@@ -18,8 +18,10 @@ import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
 import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
+import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { OpenWhenMessage } from '../../core/models';
+import { OPEN_WHEN_FALLBACK } from './open-when-fallback';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -46,6 +48,7 @@ export class OpenWhenComponent implements OnInit, OnDestroy {
   private readonly motion = inject(MotionService);
   private readonly scenes = inject(SceneManagerService);
   private readonly sounds = inject(SoundDesignService);
+  private readonly music = inject(MusicalChoreographyService);
   private readonly controller = inject(ExperienceControllerService);
   private observer?: IntersectionObserver;
   private scrollTriggers: ScrollTrigger[] = [];
@@ -70,9 +73,10 @@ export class OpenWhenComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     try {
       const data = await firstValueFrom(this.api.getOpenWhenMessages());
-      this.messages.set(data);
+      this.messages.set(data.length > 0 ? data : OPEN_WHEN_FALLBACK);
     } catch {
-      this.error.set('Could not load messages.');
+      this.messages.set(OPEN_WHEN_FALLBACK);
+      this.error.set(null);
     } finally {
       this.loading.set(false);
       setTimeout(() => {
@@ -99,17 +103,30 @@ export class OpenWhenComponent implements OnInit, OnDestroy {
     }
 
     this.sounds.enable();
-    this.sounds.play('envelope');
+    this.music.onEnvelope();
     this.controller.openEnvelope(msg.id);
 
     const mood = this.getMood(index);
     this.activeMood.set(mood);
     this.openedId.set(msg.id);
     this.shiftMood(mood);
-    this.revealLetter();
+    setTimeout(() => this.revealLetter(), 0);
   }
 
   closeEnvelope(): void {
+    const panel = this.letterPanelRef?.nativeElement;
+    if (panel && !this.motion.prefersReducedMotion()) {
+      gsap.to(panel, {
+        opacity: 0,
+        y: 20,
+        duration: 0.5,
+        ease: 'power2.in',
+        onComplete: () => this.openedId.set(null)
+      });
+      this.shiftMood('warm');
+      return;
+    }
+
     this.openedId.set(null);
     this.shiftMood('warm');
   }
@@ -131,19 +148,28 @@ export class OpenWhenComponent implements OnInit, OnDestroy {
 
   private revealLetter(): void {
     const panel = this.letterPanelRef?.nativeElement;
-    if (!panel || this.motion.prefersReducedMotion()) return;
+    if (!panel) return;
 
-    gsap.fromTo(panel, {
-      opacity: 0,
-      y: 40,
-      filter: 'blur(10px)'
-    }, {
-      opacity: 1,
-      y: 0,
-      filter: 'blur(0px)',
-      duration: 1,
-      ease: 'power3.out'
-    });
+    if (this.motion.prefersReducedMotion()) {
+      gsap.set(panel, { opacity: 1, y: 0, filter: 'blur(0px)' });
+      return;
+    }
+
+    gsap.fromTo(
+      panel,
+      {
+        opacity: 0,
+        y: 24,
+        filter: 'blur(10px)'
+      },
+      {
+        opacity: 1,
+        y: 0,
+        filter: 'blur(0px)',
+        duration: 1.1,
+        ease: 'power3.out'
+      }
+    );
   }
 
   private initSceneObserver(): void {
@@ -179,20 +205,25 @@ export class OpenWhenComponent implements OnInit, OnDestroy {
 
     const envelopes = this.envelopeRefs?.toArray() ?? [];
     envelopes.forEach((ref, i) => {
+      gsap.set(ref.nativeElement, { opacity: 1, y: 0, rotate: 0 });
+
       const st = gsap.from(ref.nativeElement, {
         scrollTrigger: {
-          trigger: this.sectionRef.nativeElement,
-          start: 'top 75%',
-          toggleActions: 'play none none reverse'
+          trigger: ref.nativeElement,
+          start: 'top 92%',
+          once: true
         },
         opacity: 0,
-        y: 40,
+        y: 28,
         rotate: i % 2 === 0 ? -2 : 2,
-        duration: 0.8,
-        delay: i * 0.1,
-        ease: 'power3.out'
+        duration: 0.9,
+        delay: i * 0.08,
+        ease: 'power3.out',
+        immediateRender: false
       }).scrollTrigger;
       if (st) this.scrollTriggers.push(st);
     });
+
+    ScrollTrigger.refresh();
   }
 }

@@ -1,5 +1,5 @@
-import { Component, inject, input, OnInit } from '@angular/core';
-import { AudioService } from '../../core/services/audio.service';
+import { Component, inject, input } from '@angular/core';
+import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 
 @Component({
   selector: 'app-music-player',
@@ -7,26 +7,18 @@ import { AudioService } from '../../core/services/audio.service';
   templateUrl: './music-player.component.html',
   styleUrl: './music-player.component.scss'
 })
-export class MusicPlayerComponent implements OnInit {
+export class MusicPlayerComponent {
+  /** Legacy config key — procedural layers are used; file optional for future stems. */
   readonly musicUrl = input('/assets/audio/background.mp3');
 
-  readonly audio = inject(AudioService);
-  expanded = false;
+  readonly music = inject(MusicalChoreographyService);
 
-  ngOnInit(): void {
-    this.audio.init(this.musicUrl());
-  }
-
-  togglePlay(): void {
-    this.audio.toggle();
-  }
-
-  toggleMute(): void {
-    this.audio.toggleMute();
-  }
-
-  onVolumeChange(event: Event): void {
-    const value = parseFloat((event.target as HTMLInputElement).value);
-    this.audio.setVolume(value);
+  onSoundToggle(): void {
+    if (!this.music.enabled()) {
+      this.music.enable();
+      this.music.onFirstInteraction();
+      return;
+    }
+    this.music.toggleMute();
   }
 }

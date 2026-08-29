@@ -1,17 +1,17 @@
+# Repo-root Netlify config (GitHub: naveenpra17/valentine)
 [build]
+  base    = "romantic-universe/frontend"
   command = "npm ci && npm run build"
-  publish = "dist/frontend/browser"
+  publish = "romantic-universe/frontend/dist/frontend/browser"
 
 [build.environment]
   NODE_VERSION = "20"
 
-# SPA fallback — all routes serve index.html
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
   status = 200
 
-# Cache static assets
 [[headers]]
   for = "/assets/*"
   [headers.values]

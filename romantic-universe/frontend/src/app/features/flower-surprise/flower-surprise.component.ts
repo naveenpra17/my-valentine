@@ -13,6 +13,7 @@ import { MotionService } from '../../core/services/motion.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
+import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 
 @Component({
   selector: 'app-flower-surprise',
@@ -37,6 +38,7 @@ export class FlowerSurpriseComponent implements OnDestroy {
   private readonly scenes = inject(SceneManagerService);
   private readonly experienceState = inject(ExperienceStateService);
   private readonly sounds = inject(SoundDesignService);
+  private readonly music = inject(MusicalChoreographyService);
   private observer?: IntersectionObserver;
   private bloomTimeline?: gsap.core.Timeline;
 
@@ -127,7 +129,7 @@ export class FlowerSurpriseComponent implements OnDestroy {
 
   private registerFlowerDiscovery(): void {
     this.sounds.enable();
-    this.sounds.play('heart');
+    this.music.onFlower();
     this.experienceState.discoverFlower(1, this.flowerMessage());
   }
 

@@ -461,6 +461,8 @@ export class OurLittleHeartScene {
   }
 
   beginCreation(): void {
+    this.poolGroup.visible = this.mode === 'create';
+    this.heartRoot.visible = true;
     this.setPhase('entering');
     if (this.reducedMotion) {
       this.heartRoot.scale.setScalar(1);
@@ -531,13 +533,13 @@ export class OurLittleHeartScene {
   /** Reconstruct heart objects one at a time from saved state (read-only). */
   async reconstructSequential(objects: HeartObject[]): Promise<void> {
     this.prepareReconstruction();
-    await this.pause(800);
+    await this.pause(1200);
 
     for (let i = 0; i < objects.length; i++) {
       const obj = objects[i];
       await this.flyReconstructAttach(obj);
       this.callbacks.onReconstructItem?.(obj, i);
-      await this.pause(this.reducedMotion ? 200 : 500);
+      await this.pause(this.reducedMotion ? 350 : 750);
     }
 
     this.setPhase('complete');
@@ -566,7 +568,7 @@ export class OurLittleHeartScene {
     group.scale.setScalar(this.reducedMotion ? (obj.scale ?? 1) * 0.85 : 0.05);
     this.attachedGroup.add(group);
 
-    const duration = this.reducedMotion ? 400 : 1000;
+    const duration = this.reducedMotion ? 450 : 1200;
 
     await new Promise<void>(resolve => {
       const trail = this.reducedMotion ? undefined : this.createTrail(from, target);
@@ -936,18 +938,25 @@ export class OurLittleHeartScene {
   private animate = (): void => {
     if (!this.running) return;
     this.animationId = requestAnimationFrame(this.animate);
-    if (!this.visible) return;
 
     const elapsed = this.clock.getElapsedTime();
     const dt = this.clock.getDelta();
     const slow = this.timeScale;
 
+    // Heart entry animation must run even when off-screen (e.g. after "Let's make one")
     if (this.phase === 'entering' && !this.reducedMotion) {
-      this.introProgress = Math.min(1, this.introProgress + dt * 0.45);
+      this.introProgress = Math.min(1, this.introProgress + dt * 0.55);
       const eased = 1 - Math.pow(1 - this.introProgress, 3);
       this.heartRoot.scale.setScalar(THREE.MathUtils.lerp(0.15, 1, eased));
       this.targetCameraZ = THREE.MathUtils.lerp(8.5, 5.8, eased);
       if (this.introProgress >= 1) this.setPhase('creating');
+    }
+
+    if (!this.visible) {
+      if (this.phase === 'entering' || this.phase === 'creating') {
+        this.renderer.render(this.scene, this.camera);
+      }
+      return;
     }
 
     this.cameraZ += (this.targetCameraZ - this.cameraZ) * 0.08;

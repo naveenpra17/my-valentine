@@ -16,6 +16,7 @@ import { MotionService } from '../../core/services/motion.service';
 import { LiveAnnouncerService } from '../../core/services/live-announcer.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
+import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { LoveBomb } from '../../core/models';
 
@@ -50,6 +51,7 @@ export class LoveBombComponent implements OnDestroy, AfterViewInit {
   private readonly announcer = inject(LiveAnnouncerService);
   private readonly experienceState = inject(ExperienceStateService);
   private readonly sounds = inject(SoundDesignService);
+  private readonly music = inject(MusicalChoreographyService);
   private readonly scenes = inject(SceneManagerService);
 
   readonly hearts = signal<GameHeart[]>([]);
@@ -148,7 +150,7 @@ export class LoveBombComponent implements OnDestroy, AfterViewInit {
 
     this.removingIds.add(heart.id);
     this.sounds.enable();
-    this.sounds.play('love-bomb');
+    this.music.onLoveBomb();
     this.hearts.update(list => list.filter(h => h.id !== heart.id));
 
     const arena = this.arenaRef?.nativeElement;

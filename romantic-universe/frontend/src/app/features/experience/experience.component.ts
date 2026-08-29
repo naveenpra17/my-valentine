@@ -23,6 +23,7 @@ import { ExperienceEngineService } from '../../core/cinematic/experience-engine.
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 
 import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
+import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 
@@ -168,6 +169,8 @@ export class ExperienceComponent implements OnDestroy {
 
   readonly scenes = inject(SceneManagerService);
 
+  private readonly music = inject(MusicalChoreographyService);
+
 
 
   readonly showMain = signal(this.session.hasEntered());
@@ -230,6 +233,8 @@ export class ExperienceComponent implements OnDestroy {
 
     if (this.transitioning()) return;
 
+    this.music.onFirstInteraction();
+
     this.transitioning.set(true);
 
     this.burstActive.set(true);
@@ -255,6 +260,8 @@ export class ExperienceComponent implements OnDestroy {
     this.transitioning.set(false);
 
     this.scenes.setScene('universe');
+
+    this.music.enterUniverse();
 
   }
 

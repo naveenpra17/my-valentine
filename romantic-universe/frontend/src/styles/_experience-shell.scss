@@ -20,7 +20,7 @@
 }
 
 .experience-beat {
-  pointer-events: auto;
+  pointer-events: none;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
@@ -34,10 +34,14 @@
     rgba(5, 3, 8, 0.88) 72%,
     rgba(5, 3, 8, 0.95) 100%
   );
+
+  > * {
+    pointer-events: auto;
+  }
 }
 
 .experience-beat--spacer {
-  min-height: 55vh;
+  min-height: 70vh;
   background: transparent;
   pointer-events: none;
 }
@@ -50,11 +54,48 @@
     rgba(5, 3, 8, 0.25) 40%,
     rgba(5, 3, 8, 0.75) 100%
   );
+
+  > app-hero {
+    pointer-events: auto;
+    max-width: 100%;
+  }
 }
 
 .experience-beat--letter,
 .experience-beat--finale {
   background: rgba(5, 3, 8, 0.96);
+}
+
+.experience-beat--open-when {
+  min-height: auto;
+  justify-content: flex-start;
+  padding-bottom: 0;
+  pointer-events: auto;
+  background: linear-gradient(
+    180deg,
+    rgba(5, 3, 8, 0.92) 0%,
+    rgba(5, 3, 8, 0.96) 70%,
+    rgba(5, 3, 8, 0.88) 100%
+  );
+}
+
+.experience-beat--heart {
+  min-height: 100vh;
+  min-height: 100dvh;
+  justify-content: center;
+  padding-bottom: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(5, 3, 8, 0.88) 0%,
+    rgba(5, 3, 8, 0.45) 28%,
+    rgba(5, 3, 8, 0.45) 72%,
+    rgba(5, 3, 8, 0.92) 100%
+  );
+  pointer-events: auto;
+
+  > * {
+    pointer-events: auto;
+  }
 }
 
 .experience-fallback {
@@ -67,6 +108,8 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .experience-chrome {
@@ -86,7 +129,7 @@
 }
 
 .experience-chrome__secret {
-  opacity: 0.12;
+  opacity: 0.08;
   transition: opacity 0.4s ease;
 
   &:hover,

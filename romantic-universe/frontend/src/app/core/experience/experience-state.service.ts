@@ -224,10 +224,16 @@ export class ExperienceStateService {
     this.constellationStars.update(stars => [...stars, star]);
   }
 
-  private addToHeartPool(object: HeartObject): void {
+  addToHeartPool(object: HeartObject): void {
     const key = `${object.type}-${object.referenceId}`;
     if (this.heartPool().some(o => `${o.type}-${o.referenceId}` === key)) return;
     this.heartPool.update(list => [...list, object]);
+  }
+
+  /** Re-sync pool from discoveries (e.g. after scrolling back to heart). */
+  syncHeartPoolFromDiscoveries(): void {
+    this.rebuildHeartPoolFromDiscoveries();
+    this.persist();
   }
 
   private rebuildHeartPoolFromDiscoveries(): void {
