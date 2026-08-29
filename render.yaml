@@ -1,10 +1,5 @@
 # Repo-root Render Blueprint (GitHub: naveenpra17/valentine)
-databases:
-  - name: romantic-universe-db
-    plan: free
-    databaseName: romantic_universe
-    user: romantic_user
-
+# Database: Neon PostgreSQL — set DATABASE_URL manually in Render env vars
 services:
   - type: web
     name: romantic-universe-api
@@ -17,9 +12,7 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
       - key: DATABASE_URL
-        fromDatabase:
-          name: romantic-universe-db
-          property: connectionString
+        sync: false
       - key: CORS_ALLOWED_ORIGINS
         sync: false
       - key: ENTRY_LOCK_ENABLED

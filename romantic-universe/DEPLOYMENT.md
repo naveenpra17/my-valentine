@@ -14,19 +14,20 @@
 
 ---
 
-## 1. Database Setup (PostgreSQL)
-
-### Option A: Neon (recommended)
+## 1. Database Setup — Neon (recommended)
 
 1. Create a free project at [neon.tech](https://neon.tech)
-2. Copy the connection string (`postgres://...`)
-3. In the Neon SQL editor, run:
+2. **Connect** → copy the **pooled** connection string (`postgresql://...?sslmode=require`)
+3. In the Neon **SQL Editor**, run in order:
    - `backend/src/main/resources/db/schema.sql`
    - `backend/src/main/resources/db/data.sql`
+4. Paste the connection string into Render as `DATABASE_URL` when deploying the API
 
-### Option B: Render PostgreSQL
+The backend accepts Neon URLs automatically (`postgres://` or `postgresql://`).
 
-If using `render.yaml`, a database is provisioned automatically. After deploy, connect and run `schema.sql` + `data.sql`.
+### Option B: Render PostgreSQL (legacy)
+
+Only if you use the old `render.yaml` with a `databases:` block. Neon is preferred.
 
 ---
 
@@ -37,6 +38,7 @@ If using `render.yaml`, a database is provisioned automatically. After deploy, c
 1. Push the repo to GitHub
 2. In Render Dashboard → **New** → **Blueprint** → connect repo
 3. Set environment variables:
+   - `DATABASE_URL` = your Neon connection string
    - `CORS_ALLOWED_ORIGINS` = `https://your-site.netlify.app`
    - `ENTRY_LOCK_ANSWER` = your nickname (if using entry lock)
 4. Deploy — Render builds the Docker image from `backend/Dockerfile`

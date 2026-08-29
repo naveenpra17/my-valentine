@@ -2,47 +2,60 @@
 
 Repo: **https://github.com/naveenpra17/valentine**
 
-Stack: **Render** (API + PostgreSQL) + **Netlify** (Angular frontend)
+Stack: **Neon** (PostgreSQL) + **Render** (API) + **Netlify** (Angular frontend)
 
 ---
 
-## Step 1 — Push latest code
+## Step 1 — Create Neon database
 
-```powershell
-cd "c:\personal site"
-git add .
-git commit -m "Prepare romantic universe for production deploy"
-git push origin main
+1. Go to [neon.tech](https://neon.tech) → sign up / sign in
+2. **New Project** → name it e.g. `romantic-universe`
+3. Region: pick one close to you (e.g. `Singapore` or `US East`)
+4. Open **Dashboard** → your project → **Connect**
+5. Copy the connection string — use the **pooled** URL if offered:
+   ```
+   postgresql://user:password@ep-xxxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+   ```
+6. Open **SQL Editor** in Neon and run these files **in order**:
+   - Paste all of `romantic-universe/backend/src/main/resources/db/schema.sql` → **Run**
+   - Paste all of `romantic-universe/backend/src/main/resources/db/data.sql` → **Run**
+
+> Without schema + data, the API will fail on startup (Hibernate `validate` error).
+
+### Verify in Neon
+
+Run in SQL Editor:
+
+```sql
+SELECT config_key, config_value FROM site_config LIMIT 5;
+SELECT id, title FROM photos;
 ```
 
----
-
-## Step 2 — Database (Render auto-creates via Blueprint)
-
-After Render Blueprint deploys, open the **romantic-universe-db** database → **Connect** → run these files in order:
-
-1. `romantic-universe/backend/src/main/resources/db/schema.sql`
-2. `romantic-universe/backend/src/main/resources/db/data.sql`
-
-> Without this, the API will fail with Hibernate `validate` errors.
+You should see your config keys and 6 photos.
 
 ---
 
-## Step 3 — Deploy backend on Render
+## Step 2 — Deploy backend on Render
 
 1. Go to [dashboard.render.com](https://dashboard.render.com) → **New** → **Blueprint**
 2. Connect GitHub repo **naveenpra17/valentine**
-3. Render reads `render.yaml` at repo root
-4. When prompted, set:
-   - `CORS_ALLOWED_ORIGINS` → leave blank for now (set after Netlify)
-   - `ENTRY_LOCK_ANSWER` → her nickname (e.g. `beautiful`)
-5. Wait for deploy (~5–10 min first build)
+3. Render reads `render.yaml` at repo root (API only — no Render database)
+4. When prompted, set these environment variables:
+
+| Variable | Value |
+|----------|--------|
+| `DATABASE_URL` | Your full Neon connection string (from Step 1) |
+| `ENTRY_LOCK_ANSWER` | Her nickname (e.g. `beautiful`) |
+| `CORS_ALLOWED_ORIGINS` | Leave blank for now |
+
+5. Click **Apply** → wait for first build (~5–10 min)
 6. Copy your API URL, e.g. `https://romantic-universe-api.onrender.com`
 7. Test: `https://YOUR-API.onrender.com/api/health` → `{"status":"UP"}`
+8. Test: `https://YOUR-API.onrender.com/api/config` → JSON with names/messages
 
 ---
 
-## Step 4 — Point frontend at the API
+## Step 3 — Point frontend at the API
 
 Edit `romantic-universe/frontend/src/assets/config.json`:
 
@@ -55,6 +68,7 @@ Edit `romantic-universe/frontend/src/assets/config.json`:
 Commit and push:
 
 ```powershell
+cd "c:\personal site"
 git add romantic-universe/frontend/src/assets/config.json
 git commit -m "Set production API URL"
 git push origin main
@@ -62,7 +76,7 @@ git push origin main
 
 ---
 
-## Step 5 — Deploy frontend on Netlify
+## Step 4 — Deploy frontend on Netlify
 
 1. Go to [app.netlify.com](https://app.netlify.com) → **Add new site** → **Import from Git**
 2. Connect **naveenpra17/valentine**
@@ -74,7 +88,7 @@ git push origin main
 
 ---
 
-## Step 6 — Fix CORS (required)
+## Step 5 — Fix CORS (required)
 
 In Render → **romantic-universe-api** → **Environment**:
 
@@ -82,26 +96,31 @@ In Render → **romantic-universe-api** → **Environment**:
 CORS_ALLOWED_ORIGINS=https://YOUR-SITE.netlify.app
 ```
 
-No trailing slash. Render will redeploy automatically.
+No trailing slash. Render redeploys automatically.
 
 ---
 
-## Step 7 — Verify
+## Step 6 — Verify
 
+- [ ] Neon SQL: `site_config` and `photos` tables have data
 - [ ] `https://YOUR-API.onrender.com/api/health` → UP
-- [ ] `https://YOUR-API.onrender.com/api/config` → JSON with names/messages
+- [ ] `https://YOUR-API.onrender.com/api/config` → JSON with your names/messages
 - [ ] Frontend loads opening screen
 - [ ] No CORS errors in browser console (F12)
-- [ ] Photos load in starfield
+- [ ] Photos appear in starfield
 - [ ] Entry lock works (if enabled)
 
 ---
 
-## Optional — Custom domain
+## Neon tips
 
-**Netlify:** Domain settings → add domain → update DNS  
-**Render:** Custom domain on API service  
-Then update `config.json` apiUrl + `CORS_ALLOWED_ORIGINS` with the new URLs.
+| Topic | Note |
+|-------|------|
+| Connection string | Use **pooled** URL on Render (better for serverless/cold starts) |
+| SSL | Neon includes `?sslmode=require` — keep it in the URL |
+| Free tier | DB sleeps after inactivity; first query may take a few seconds |
+| Editing content | Update `data.sql` locally, re-run changed SQL in Neon SQL Editor |
+| Password special chars | Neon URL-encodes them — paste the string exactly as Neon gives it |
 
 ---
 
@@ -109,7 +128,8 @@ Then update `config.json` apiUrl + `CORS_ALLOWED_ORIGINS` with the new URLs.
 
 | Problem | Fix |
 |---------|-----|
-| API 503 on cold start | Render free tier sleeps — first request takes ~30s |
-| CORS error | URLs must match exactly |
-| Blank page | Check Netlify deploy log; confirm publish path |
-| DB error on startup | Run schema.sql + data.sql on PostgreSQL |
+| `relation "site_config" does not exist` | Run `schema.sql` in Neon SQL Editor |
+| API starts but config is empty | Run `data.sql` in Neon SQL Editor |
+| `Connection refused` / SSL error | Use full Neon URL with `sslmode=require` |
+| API 503 on cold start | Render free tier sleeps — first request ~30s |
+| CORS error | `CORS_ALLOWED_ORIGINS` must match Netlify URL exactly |
