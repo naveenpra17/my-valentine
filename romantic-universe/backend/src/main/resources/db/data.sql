@@ -69,22 +69,22 @@ But I know this: my life is better with you in it. And I''m grateful for you —
 ('FLOWER_MESSAGE', 'Every day with you feels like spring arrived early.'),
 ('SECRET_MESSAGE', 'You found the secret heart. That means you''re officially the most curious, wonderful person I know.'),
 ('MUSIC_URL', '/assets/audio/background.mp3'),
-('HERO_IMAGE_URL', '/assets/images/hero/hero.jpg'),
+('HERO_IMAGE_URL', '/assets/images/hero/hero.png'),
 ('ENTRY_LOCK_QUESTION', 'What''s the nickname only I call you? ❤️');
 
 INSERT INTO memories (title, message, memory_date, location, image_url, display_order) VALUES
-('The day everything changed', 'I still remember how the world felt quieter and louder at the same time — because you were in it.', '2024-01-15', 'Where we met', '/assets/images/memories/memory-1.jpg', 1),
-('Our first adventure', 'We laughed until our cheeks hurt and I knew I wanted more days exactly like that one.', '2024-03-20', 'Our favourite place', '/assets/images/memories/memory-2.jpg', 2),
-('A quiet evening', 'Nothing extraordinary happened — and somehow that made it extraordinary.', '2024-06-08', NULL, '/assets/images/memories/memory-3.jpg', 3),
-('The look on your face', 'That smile. I''d frame it if I could.', '2024-09-12', NULL, '/assets/images/memories/memory-4.jpg', 4);
+('The day everything changed', 'I still remember how the world felt quieter and louder at the same time — because you were in it.', '2024-01-15', 'Where we met', '/assets/images/memories/memory-1.png', 1),
+('Our first adventure', 'We laughed until our cheeks hurt and I knew I wanted more days exactly like that one.', '2024-03-20', 'Our favourite place', '/assets/images/memories/memory-2.png', 2),
+('A quiet evening', 'Nothing extraordinary happened — and somehow that made it extraordinary.', '2024-06-08', NULL, '/assets/images/memories/memory-3.png', 3),
+('The look on your face', 'That smile. I''d frame it if I could.', '2024-09-12', NULL, '/assets/images/memories/memory-4.png', 4);
 
 INSERT INTO photos (title, caption, image_url, memory_id, display_order) VALUES
-('Us', 'My favourite view.', '/assets/images/gallery/photo-1.jpg', 1, 1),
-('Sunset', 'Golden hour with you hits different.', '/assets/images/gallery/photo-2.jpg', 2, 2),
-('Adventure', 'Every road is better with you.', '/assets/images/gallery/photo-3.jpg', 3, 3),
-('Candid', 'Caught you being adorable again.', '/assets/images/gallery/photo-4.jpg', 4, 4),
-('Together', 'Home is wherever you are.', '/assets/images/gallery/photo-5.jpg', NULL, 5),
-('Smile', 'The one that ruins my concentration.', '/assets/images/gallery/photo-6.jpg', NULL, 6);
+('Us', 'My favourite view.', '/assets/images/gallery/photo-1.png', 1, 1),
+('Sunset', 'Golden hour with you hits different.', '/assets/images/gallery/photo-2.png', 2, 2),
+('Adventure', 'Every road is better with you.', '/assets/images/gallery/photo-3.png', 3, 3),
+('Candid', 'Caught you being adorable again.', '/assets/images/gallery/photo-4.png', 4, 4),
+('Together', 'Home is wherever you are.', '/assets/images/gallery/photo-5.png', NULL, 5),
+('Smile', 'The one that ruins my concentration.', '/assets/images/gallery/photo-6.png', NULL, 6);
 
 INSERT INTO quotes (text, author, display_order) VALUES
 ('If I could give you one thing, I''d let you see yourself through my eyes.', NULL, 1),
