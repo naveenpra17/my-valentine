@@ -64,7 +64,7 @@ Verify: `https://your-api.onrender.com/api/health` → `{"status":"UP"}`
 
 ---
 
-## 3. Frontend Deployment (Netlify)
+## 3. Frontend Deployment (Vercel)
 
 ### Before building
 
@@ -76,29 +76,31 @@ Edit `frontend/src/assets/config.json`:
 }
 ```
 
-### Deploy via Netlify UI
+Commit and push to GitHub.
 
-1. Connect GitHub repo
-2. Build settings (auto-detected from `frontend/netlify.toml`):
-   - **Base directory:** `frontend`
-   - **Build command:** `npm ci && npm run build`
-   - **Publish directory:** `frontend/dist/frontend/browser`
-3. Deploy
+### Deploy via Vercel UI
+
+1. Go to [vercel.com](https://vercel.com) → **Add New Project**
+2. Import GitHub repo
+3. Set **Root Directory** to `romantic-universe/frontend`
+4. Build settings (from `frontend/vercel.json`):
+   - **Build command:** `npm run build`
+   - **Output directory:** `dist/frontend/browser`
+   - **Install command:** `npm ci`
+5. Deploy
 
 ### Deploy via CLI
 
 ```bash
-cd frontend
+cd romantic-universe/frontend
 npm ci
 npm run build
-npx netlify deploy --prod --dir=dist/frontend/browser
+npx vercel --prod
 ```
 
-### Cloudflare Pages alternative
+### Netlify alternative
 
-- Build command: `cd frontend && npm ci && npm run build`
-- Output directory: `frontend/dist/frontend/browser`
-- Add `_redirects` or Pages redirect rule: `/* /index.html 200`
+See `netlify.toml` at repo root — base directory `romantic-universe/frontend`.
 
 ---
 
@@ -107,7 +109,7 @@ npx netlify deploy --prod --dir=dist/frontend/browser
 Set backend `CORS_ALLOWED_ORIGINS` to your exact frontend URL(s), comma-separated:
 
 ```
-https://your-site.netlify.app,https://www.yourdomain.com
+https://your-site.vercel.app,https://www.yourdomain.com
 ```
 
 No trailing slashes.

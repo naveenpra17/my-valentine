@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd romantic-universe/frontend && npm ci && npm run build",
+  "outputDirectory": "romantic-universe/frontend/dist/frontend/browser",
+  "installCommand": "cd romantic-universe/frontend && npm ci",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

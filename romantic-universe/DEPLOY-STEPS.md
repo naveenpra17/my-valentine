@@ -2,7 +2,7 @@
 
 Repo: **https://github.com/naveenpra17/valentine**
 
-Stack: **Neon** (PostgreSQL) + **Render** (API) + **Netlify** (Angular frontend)
+Stack: **Neon** (PostgreSQL) + **Render** (API) + **Vercel** (Angular frontend)
 
 ---
 
@@ -76,15 +76,34 @@ git push origin main
 
 ---
 
-## Step 4 — Deploy frontend on Netlify
+## Step 4 — Deploy frontend on Vercel
 
-1. Go to [app.netlify.com](https://app.netlify.com) → **Add new site** → **Import from Git**
-2. Connect **naveenpra17/valentine**
-3. Netlify auto-detects root `netlify.toml`:
-   - Base: `romantic-universe/frontend`
-   - Publish: `romantic-universe/frontend/dist/frontend/browser`
-4. Deploy
-5. Copy your site URL, e.g. `https://something.netlify.app`
+1. Go to [vercel.com](https://vercel.com) → sign in with **GitHub**
+2. **Add New…** → **Project**
+3. Import repo **`naveenpra17/valentine`**
+4. Configure the project:
+
+| Setting | Value |
+|---------|--------|
+| **Framework Preset** | Other (or leave as detected) |
+| **Root Directory** | `romantic-universe/frontend` |
+| **Build Command** | `npm run build` |
+| **Output Directory** | `dist/frontend/browser` |
+| **Install Command** | `npm ci` |
+
+> Vercel reads `romantic-universe/frontend/vercel.json` for SPA routing and cache headers.
+
+5. Click **Deploy** → wait ~2–5 min
+6. Copy your site URL, e.g. `https://valentine-xxx.vercel.app`
+
+### Optional — deploy via CLI
+
+```powershell
+cd "c:\personal site\romantic-universe\frontend"
+npm i -g vercel
+vercel login
+vercel --prod
+```
 
 ---
 
@@ -93,10 +112,16 @@ git push origin main
 In Render → **romantic-universe-api** → **Environment**:
 
 ```
-CORS_ALLOWED_ORIGINS=https://YOUR-SITE.netlify.app
+CORS_ALLOWED_ORIGINS=https://YOUR-SITE.vercel.app
 ```
 
-No trailing slash. Render redeploys automatically.
+No trailing slash. If you use a custom domain too, comma-separate:
+
+```
+CORS_ALLOWED_ORIGINS=https://YOUR-SITE.vercel.app,https://yourdomain.com
+```
+
+Render redeploys automatically.
 
 ---
 
@@ -132,4 +157,5 @@ No trailing slash. Render redeploys automatically.
 | API starts but config is empty | Run `data.sql` in Neon SQL Editor |
 | `Connection refused` / SSL error | Use full Neon URL with `sslmode=require` |
 | API 503 on cold start | Render free tier sleeps — first request ~30s |
-| CORS error | `CORS_ALLOWED_ORIGINS` must match Netlify URL exactly |
+| CORS error | `CORS_ALLOWED_ORIGINS` must match Vercel URL exactly |
+| Blank page on Vercel | Confirm Output Directory is `dist/frontend/browser` |
