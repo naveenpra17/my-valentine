@@ -173,7 +173,7 @@ export class ExperienceComponent implements OnDestroy {
 
 
 
-  readonly showMain = signal(this.session.hasEntered());
+  readonly showMain = signal(this.session.entered());
 
   readonly burstActive = signal(false);
 
@@ -182,11 +182,8 @@ export class ExperienceComponent implements OnDestroy {
 
 
   readonly showEntryLock = computed(() => {
-
     const cfg = this.config.config();
-
-    return !!cfg?.entryLockEnabled && !this.session.isUnlocked();
-
+    return !!cfg?.entryLockEnabled && !this.session.unlocked();
   });
 
 
