@@ -138,6 +138,7 @@ export class ExperienceControllerService {
     sessionStorage.removeItem('love_bombs_count');
     sessionStorage.removeItem('ru_heart_intro_seen');
     sessionStorage.removeItem('ru_heart_first_attach');
+    sessionStorage.removeItem('ru_heart_complete_seen');
     window.location.assign(window.location.pathname || '/');
   }
 

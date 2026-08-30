@@ -4,6 +4,7 @@ import { ApiService } from '../services/api.service';
 import { CameraDirectorService } from '../cinematic/camera-director.service';
 import { SceneMomentService } from '../cinematic/scene-moment.service';
 import { ExperienceStateService } from './experience-state.service';
+import { HeartObject } from './experience-state.types';
 import { SoundDesignService } from '../services/sound-design.service';
 import { MusicalChoreographyService } from '../audio/musical-choreography.service';
 import { MotionService } from '../services/motion.service';
@@ -28,9 +29,22 @@ export class ExperienceFlowService {
     this.busy = true;
 
     try {
-      const photos = await this.loadPhotos();
-      const photo = photos.find(p => p.id === photoId);
-      if (!photo) return;
+      let photo: Photo | undefined;
+      try {
+        const photos = await this.loadPhotos();
+        photo = photos.find(p => p.id === photoId);
+      } catch {
+        photo = undefined;
+      }
+
+      if (!photo) {
+        photo = {
+          id: photoId,
+          title: title ?? `Photo ${photoId}`,
+          imageUrl: `/assets/images/gallery/photo-${photoId}.png`,
+          caption: title
+        } as Photo;
+      }
 
       this.sounds.enable();
       this.music.onPhoto();
@@ -158,5 +172,75 @@ export class ExperienceFlowService {
       return Promise.resolve();
     }
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /** Restore image URLs and labels for heart pool items missing metadata. */
+  async enrichHeartPool(): Promise<void> {
+    const pool = this.state.heartPool();
+    if (!pool.length) return;
+
+    const patches: HeartObject[] = [];
+    const needsPhoto = pool.some(o => o.type === 'photo' && !o.imageUrl);
+    const needsMemory = pool.some(o => o.type === 'memory' && !o.imageUrl);
+
+    if (needsPhoto) {
+      try {
+        const photos = await this.loadPhotos();
+        for (const item of pool.filter(o => o.type === 'photo' && !o.imageUrl)) {
+          const photo = photos.find(p => p.id === item.referenceId);
+          if (photo) {
+            patches.push({
+              type: 'photo',
+              referenceId: photo.id,
+              label: photo.caption ?? photo.title ?? undefined,
+              imageUrl: photo.imageUrl,
+              thumbnailUrl: photo.imageUrl
+            });
+          }
+        }
+      } catch {
+        for (const item of pool.filter(o => o.type === 'photo' && !o.imageUrl)) {
+          const id = Number(item.referenceId);
+          patches.push({
+            type: 'photo',
+            referenceId: id,
+            label: item.label ?? `Photo ${id}`,
+            imageUrl: `/assets/images/gallery/photo-${id}.png`,
+            thumbnailUrl: `/assets/images/gallery/photo-${id}.png`
+          });
+        }
+      }
+    }
+
+    if (needsMemory) {
+      try {
+        const memories = await this.loadMemories();
+        for (const item of pool.filter(o => o.type === 'memory' && !o.imageUrl)) {
+          const memory = memories.find(m => m.id === item.referenceId);
+          if (memory) {
+            patches.push({
+              type: 'memory',
+              referenceId: memory.id,
+              label: memory.title,
+              imageUrl: memory.imageUrl,
+              thumbnailUrl: memory.imageUrl
+            });
+          }
+        }
+      } catch {
+        for (const item of pool.filter(o => o.type === 'memory' && !o.imageUrl)) {
+          const id = Number(item.referenceId);
+          patches.push({
+            type: 'memory',
+            referenceId: id,
+            label: item.label ?? `Memory ${id}`,
+            imageUrl: `/assets/images/memories/memory-${id}.png`,
+            thumbnailUrl: `/assets/images/memories/memory-${id}.png`
+          });
+        }
+      }
+    }
+
+    this.state.patchHeartPool(patches);
   }
 }

@@ -134,6 +134,18 @@
   margin-bottom: 1rem;
 }
 
+.love-bomb__footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.love-bomb__continue {
+  min-height: var(--touch-min, 44px);
+}
+
 .love-bomb__stats {
   position: relative;
   z-index: 2;

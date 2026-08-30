@@ -19,6 +19,8 @@ import { ExperienceControllerService } from '../../core/experience/experience-co
 import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { ExperienceFlowService } from '../../core/experience/experience-flow.service';
+import { ExperienceStateService } from '../../core/experience/experience-state.service';
+import { ExperienceNavigationService } from '../../core/experience/experience-navigation.service';
 import { ScrollProgressService } from '../../core/cinematic/scroll-progress.service';
 import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
 import { LoveUniverseScene } from './love-universe-scene';
@@ -43,6 +45,8 @@ export class LoveUniverseComponent implements OnDestroy {
   private readonly api = inject(ApiService);
   private readonly scenes = inject(SceneManagerService);
   private readonly experienceFlow = inject(ExperienceFlowService);
+  private readonly experienceState = inject(ExperienceStateService);
+  private readonly navigation = inject(ExperienceNavigationService);
   private readonly scrollProgress = inject(ScrollProgressService);
   private readonly cameraDirector = inject(CameraDirectorService);
   private readonly controller = inject(ExperienceControllerService);
@@ -54,6 +58,12 @@ export class LoveUniverseComponent implements OnDestroy {
 
   readonly introVisible = signal(true);
   readonly photosLoaded = signal(false);
+  readonly discoveryHunt = this.experienceState.heartDiscoveryHunt;
+
+  returnToHeart(): void {
+    this.experienceState.setHeartDiscoveryHunt(false);
+    this.navigation.scrollToHeart();
+  }
 
   constructor() {
     afterNextRender(() => void this.bootstrap());

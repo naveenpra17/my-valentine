@@ -107,6 +107,7 @@ export class OurLittleHeartScene {
   private heartScale = 0.38;
   private introProgress = 0;
   private timeScale = 1;
+  private poolHighlight = false;
 
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
@@ -309,10 +310,23 @@ export class OurLittleHeartScene {
     }
 
     const quality = this.mobile ? 'mobile' : 'desktop';
+    const poolKeys = objects.map(objectKey);
     for (let i = 0; i < objects.length; i++) {
       const obj = objects[i];
       const key = objectKey(obj);
-      if (this.pool.has(key) || this.attached.has(key)) continue;
+      if (this.pool.has(key)) {
+        const entry = this.pool.get(key)!;
+        const orbit = computePoolOrbit(obj.type, obj.referenceId, i, objects.length);
+        entry.orbit = orbit;
+        entry.object = obj;
+        entry.floatPhase = i * 0.7;
+        if (!this.flyTasks.some(t => t.group === entry.group)) {
+          entry.group.position.set(orbit.position.x, orbit.position.y, orbit.position.z);
+          entry.group.rotation.set(orbit.rotation.x, orbit.rotation.y, orbit.rotation.z);
+        }
+        continue;
+      }
+      if (this.attached.has(key)) continue;
 
       const group = await buildObjectMesh(obj, quality);
       const orbit = computePoolOrbit(obj.type, obj.referenceId, i, objects.length);
@@ -321,6 +335,19 @@ export class OurLittleHeartScene {
       group.userData['pool'] = true;
       this.poolGroup.add(group);
       this.pool.set(key, { key, object: obj, group, orbit, floatPhase: i * 0.7 });
+    }
+
+    if (poolKeys.length > 0 && this.phase === 'creating') {
+      this.targetCameraZ = THREE.MathUtils.lerp(this.targetCameraZ, this.mobile ? 6.1 : 5.9, 0.35);
+    }
+  }
+
+  setPoolHighlight(active: boolean): void {
+    this.poolHighlight = active;
+    if (!active) {
+      for (const entry of this.pool.values()) {
+        entry.group.scale.setScalar(1);
+      }
     }
   }
 
@@ -395,8 +422,8 @@ export class OurLittleHeartScene {
     group.position.copy(localFrom);
     group.scale.setScalar(this.reducedMotion ? (obj.scale ?? 1) * 0.85 : 0.2);
 
-    const duration = this.reducedMotion ? 350 : 1100;
-    this.timeScale = 0.35;
+    const duration = this.reducedMotion ? 350 : 900;
+    this.timeScale = 0.65;
 
     await new Promise<void>(resolve => {
       const trail = this.reducedMotion ? undefined : this.createTrail(localFrom, target);
@@ -476,6 +503,22 @@ export class OurLittleHeartScene {
 
   completeCreation(): void {
     this.setPhase('complete');
+    this.setPoolHighlight(false);
+    this.poolGroup.visible = false;
+    this.readOnly = true;
+    this.hoveredKey = null;
+
+    if (this.reducedMotion) {
+      this.targetCameraZ = 6;
+      this.cameraZ = 6;
+      this.pulseAmount = 1;
+      return;
+    }
+
+    this.targetCameraZ = this.mobile ? 6.35 : 6.05;
+    this.targetRotX = THREE.MathUtils.lerp(this.targetRotX, 0, 0.35);
+    this.pulseAmount = 1.35;
+    this.triggerHeartPulse();
   }
 
   setReadOnly(readOnly: boolean): void {
@@ -996,6 +1039,12 @@ export class OurLittleHeartScene {
         const f = elapsed * 0.6 + entry.floatPhase;
         entry.group.position.y = entry.orbit.position.y + Math.sin(f) * 0.06;
         entry.group.rotation.y = entry.orbit.rotation.y + Math.sin(f * 0.5) * 0.08;
+
+        if (this.poolHighlight) {
+          const pulse = 1 + Math.sin(elapsed * 2.2 + entry.floatPhase) * 0.08;
+          const isHovered = this.hoveredKey === entry.key;
+          entry.group.scale.setScalar(isHovered ? 1.12 * pulse : pulse);
+        }
       }
 
       for (const entry of this.attached.values()) {

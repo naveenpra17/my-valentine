@@ -17,6 +17,8 @@ import { VisibilityService } from '../../core/services/visibility.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
 import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
+import { ExperienceFlowService } from '../../core/experience/experience-flow.service';
+import { ExperienceNavigationService } from '../../core/experience/experience-navigation.service';
 import { HeartStateService } from '../../core/experience/heart-state.service';
 import { HeartShareService } from '../../core/services/heart-share.service';
 import { prioritizePool } from '../../core/experience/heart-asset.mapper';
@@ -28,8 +30,18 @@ import { objectKey } from './heart-object-meshes';
 
 const INTRO_KEY = 'ru_heart_intro_seen';
 const FIRST_ATTACH_KEY = 'ru_heart_first_attach';
+const HEART_COMPLETE_KEY = 'ru_heart_complete_seen';
 
-type GuidanceKey = 'intro' | 'choose' | 'first' | 'another' | 'rich' | 'done' | 'empty';
+type GuidanceKey =
+  | 'intro'
+  | 'choose'
+  | 'first'
+  | 'another'
+  | 'variety'
+  | 'find-more'
+  | 'rich'
+  | 'done'
+  | 'empty';
 
 @Component({
   selector: 'app-our-little-heart',
@@ -43,6 +55,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   @ViewChild('canvasHost') canvasHost!: ElementRef<HTMLElement>;
   @ViewChild('introEl') introRef?: ElementRef<HTMLElement>;
   @ViewChild('guidanceEl') guidanceRef?: ElementRef<HTMLElement>;
+  @ViewChild('completeEl') completeRef?: ElementRef<HTMLElement>;
 
   readonly title = input('Our Little Heart');
   readonly subtitle = input('Choose something for our heart.');
@@ -52,6 +65,8 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   private readonly sounds = inject(SoundDesignService);
   private readonly music = inject(MusicalChoreographyService);
   readonly experienceState = inject(ExperienceStateService);
+  private readonly experienceFlow = inject(ExperienceFlowService);
+  private readonly navigation = inject(ExperienceNavigationService);
   private readonly heartState = inject(HeartStateService);
   private readonly heartShare = inject(HeartShareService);
   private readonly scenes = inject(SceneManagerService);
@@ -66,6 +81,8 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   private attaching = false;
   private introPlayed = false;
   private sectionEngaged = false;
+  private guidanceLocked = false;
+  private completionTimer?: ReturnType<typeof setTimeout>;
 
   readonly sceneReady = signal(false);
   readonly sceneFailed = signal(false);
@@ -95,6 +112,8 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
       case 'choose': return 'Touch one of the little lights around the heart.';
       case 'first': return "That's one. Let's keep going.";
       case 'another': return "There's room for another.";
+      case 'variety': return 'Mix different kinds of treasures.';
+      case 'find-more': return "There's room for another.";
       case 'rich': return "Look what you've made.";
       case 'done': return 'Look at our little heart.';
       case 'empty': return "Let's find some things to put in here.";
@@ -102,16 +121,50 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
     }
   });
 
+  readonly guidanceHint = computed(() => {
+    switch (this.guidance()) {
+      case 'choose':
+        return 'Each little light is something you found.';
+      case 'first':
+        return 'The heart is starting to take shape.';
+      case 'another':
+        return 'Tap another little light floating around the heart.';
+      case 'variety':
+        return 'Try adding a memory, reason, or quote — not just photos.';
+      case 'find-more':
+        return 'Scroll up to discover more, then come back here.';
+      default:
+        return '';
+    }
+  });
+
+  readonly showGuidanceHint = computed(() => {
+    const key = this.guidance();
+    return key === 'choose' || key === 'first' || key === 'another' || key === 'variety' || key === 'find-more';
+  });
+
   constructor() {
     effect(() => {
       const attached = this.experienceState.selectedHeartObjects();
       this.scene?.syncAttachedObjects(attached);
-      this.updateGuidance();
     });
 
     effect(() => {
       const pool = this.poolObjects();
       void this.scene?.setPoolObjects(pool);
+    });
+
+    effect(() => {
+      this.attachedCount();
+      if (!this.showIntro() && !this.guidanceLocked && !this.attaching) {
+        this.updateGuidance();
+      }
+    });
+
+    effect(() => {
+      const key = this.guidance();
+      const poolActive = key === 'another' || key === 'choose' || key === 'find-more';
+      this.scene?.setPoolHighlight(poolActive);
     });
   }
 
@@ -126,13 +179,15 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
+    if (this.completionTimer) clearTimeout(this.completionTimer);
     this.observer?.disconnect();
     this.resizeObserver?.disconnect();
     this.scene?.dispose();
   }
 
   beginHeart(): void {
-    this.experienceState.syncHeartPoolFromDiscoveries();
+    this.experienceState.setHeartDiscoveryHunt(false);
+    void this.refreshHeartPoolFromDiscoveries();
     this.showIntro.set(false);
     this.scene?.setVisible(true);
     this.scene?.beginCreation();
@@ -169,10 +224,17 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
       const isFirst = !sessionStorage.getItem(FIRST_ATTACH_KEY);
       if (isFirst) {
         sessionStorage.setItem(FIRST_ATTACH_KEY, '1');
+        this.guidanceLocked = true;
         this.guidance.set('first');
+        this.scene?.setPoolHighlight(true);
         await this.pause(1800);
+        this.guidanceLocked = false;
       }
       this.updateGuidance();
+      this.animateGuidanceChange();
+      if (this.canComplete()) {
+        this.scheduleCompletion();
+      }
     } finally {
       this.attaching = false;
     }
@@ -182,6 +244,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
     const obj = this.selectedObject();
     if (!obj || this.attaching) return;
 
+    this.cancelScheduledCompletion();
     this.attaching = true;
     this.experienceState.removeHeartObject(obj.type, obj.referenceId);
     this.heartShare.clearPreviewCache();
@@ -190,6 +253,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
     this.selectedObject.set(null);
     this.scene?.clearAttachedFocus();
     this.updateGuidance();
+    this.animateGuidanceChange();
     this.attaching = false;
   }
 
@@ -206,11 +270,14 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   }
 
   finishHeart(): void {
-    if (this.phase() === 'complete') return;
-    this.showCompletion.set(true);
+    if (this.phase() === 'complete' || this.showCompletion()) return;
+    this.scene?.setPoolHighlight(false);
     this.guidance.set('done');
     this.scene?.completeCreation();
     this.music.onHeartComplete();
+    sessionStorage.setItem(HEART_COMPLETE_KEY, '1');
+    this.showCompletion.set(true);
+    this.animateCompletionEnter();
   }
 
   continueJourney(): void {
@@ -218,52 +285,110 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
       this.finishHeart();
     }
 
-    this.showCompletion.set(false);
     this.sounds.enable();
+    void this.dismissCompletionAndScroll();
+  }
 
-    const flower = document.getElementById('flower');
-    const nextBeat = this.sectionRef.nativeElement.closest('.experience-beat')
-      ?.nextElementSibling as HTMLElement | null;
-    const target = flower ?? nextBeat;
-
-    if (target) {
-      target.scrollIntoView({
-        behavior: this.motion.prefersReducedMotion() ? 'auto' : 'smooth',
-        block: 'start'
-      });
-      return;
+  private async dismissCompletionAndScroll(): Promise<void> {
+    const el = this.completeRef?.nativeElement;
+    if (el && !this.motion.prefersReducedMotion()) {
+      await gsap.to(el, { opacity: 0, y: 8, duration: 0.45, ease: 'power2.in' }).then();
     }
+    this.showCompletion.set(false);
 
-    window.scrollBy({
-      top: window.innerHeight,
-      behavior: this.motion.prefersReducedMotion() ? 'auto' : 'smooth'
-    });
+    if (!this.navigation.scrollToNextBeat(this.sectionRef.nativeElement)) {
+      this.navigation.scrollTo('#open-when') || this.navigation.scrollTo('#flower');
+    }
   }
 
   goFindDiscoveries(): void {
+    this.experienceState.setHeartDiscoveryHunt(true);
     this.experienceState.syncHeartPoolFromDiscoveries();
-    const behavior = this.motion.prefersReducedMotion() ? 'auto' : 'smooth';
-    const zone = document.getElementById('universe-discovery-zone');
-    if (zone) {
-      zone.scrollIntoView({ behavior, block: 'center' });
-    } else {
-      window.scrollTo({ top: 0, behavior });
+    void this.experienceFlow.enrichHeartPool();
+
+    if (!this.navigation.scrollToDiscovery()) {
+      window.scrollTo({ top: 0, behavior: this.motion.prefersReducedMotion() ? 'auto' : 'smooth' });
+    }
+  }
+
+  returnFromDiscoveryHunt(): void {
+    this.experienceState.setHeartDiscoveryHunt(false);
+    this.navigation.scrollToHeart();
+  }
+
+  skipIntro(): void {
+    sessionStorage.setItem(INTRO_KEY, '1');
+    this.beginHeart();
+  }
+
+  private async refreshHeartPoolFromDiscoveries(): Promise<void> {
+    this.experienceState.syncHeartPoolFromDiscoveries();
+    await this.experienceFlow.enrichHeartPool();
+    await this.scene?.setPoolObjects(this.poolObjects());
+    if (!this.showIntro()) {
+      this.updateGuidance();
+      this.animateGuidanceChange();
     }
   }
 
   private updateGuidance(): void {
-    if (this.showIntro()) return;
+    if (this.showIntro() || this.guidanceLocked || this.attaching) return;
+
     const count = this.attachedCount();
+    const poolLen = this.poolObjects().length;
+    const selected = this.experienceState.selectedHeartObjects();
+    const hasPhoto = selected.some(o => o.type === 'photo');
+    const hasOther = selected.some(o => o.type !== 'photo');
+
     if (count === 0) {
-      this.guidance.set(this.poolObjects().length ? 'choose' : 'empty');
+      this.guidance.set(poolLen ? 'choose' : 'empty');
     } else if (count === 1) {
-      this.guidance.set('another');
+      this.guidance.set(poolLen ? 'another' : 'find-more');
+    } else if (count === 2 && !(hasPhoto && hasOther)) {
+      this.guidance.set(poolLen ? 'variety' : 'find-more');
     } else if (count >= 3) {
       this.guidance.set('rich');
     }
-    if (this.canComplete() && this.phase() !== 'complete') {
+
+  }
+
+  private scheduleCompletion(): void {
+    if (this.completionTimer) return;
+    this.guidanceLocked = true;
+    this.completionTimer = setTimeout(() => {
+      this.completionTimer = undefined;
+      this.guidanceLocked = false;
       this.finishHeart();
+    }, this.motion.prefersReducedMotion() ? 400 : 1400);
+  }
+
+  private cancelScheduledCompletion(): void {
+    if (this.completionTimer) {
+      clearTimeout(this.completionTimer);
+      this.completionTimer = undefined;
     }
+    this.guidanceLocked = false;
+  }
+
+  private animateGuidanceChange(): void {
+    const el = this.guidanceRef?.nativeElement;
+    if (!el || this.motion.prefersReducedMotion()) return;
+    gsap.fromTo(el, { opacity: 0.35, y: 6 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' });
+  }
+
+  private animateCompletionEnter(): void {
+    const el = this.completeRef?.nativeElement;
+    if (!el || this.motion.prefersReducedMotion()) return;
+    gsap.fromTo(el, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' });
+  }
+
+  private restoreCompletedHeartIfNeeded(): void {
+    if (!this.canComplete() || !sessionStorage.getItem(HEART_COMPLETE_KEY)) return;
+    this.showIntro.set(false);
+    this.scene?.setVisible(true);
+    this.scene?.completeCreation();
+    this.phase.set('complete');
+    this.guidance.set('done');
   }
 
   private async playIntroSequence(): Promise<void> {
@@ -319,6 +444,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
       this.scene.init();
       await this.scene.setPoolObjects(this.poolObjects());
       this.scene.syncAttachedObjects(this.experienceState.selectedHeartObjects());
+      this.restoreCompletedHeartIfNeeded();
       this.scene.start();
       this.sceneReady.set(true);
 
@@ -329,11 +455,12 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
           if (!entry.isIntersecting) return;
 
           this.scenes.setScene('heart');
+          this.experienceState.setHeartDiscoveryHunt(false);
+          void this.refreshHeartPoolFromDiscoveries();
+
           if (!this.sectionEngaged) {
             this.sectionEngaged = true;
             this.music.enterHeart();
-            this.experienceState.syncHeartPoolFromDiscoveries();
-            void this.scene?.setPoolObjects(this.poolObjects());
             void this.camera.focusHeart(1600);
             void this.playIntroSequence();
           }

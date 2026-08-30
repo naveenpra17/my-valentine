@@ -35,28 +35,52 @@
         <button class="cine-enter-btn little-heart__begin" type="button" (click)="beginHeart()">
           Let's make one
         </button>
+        <button class="little-heart__skip cine-micro" type="button" (click)="skipIntro()">
+          Skip intro
+        </button>
       }
     </div>
   }
 
-  @if (!showIntro() && phase() !== 'intro') {
-    <div class="little-heart__guidance-wrap" #guidanceEl>
+  @if (!showIntro() && phase() !== 'intro' && !showCompletion()) {
+    <div
+      class="little-heart__guidance-wrap"
+      [class.little-heart__guidance-wrap--another]="guidance() === 'another' || guidance() === 'find-more'"
+      #guidanceEl
+    >
       <p class="little-heart__guidance cine-discovery-hint" aria-live="polite">
         {{ guidanceText() }}
       </p>
-      @if (guidance() === 'empty') {
+      @if (showGuidanceHint()) {
+        <p class="little-heart__guidance-hint cine-whisper">{{ guidanceHint() }}</p>
+      }
+      @if (guidance() === 'empty' || guidance() === 'find-more') {
         <div class="little-heart__empty-help">
-          <p class="little-heart__guidance-steps cine-whisper">
-            1. Scroll up into the starfield<br />
-            2. Tap a floating photograph<br />
-            3. Or catch hearts in Love Bomb<br />
-            4. Come back here to build the heart
-          </p>
+          @if (guidance() === 'empty') {
+            <p class="little-heart__guidance-steps cine-whisper">
+              1. Tap <strong>Take me to the stars</strong> below<br />
+              2. Tap a floating photograph in the starfield<br />
+              3. Or catch hearts in Love Bomb<br />
+              4. Scroll back here — your finds appear as little lights
+            </p>
+          } @else {
+            <p class="little-heart__guidance-steps cine-whisper">
+              Find more in the starfield above, then scroll back here to add them.
+            </p>
+          }
           <button class="cine-enter-btn little-heart__find-btn" type="button" (click)="goFindDiscoveries()">
             Take me to the stars
           </button>
         </div>
       }
+    </div>
+  }
+
+  @if (showCompletion() && !showIntro()) {
+    <div class="little-heart__complete" #completeEl role="dialog" aria-labelledby="heart-complete-title">
+      <p class="cine-editorial-sm" id="heart-complete-title">Look at our little heart.</p>
+      <p class="little-heart__complete-hint cine-whisper">Take a moment with what you made.</p>
+      <button class="cine-enter-btn" type="button" (click)="continueJourney()">Continue</button>
     </div>
   }
 
@@ -70,13 +94,6 @@
           Release
         </button>
       </div>
-    </div>
-  }
-
-  @if (showCompletion() && !showIntro()) {
-    <div class="little-heart__complete">
-      <p class="cine-editorial-sm">Look at our little heart.</p>
-      <button class="cine-enter-btn" type="button" (click)="continueJourney()">Show me</button>
     </div>
   }
 

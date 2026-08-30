@@ -11,8 +11,16 @@
     </div>
   }
 
-  <div class="universe__overlay">
-    <p class="universe__hint cine-micro">Tap a floating photograph in the stars</p>
+  <div class="universe__overlay" [class.universe__overlay--hunt]="discoveryHunt()">
+    @if (discoveryHunt()) {
+      <p class="universe__hint universe__hint--hunt cine-discovery-hint">Tap a floating photograph in the stars</p>
+      <p class="universe__hint-sub cine-whisper">Each one you find can go in your heart.</p>
+      <button class="cine-enter-btn universe__back-heart" type="button" (click)="returnToHeart()">
+        Back to the heart
+      </button>
+    } @else {
+      <p class="universe__hint cine-micro">Tap a floating photograph in the stars</p>
+    }
     <div class="universe__scroll-hint">
       <span class="cine-micro">Continue</span>
       <div class="universe__chevron" aria-hidden="true"></div>

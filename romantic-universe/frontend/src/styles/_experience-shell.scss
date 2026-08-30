@@ -1,3 +1,23 @@
+.experience-shell--discovery-hunt {
+  .experience-beat--heart {
+    pointer-events: none;
+
+    > * {
+      pointer-events: none;
+    }
+  }
+
+  .experience-beat--hero,
+  .experience-beat--discovery {
+    background: linear-gradient(
+      180deg,
+      rgba(5, 3, 8, 0.15) 0%,
+      rgba(5, 3, 8, 0.35) 50%,
+      rgba(5, 3, 8, 0.55) 100%
+    );
+  }
+}
+
 .experience-shell {
   position: relative;
   min-height: 100vh;
@@ -46,6 +66,20 @@
   min-height: 70vh;
   background: transparent;
   pointer-events: none;
+}
+
+.experience-beat--discovery {
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1.5rem;
+
+  .experience-discovery-hint {
+    margin: 0;
+    max-width: 28ch;
+    text-align: center;
+    opacity: 0.55;
+    pointer-events: none;
+  }
 }
 
 .experience-beat--hero {

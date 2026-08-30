@@ -50,6 +50,14 @@
     <p class="love-bomb__error cine-body" role="alert">{{ error() }}</p>
   }
 
+  <div class="love-bomb__footer">
+    @if (totalCaught() > 0) {
+      <button class="cine-enter-btn love-bomb__continue" type="button" (click)="continueJourney()">
+        Continue
+      </button>
+    }
+  </div>
+
   <div class="love-bomb__stats">
     @if (totalCaught() > 0) {
       <span class="cine-micro">{{ totalCaught() }} caught</span>

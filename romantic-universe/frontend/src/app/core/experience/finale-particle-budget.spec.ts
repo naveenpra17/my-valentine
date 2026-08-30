@@ -1,4 +1,4 @@
-import { buildPersonalizedOrigins, resolveParticleCapacity } from './finale-particle-budget';
+import { ambientParticleCount, buildPersonalizedOrigins, resolveParticleCapacity } from './finale-particle-budget';
 import { HeartObject } from './experience-state.types';
 
 describe('finale-particle-budget', () => {

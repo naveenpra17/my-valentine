@@ -88,6 +88,8 @@ export class OpeningComponent implements OnDestroy {
   private playVoidSequence(lines: string[]): void {
     const wrap = this.linesWrapRef.nativeElement;
     wrap.innerHTML = '';
+    const linePause = this.motion.isMobile() ? 1.4 : 2.2;
+    const hidePause = this.motion.isMobile() ? 1.2 : 2.2;
 
     this.timeline = gsap.timeline({
       defaults: { ease: 'power3.out' },
@@ -95,10 +97,10 @@ export class OpeningComponent implements OnDestroy {
     });
 
     lines.forEach((text, index) => {
-      const pause = index === 0 ? 0 : '+=2.2';
+      const pause = index === 0 ? 0 : `+=${linePause}`;
       this.timeline!.add(() => this.showLine(wrap, text, index), pause);
       if (index < lines.length - 1) {
-        this.timeline!.add(() => this.hideLine(wrap), '+=2.2');
+        this.timeline!.add(() => this.hideLine(wrap), `+=${hidePause}`);
       }
     });
   }

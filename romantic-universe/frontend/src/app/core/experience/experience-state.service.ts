@@ -27,6 +27,8 @@ export class ExperienceStateService {
   readonly musicEnabled = signal(false);
   readonly experienceStarted = signal(false);
   readonly experienceCompleted = signal(false);
+  /** User was sent from the heart section to find discoveries in the starfield. */
+  readonly heartDiscoveryHunt = signal(false);
 
   readonly totalDiscoveries = computed(() => {
     return (
@@ -230,19 +232,83 @@ export class ExperienceStateService {
     this.heartPool.update(list => [...list, object]);
   }
 
-  /** Re-sync pool from discoveries (e.g. after scrolling back to heart). */
+  /** Re-sync pool from discoveries without stripping labels or image URLs. */
   syncHeartPoolFromDiscoveries(): void {
-    this.rebuildHeartPoolFromDiscoveries();
+    this.mergeDiscoveriesIntoHeartPool();
     this.persist();
   }
 
+  setHeartDiscoveryHunt(active: boolean): void {
+    this.heartDiscoveryHunt.set(active);
+  }
+
+  /** Fill in missing labels and image URLs on pool items (e.g. after session restore). */
+  patchHeartPool(updates: HeartObject[]): void {
+    if (!updates.length) return;
+    const byKey = new Map(updates.map(o => [`${o.type}-${o.referenceId}`, o]));
+    let changed = false;
+    const next = this.heartPool().map(item => {
+      const patch = byKey.get(`${item.type}-${item.referenceId}`);
+      if (!patch) return item;
+      const merged = {
+        ...item,
+        ...patch,
+        label: patch.label ?? item.label,
+        imageUrl: patch.imageUrl ?? item.imageUrl,
+        thumbnailUrl: patch.thumbnailUrl ?? item.thumbnailUrl ?? patch.imageUrl ?? item.imageUrl
+      };
+      if (
+        merged.label !== item.label ||
+        merged.imageUrl !== item.imageUrl ||
+        merged.thumbnailUrl !== item.thumbnailUrl
+      ) {
+        changed = true;
+      }
+      return merged;
+    });
+    if (changed) {
+      this.heartPool.set(next);
+      this.persist();
+    }
+  }
+
+  private mergeDiscoveriesIntoHeartPool(): void {
+    const ensure = (obj: HeartObject): void => {
+      const key = `${obj.type}-${obj.referenceId}`;
+      if (!this.heartPool().some(o => `${o.type}-${o.referenceId}` === key)) {
+        this.addToHeartPool(obj);
+      }
+    };
+
+    for (const id of this.discoveredPhotos()) ensure({ type: 'photo', referenceId: id });
+    for (const id of this.discoveredMemories()) ensure({ type: 'memory', referenceId: id });
+    for (const id of this.discoveredReasons()) ensure({ type: 'reason', referenceId: id });
+    for (const id of this.activatedQuotes()) ensure({ type: 'quote', referenceId: id });
+    for (const id of this.triggeredLoveBombs()) ensure({ type: 'love-bomb', referenceId: id });
+    for (const id of this.discoveredFlowers()) ensure({ type: 'flower', referenceId: id });
+    for (const key of this.foundSecrets()) ensure({ type: 'secret', referenceId: key });
+  }
+
   private rebuildHeartPoolFromDiscoveries(): void {
+    const existing = new Map<string, HeartObject>(
+      this.heartPool().map(o => [`${o.type}-${o.referenceId}`, o])
+    );
     const pool: HeartObject[] = [];
     const add = (obj: HeartObject): void => {
       const key = `${obj.type}-${obj.referenceId}`;
-      if (!pool.some(o => `${o.type}-${o.referenceId}` === key)) {
-        pool.push(obj);
-      }
+      if (pool.some(o => `${o.type}-${o.referenceId}` === key)) return;
+      const prev = existing.get(key);
+      pool.push(
+        prev
+          ? {
+              ...prev,
+              ...obj,
+              label: prev.label ?? obj.label,
+              imageUrl: prev.imageUrl ?? obj.imageUrl,
+              thumbnailUrl: prev.thumbnailUrl ?? obj.thumbnailUrl ?? prev.imageUrl
+            }
+          : obj
+      );
     };
 
     for (const id of this.discoveredPhotos()) add({ type: 'photo', referenceId: id });

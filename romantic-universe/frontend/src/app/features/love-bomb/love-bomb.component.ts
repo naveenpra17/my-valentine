@@ -17,6 +17,7 @@ import { LiveAnnouncerService } from '../../core/services/live-announcer.service
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
 import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
+import { ExperienceNavigationService } from '../../core/experience/experience-navigation.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { LoveBomb } from '../../core/models';
 
@@ -53,6 +54,7 @@ export class LoveBombComponent implements OnDestroy, AfterViewInit {
   private readonly sounds = inject(SoundDesignService);
   private readonly music = inject(MusicalChoreographyService);
   private readonly scenes = inject(SceneManagerService);
+  private readonly navigation = inject(ExperienceNavigationService);
 
   readonly hearts = signal<GameHeart[]>([]);
   readonly currentBomb = signal<LoveBomb | null>(null);
@@ -161,6 +163,11 @@ export class LoveBombComponent implements OnDestroy, AfterViewInit {
   dismissMessage(): void {
     this.showMessage.set(false);
     this.currentBomb.set(null);
+  }
+
+  continueJourney(): void {
+    if (!this.sectionRef?.nativeElement) return;
+    this.navigation.scrollToNextBeat(this.sectionRef.nativeElement);
   }
 
   private async fetchLoveBomb(): Promise<void> {

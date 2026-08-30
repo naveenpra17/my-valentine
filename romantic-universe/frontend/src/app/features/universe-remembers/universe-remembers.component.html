@@ -12,6 +12,12 @@
     }
   </div>
 
+  @if (canSkip()) {
+    <button class="remembers__skip cine-micro" type="button" (click)="skipPlayback()">
+      Skip ahead
+    </button>
+  }
+
   @if (overlayLine() || overlaySubtitle()) {
     <div class="remembers__overlay" aria-live="polite">
       @if (overlayLine()) {

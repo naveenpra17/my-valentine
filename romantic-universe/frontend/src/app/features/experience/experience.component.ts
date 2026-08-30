@@ -176,7 +176,7 @@ export class ExperienceComponent implements OnDestroy, AfterViewInit {
 
   readonly controller = inject(ExperienceControllerService);
 
-  private readonly experienceState = inject(ExperienceStateService);
+  readonly experienceState = inject(ExperienceStateService);
 
   private readonly easterEggs = inject(EasterEggService);
 

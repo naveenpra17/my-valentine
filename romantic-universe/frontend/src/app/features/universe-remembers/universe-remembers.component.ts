@@ -57,6 +57,11 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
   private resizeObserver?: ResizeObserver;
   private started = false;
   private bootstrapped = false;
+  private skipRequested = false;
+
+  readonly canSkip = computed(
+    () => this.phase() !== 'idle' && this.phase() !== 'complete'
+  );
 
   readonly phase = signal<RemembersPhase>('idle');
   readonly sceneReady = signal(false);
@@ -90,6 +95,18 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
   dismissDetail(): void {
     this.selectedObject.set(null);
     this.scene?.clearAttachedFocus();
+  }
+
+  skipPlayback(): void {
+    if (this.phase() === 'complete' || this.phase() === 'idle') return;
+    this.skipRequested = true;
+    this.overlayLine.set('');
+    this.overlaySubtitle.set('');
+    this.introLineIndex.set(-1);
+    this.showTitle.set(true);
+    this.phase.set('complete');
+    this.scene?.setReadOnly(true);
+    this.scene?.completeCreation();
   }
 
   private waitForContainerAndBootstrap(attempts = 0): void {
@@ -156,7 +173,9 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
     this.music.enterRemembers();
     this.phase.set('intro');
     await this.playIntroSequence();
+    if (this.skipRequested) return;
     await this.playJourneyReplay();
+    if (this.skipRequested) return;
     await this.playHeartSequence();
   }
 
@@ -169,6 +188,7 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
     ];
 
     for (let i = 0; i < lines.length; i++) {
+      if (this.skipRequested) return;
       this.introLineIndex.set(i);
       this.overlayLine.set(lines[i]);
       this.overlaySubtitle.set('');
@@ -191,6 +211,7 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
     const total = events.length;
 
     for (let i = 0; i < events.length; i++) {
+      if (this.skipRequested) return;
       const event = events[i];
       await this.playJourneyEvent(event, i, total);
     }
