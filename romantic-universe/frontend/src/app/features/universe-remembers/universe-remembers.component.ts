@@ -17,7 +17,6 @@ import { ExperienceStateService } from '../../core/experience/experience-state.s
 import { HeartStateService } from '../../core/experience/heart-state.service';
 import { JourneyReplayService, JourneyReplayEvent } from '../../core/experience/journey-replay.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
-import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
 import { HeartObject } from '../../core/experience/experience-state.types';
 import { OurLittleHeartScene } from '../our-little-heart/our-little-heart-scene';
 import { objectKey } from '../our-little-heart/heart-object-meshes';
@@ -33,7 +32,7 @@ type RemembersPhase =
 @Component({
   selector: 'app-universe-remembers',
   standalone: true,
-  imports: [ChapterVisitDirective],
+  imports: [],
   templateUrl: './universe-remembers.component.html',
   styleUrl: './universe-remembers.component.scss'
 })

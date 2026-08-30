@@ -70,7 +70,7 @@
 
   @if (showMain()) {
 
-    <div class="experience-shell">
+    <div class="experience-shell" #shellRef>
 
       <div class="experience-shell__universe" aria-hidden="false">
 
@@ -160,20 +160,6 @@
 
 
 
-        <section class="experience-beat experience-beat--open-when" appChapterVisit="9">
-
-          <app-open-when
-
-            [title]="config.get('OPEN_WHEN_TITLE', 'Open When...')"
-
-            [subtitle]="config.get('OPEN_WHEN_SUBTITLE', 'For the quiet moments')"
-
-          />
-
-        </section>
-
-
-
         <section class="experience-beat experience-beat--heart" appChapterVisit="8">
 
           <app-our-little-heart
@@ -181,6 +167,20 @@
             [title]="config.get('HEART_TITLE', 'Our Little Heart')"
 
             [subtitle]="config.get('HEART_SUBTITLE', 'Choose something for our heart.')"
+
+          />
+
+        </section>
+
+
+
+        <section class="experience-beat experience-beat--open-when" appChapterVisit="9">
+
+          <app-open-when
+
+            [title]="config.get('OPEN_WHEN_TITLE', 'Open When...')"
+
+            [subtitle]="config.get('OPEN_WHEN_SUBTITLE', 'For the quiet moments')"
 
           />
 

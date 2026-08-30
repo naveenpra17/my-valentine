@@ -8,9 +8,13 @@ import {
 
   OnDestroy,
 
+  AfterViewInit,
+
   ViewChild,
 
   computed,
+
+  effect,
 
   inject,
 
@@ -18,7 +22,10 @@ import {
 
 } from '@angular/core';
 
+import gsap from 'gsap';
 import { ExperienceEngineService } from '../../core/cinematic/experience-engine.service';
+import { ScrollProgressService } from '../../core/cinematic/scroll-progress.service';
+import { MotionService } from '../../core/services/motion.service';
 
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 
@@ -145,11 +152,13 @@ import { DiscoverySceneComponent } from '../../shared/components/discovery-scene
 
 })
 
-export class ExperienceComponent implements OnDestroy {
+export class ExperienceComponent implements OnDestroy, AfterViewInit {
 
   @ViewChild(OpeningComponent) opening?: OpeningComponent;
 
   @ViewChild('mainContent') mainRef?: ElementRef<HTMLElement>;
+
+  @ViewChild('shellRef') shellRef?: ElementRef<HTMLElement>;
 
   @ViewChild('openingHost') openingHost?: ElementRef<HTMLElement>;
 
@@ -160,6 +169,10 @@ export class ExperienceComponent implements OnDestroy {
   private readonly session = inject(SessionService);
 
   private readonly engine = inject(ExperienceEngineService);
+
+  private readonly scrollProgress = inject(ScrollProgressService);
+
+  private readonly motion = inject(MotionService);
 
   readonly controller = inject(ExperienceControllerService);
 
@@ -214,13 +227,45 @@ export class ExperienceComponent implements OnDestroy {
 
     this.easterEggs.initHiddenWorld();
 
+    effect(() => {
+      if (this.showMain()) {
+        queueMicrotask(() => this.attachScrollTracking());
+      }
+    });
+
+  }
+
+
+
+  ngAfterViewInit(): void {
+
+    if (this.showMain()) {
+      const shell = this.shellRef?.nativeElement;
+      if (shell) {
+        gsap.set(shell, { opacity: 1 });
+      }
+      this.attachScrollTracking();
+    }
+
   }
 
 
 
   ngOnDestroy(): void {
 
+    this.scrollProgress.detach();
     this.easterEggs.destroyHiddenWorld();
+
+  }
+
+
+
+  private attachScrollTracking(): void {
+
+    const main = this.mainRef?.nativeElement;
+    if (main) {
+      this.scrollProgress.attach(main);
+    }
 
   }
 
@@ -251,6 +296,19 @@ export class ExperienceComponent implements OnDestroy {
     this.experienceState.setChapter(1);
 
     this.showMain.set(true);
+
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+
+    this.attachScrollTracking();
+
+    const shell = this.shellRef?.nativeElement;
+    if (shell) {
+      if (this.motion.prefersReducedMotion()) {
+        gsap.set(shell, { opacity: 1 });
+      } else {
+        gsap.fromTo(shell, { opacity: 0 }, { opacity: 1, duration: 1.1, ease: 'power2.out' });
+      }
+    }
 
     this.burstActive.set(false);
 

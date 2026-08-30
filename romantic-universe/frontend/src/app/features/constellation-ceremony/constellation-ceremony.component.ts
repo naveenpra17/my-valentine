@@ -2,13 +2,12 @@ import { Component, ElementRef, OnDestroy, ViewChild, afterNextRender, computed,
 import { MotionService } from '../../core/services/motion.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
-import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 
 @Component({
   selector: 'app-constellation-ceremony',
   standalone: true,
-  imports: [ChapterVisitDirective],
+  imports: [],
   templateUrl: './constellation-ceremony.component.html',
   styleUrl: './constellation-ceremony.component.scss'
 })

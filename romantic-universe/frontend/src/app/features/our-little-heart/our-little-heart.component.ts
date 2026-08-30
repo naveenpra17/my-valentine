@@ -23,7 +23,6 @@ import { prioritizePool } from '../../core/experience/heart-asset.mapper';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { CameraDirectorService } from '../../core/cinematic/camera-director.service';
 import { HeartObject } from '../../core/experience/experience-state.types';
-import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
 import { HeartScenePhase, OurLittleHeartScene } from './our-little-heart-scene';
 import { objectKey } from './heart-object-meshes';
 
@@ -35,7 +34,7 @@ type GuidanceKey = 'intro' | 'choose' | 'first' | 'another' | 'rich' | 'done' | 
 @Component({
   selector: 'app-our-little-heart',
   standalone: true,
-  imports: [ChapterVisitDirective],
+  imports: [],
   templateUrl: './our-little-heart.component.html',
   styleUrl: './our-little-heart.component.scss'
 })
@@ -66,6 +65,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   private bootstrapped = false;
   private attaching = false;
   private introPlayed = false;
+  private sectionEngaged = false;
 
   readonly sceneReady = signal(false);
   readonly sceneFailed = signal(false);
@@ -242,11 +242,12 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
 
   goFindDiscoveries(): void {
     this.experienceState.syncHeartPoolFromDiscoveries();
+    const behavior = this.motion.prefersReducedMotion() ? 'auto' : 'smooth';
     const zone = document.getElementById('universe-discovery-zone');
     if (zone) {
-      zone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      zone.scrollIntoView({ behavior, block: 'center' });
     } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior });
     }
   }
 
@@ -325,8 +326,11 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
         ([entry]) => {
           this.inView = entry.isIntersecting;
           this.scene?.setVisible(this.inView && this.visibility.pageVisible());
-          if (entry.isIntersecting) {
-            this.scenes.setScene('heart');
+          if (!entry.isIntersecting) return;
+
+          this.scenes.setScene('heart');
+          if (!this.sectionEngaged) {
+            this.sectionEngaged = true;
             this.music.enterHeart();
             this.experienceState.syncHeartPoolFromDiscoveries();
             void this.scene?.setPoolObjects(this.poolObjects());
@@ -334,7 +338,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
             void this.playIntroSequence();
           }
         },
-        { threshold: 0.2 }
+        { threshold: 0.28, rootMargin: '0px 0px -12% 0px' }
       );
       this.observer.observe(this.sectionRef.nativeElement);
     } catch {

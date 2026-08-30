@@ -18,7 +18,6 @@ import { ExperienceControllerService } from '../../core/experience/experience-co
 import { HeartStateService } from '../../core/experience/heart-state.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
 import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
-import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
 import { HeartShareOfferComponent } from '../../shared/components/heart-share-offer/heart-share-offer.component';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import {
@@ -42,7 +41,7 @@ type TextPhase =
 @Component({
   selector: 'app-finale',
   standalone: true,
-  imports: [ChapterVisitDirective, HeartShareOfferComponent],
+  imports: [HeartShareOfferComponent],
   templateUrl: './finale.component.html',
   styleUrl: './finale.component.scss'
 })

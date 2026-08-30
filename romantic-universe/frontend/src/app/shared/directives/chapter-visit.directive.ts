@@ -19,13 +19,13 @@ export class ChapterVisitDirective implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.28) {
           this.ngZone.run(() => {
             this.controller.visitChapter(this.appChapterVisit());
           });
         }
       },
-      { threshold: 0.18 }
+      { threshold: [0.28, 0.45], rootMargin: '0px 0px -15% 0px' }
     );
     this.observer.observe(this.el.nativeElement);
   }

@@ -93,11 +93,6 @@ export class LoveBombComponent implements OnDestroy, AfterViewInit {
 
     this.measureArena();
     this.initSceneObserver();
-
-    // Always start shortly after view init — do not rely on intersection alone
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => this.startPlayground());
-    });
   }
 
   ngOnDestroy(): void {
@@ -199,12 +194,12 @@ export class LoveBombComponent implements OnDestroy, AfterViewInit {
     if (!this.sectionRef?.nativeElement) return;
     this.observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.2) {
           this.scenes.setScene('love-bomb');
           this.startPlayground();
         }
       },
-      { threshold: 0.1 }
+      { threshold: [0.2, 0.35], rootMargin: '0px 0px -12% 0px' }
     );
     this.observer.observe(this.sectionRef.nativeElement);
   }

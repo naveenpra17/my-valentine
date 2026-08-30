@@ -54,6 +54,9 @@ export class TransitionService {
   }
 
   fadeThroughDarkness(duration = 1.2): Promise<void> {
+    if (this.motion.prefersReducedMotion()) {
+      return Promise.resolve();
+    }
     const overlay = this.createOverlay();
     return new Promise(resolve => {
       gsap.fromTo(overlay, { opacity: 0 }, {

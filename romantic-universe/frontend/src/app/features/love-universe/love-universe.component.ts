@@ -4,6 +4,7 @@ import {
   OnDestroy,
   ViewChild,
   afterNextRender,
+  effect,
   inject,
   input,
   signal
@@ -18,6 +19,7 @@ import { ExperienceControllerService } from '../../core/experience/experience-co
 import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { ExperienceFlowService } from '../../core/experience/experience-flow.service';
+import { ScrollProgressService } from '../../core/cinematic/scroll-progress.service';
 import { ChapterVisitDirective } from '../../shared/directives/chapter-visit.directive';
 import { LoveUniverseScene } from './love-universe-scene';
 
@@ -41,6 +43,7 @@ export class LoveUniverseComponent implements OnDestroy {
   private readonly api = inject(ApiService);
   private readonly scenes = inject(SceneManagerService);
   private readonly experienceFlow = inject(ExperienceFlowService);
+  private readonly scrollProgress = inject(ScrollProgressService);
   private readonly cameraDirector = inject(CameraDirectorService);
   private readonly controller = inject(ExperienceControllerService);
   private readonly music = inject(MusicalChoreographyService);
@@ -48,20 +51,21 @@ export class LoveUniverseComponent implements OnDestroy {
   private scene?: LoveUniverseScene;
   private observer?: IntersectionObserver;
   private inViewport = true;
-  private scrollHandler?: () => void;
 
   readonly introVisible = signal(true);
   readonly photosLoaded = signal(false);
 
   constructor() {
     afterNextRender(() => void this.bootstrap());
+
+    effect(() => {
+      const progress = this.scrollProgress.progress();
+      this.scene?.setScrollProgress(progress);
+    });
   }
 
   ngOnDestroy(): void {
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
-    if (this.scrollHandler) {
-      window.removeEventListener('scroll', this.scrollHandler);
-    }
     this.observer?.disconnect();
     this.cameraDirector.unregister();
     this.scene?.dispose();
@@ -123,8 +127,6 @@ export class LoveUniverseComponent implements OnDestroy {
     this.observer.observe(this.section.nativeElement);
 
     document.addEventListener('visibilitychange', this.onVisibilityChange);
-    this.scrollHandler = () => this.onScroll();
-    window.addEventListener('scroll', this.scrollHandler, { passive: true });
 
     this.playIntro();
   }
@@ -162,14 +164,6 @@ export class LoveUniverseComponent implements OnDestroy {
       ease: 'power2.in',
       onComplete: () => this.introVisible.set(false)
     });
-  }
-
-  private onScroll(): void {
-    if (!this.scene || !this.inViewport) return;
-    const rect = this.section.nativeElement.getBoundingClientRect();
-    const vh = window.innerHeight;
-    const progress = 1 - Math.max(0, Math.min(1, rect.bottom / (rect.height + vh)));
-    this.scene.setScrollProgress(progress);
   }
 
   private onVisibilityChange = (): void => {

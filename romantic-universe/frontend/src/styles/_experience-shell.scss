@@ -2,6 +2,8 @@
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
+  opacity: 0;
+  will-change: opacity;
 }
 
 .experience-shell__universe {
@@ -29,10 +31,10 @@
   padding-bottom: clamp(2rem, 8vh, 4rem);
   background: linear-gradient(
     180deg,
-    transparent 0%,
-    rgba(5, 3, 8, 0.35) 35%,
-    rgba(5, 3, 8, 0.88) 72%,
-    rgba(5, 3, 8, 0.95) 100%
+    rgba(5, 3, 8, 0.5) 0%,
+    rgba(5, 3, 8, 0.72) 24%,
+    rgba(5, 3, 8, 0.9) 76%,
+    rgba(5, 3, 8, 0.5) 100%
   );
 
   > * {
@@ -67,7 +69,8 @@
 }
 
 .experience-beat--open-when {
-  min-height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
   justify-content: flex-start;
   padding-bottom: 0;
   pointer-events: auto;
