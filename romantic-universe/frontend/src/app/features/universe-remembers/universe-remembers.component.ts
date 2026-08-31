@@ -140,7 +140,7 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
         },
         onReconstructComplete: () => {
           this.music.onReconstructionComplete();
-          void this.playFinaleLines();
+          void this.holdThenComplete();
         },
         onPulse: () => this.sounds.play('star')
       });
@@ -171,6 +171,10 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
   private async playExperience(): Promise<void> {
     this.sounds.enable();
     this.music.enterRemembers();
+    const cherished = this.experienceState.getCherishedDiscovery();
+    if (cherished) {
+      this.scene?.highlightCherishedMarker?.(cherished.type, cherished.referenceId);
+    }
     this.phase.set('intro');
     await this.playIntroSequence();
     if (this.skipRequested) return;
@@ -180,22 +184,18 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
   }
 
   private async playIntroSequence(): Promise<void> {
-    const lines = [
-      this.intro(),
-      'You found quite a few things.',
-      'And somehow...',
-      '...you left a little bit of yourself behind.'
-    ];
+    const lines = [this.intro(), '...you left a little bit of yourself behind.'];
 
     for (let i = 0; i < lines.length; i++) {
       if (this.skipRequested) return;
       this.introLineIndex.set(i);
       this.overlayLine.set(lines[i]);
       this.overlaySubtitle.set('');
-      await this.pause(i === 0 ? 2600 : 2200);
+      await this.pause(i === 0 ? 3600 : 3000);
     }
     this.introLineIndex.set(-1);
     this.overlayLine.set('');
+    await this.pause(1400);
   }
 
   private async playJourneyReplay(): Promise<void> {
@@ -238,25 +238,23 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
     }
 
     this.sounds.play('star');
-    await this.pause(this.motion.prefersReducedMotion() ? 1100 : 2000);
+    await this.pause(this.motion.prefersReducedMotion() ? 1000 : 2800);
     this.overlayLine.set('');
     this.overlaySubtitle.set('');
-    await this.pause(600);
+    await this.pause(1200);
   }
 
   private async playHeartSequence(): Promise<void> {
     const objects = this.heartObjects();
 
     this.phase.set('heart-intro');
-    this.overlayLine.set('You found all these little things...');
-    await this.pause(2600);
     this.overlayLine.set('...and then you made this.');
-    await this.pause(2400);
+    await this.pause(3800);
     this.overlayLine.set('');
     this.showTitle.set(true);
 
     this.scene?.revealHeartForReconstruction();
-    await this.pause(1000);
+    await this.pause(2000);
 
     this.phase.set('reconstruct');
 
@@ -273,20 +271,15 @@ export class UniverseRemembersComponent implements OnDestroy, AfterViewInit {
     await this.scene?.reconstructSequential(objects);
   }
 
-  private async playFinaleLines(): Promise<void> {
+  private async holdThenComplete(): Promise<void> {
+    if (this.skipRequested) return;
     this.phase.set('complete');
-    const lines = [
-      'Every little thing you found...',
-      'Every memory.',
-      'Every little secret.',
-      'And every piece you chose...',
-      '...became this.'
-    ];
-
-    for (const line of lines) {
-      this.overlayLine.set(line);
-      await this.pause(2400);
-    }
+    this.overlayLine.set('');
+    this.overlaySubtitle.set('');
+    await this.pause(this.motion.prefersReducedMotion() ? 1600 : 5200);
+    if (this.skipRequested) return;
+    this.overlayLine.set('This is exactly what you made.');
+    await this.pause(3400);
     this.overlayLine.set('');
     this.showTitle.set(true);
   }

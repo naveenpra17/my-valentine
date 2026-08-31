@@ -371,15 +371,10 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
     const gen = ++this.finaleGeneration;
     this.sounds.enable();
     this.textPhase.set('pre');
-
-    this.overlayLine.set('I wanted to keep this moment.');
-    await this.pause(2400, gen);
-    if (!this.isFinaleActive(gen)) return;
-    this.overlaySub.set('Just for a little longer.');
-    await this.pause(2000, gen);
-    if (!this.isFinaleActive(gen)) return;
     this.overlayLine.set('');
     this.overlaySub.set('');
+    await this.pause(this.motion.prefersReducedMotion() ? 800 : 2800, gen);
+    if (!this.isFinaleActive(gen)) return;
 
     await this.scene?.playTransformation();
   }
@@ -404,7 +399,7 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
       if (!this.isFinaleActive(gen)) return;
       this.lineIndex.set(i);
       this.overlayLine.set(lines[i]);
-      await this.pause(2600, gen);
+      await this.pause(3000, gen);
     }
     if (!this.isFinaleActive(gen)) return;
     this.lineIndex.set(-1);
@@ -413,19 +408,19 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
     this.textPhase.set('message');
     this.showMessage.set(true);
     this.music.onHerName();
-    await this.pause(3800, gen);
+    await this.pause(4400, gen);
     if (!this.isFinaleActive(gen)) return;
 
     this.textPhase.set('signature');
     this.showSignature.set(true);
     this.music.onFinalMessage();
-    await this.pause(3200, gen);
+    await this.pause(3800, gen);
     if (!this.isFinaleActive(gen)) return;
 
     this.textPhase.set('fade');
     this.showMessage.set(false);
     this.showSignature.set(false);
-    await this.pause(2400, gen);
+    await this.pause(3000, gen);
     if (!this.isFinaleActive(gen)) return;
 
     this.textPhase.set('secret');
@@ -443,7 +438,7 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
       if (!this.secretDone()) {
         this.triggerSecret();
       }
-    }, 12000);
+    }, 18000);
   }
 
   private clearSecretAutoTimeout(): void {

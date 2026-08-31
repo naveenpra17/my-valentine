@@ -15,6 +15,7 @@ import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
 import { CameraDirectorService } from '../../core/cinematic/camera-director.service';
+import { UniverseLivingService } from '../../core/cinematic/universe-living.service';
 import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
 import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
@@ -49,6 +50,7 @@ export class LoveUniverseComponent implements OnDestroy {
   private readonly navigation = inject(ExperienceNavigationService);
   private readonly scrollProgress = inject(ScrollProgressService);
   private readonly cameraDirector = inject(CameraDirectorService);
+  private readonly living = inject(UniverseLivingService);
   private readonly controller = inject(ExperienceControllerService);
   private readonly music = inject(MusicalChoreographyService);
 
@@ -59,6 +61,12 @@ export class LoveUniverseComponent implements OnDestroy {
   readonly introVisible = signal(true);
   readonly photosLoaded = signal(false);
   readonly discoveryHunt = this.experienceState.heartDiscoveryHunt;
+  readonly cursorX = signal(50);
+  readonly cursorY = signal(50);
+  readonly cursorNearDiscovery = signal(false);
+  readonly showUniverseCursor = signal(false);
+
+  private cursorRaf = 0;
 
   returnToHeart(): void {
     this.experienceState.setHeartDiscoveryHunt(false);
@@ -75,9 +83,11 @@ export class LoveUniverseComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    cancelAnimationFrame(this.cursorRaf);
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
     this.observer?.disconnect();
     this.cameraDirector.unregister();
+    this.living.unregister();
     this.scene?.dispose();
   }
 
@@ -108,6 +118,25 @@ export class LoveUniverseComponent implements OnDestroy {
       focusQuote: (d) => this.scene!.approach({ x: -1.2, y: 1, z: -3 }, d ?? 1400),
       focusHeart: (d) => this.scene!.approach({ x: 0, y: 0, z: -0.5 }, d ?? 1500)
     });
+
+    this.living.register({
+      beginTimeStop: () => this.scene?.beginTimeStop(),
+      endTimeStop: (ms) => this.scene?.endTimeStop(ms),
+      addWarmAfterimage: (x, y, z) => this.scene?.addWarmAfterimage(x, y, z),
+      spawnTouchRipple: (x, y) => this.scene?.spawnTouchRipple(x, y),
+      getDiscoveryProximity: () => this.scene?.getDiscoveryProximity() ?? 0,
+      highlightCherishedDiscovery: (type, ref) => this.scene?.highlightCherishedDiscovery(type, ref)
+    });
+
+    const cherished = this.experienceState.getCherishedDiscovery();
+    if (cherished) {
+      this.scene.highlightCherishedDiscovery(cherished.type, cherished.referenceId);
+    }
+
+    if (!this.motion.isMobile() && !this.motion.prefersReducedMotion()) {
+      this.showUniverseCursor.set(true);
+      this.startCursorLoop();
+    }
 
     try {
       const photos = await firstValueFrom(this.api.getPhotos());
@@ -143,36 +172,62 @@ export class LoveUniverseComponent implements OnDestroy {
 
   private playIntro(): void {
     if (this.motion.prefersReducedMotion()) {
-      setTimeout(() => this.introVisible.set(false), 2000);
+      setTimeout(() => {
+        this.introVisible.set(false);
+        this.scene?.beginDiscoveryChoreography();
+        this.music.onDiscoveryApproach();
+      }, 2800);
       return;
     }
 
     const el = this.introTextRef?.nativeElement;
     if (!el) {
-      setTimeout(() => this.introVisible.set(false), 4000);
+      setTimeout(() => {
+        this.introVisible.set(false);
+        this.scene?.beginDiscoveryChoreography();
+        this.music.onDiscoveryApproach();
+      }, 5200);
       return;
     }
 
-    gsap.fromTo(el.children, {
-      opacity: 0,
-      y: 14,
-      filter: 'blur(8px)'
-    }, {
-      opacity: 1,
-      y: 0,
-      filter: 'blur(0px)',
-      duration: 1.6,
-      stagger: 1.6,
-      ease: 'power3.out'
+    const children = Array.from(el.children) as HTMLElement[];
+    gsap.set(children, { opacity: 0, y: 12 });
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        this.scene?.resumeAmbientMotion();
+        this.introVisible.set(false);
+        this.scene?.beginDiscoveryChoreography();
+        this.music.onDiscoveryApproach();
+      }
     });
 
-    gsap.to(el, {
-      opacity: 0,
-      y: -10,
-      delay: 6.2,
-      duration: 1.4,
-      ease: 'power2.in',
-      onComplete: () => this.introVisible.set(false)
+    this.scene?.cueIntroStillness();
+
+    children.forEach((child, i) => {
+      tl.to(child, {
+        opacity: 1,
+        y: 0,
+        duration: 1.8,
+        ease: 'power2.out'
+      }, i === 0 ? 0.8 : '+=1.4');
+
+      if (i < children.length - 1) {
+        tl.to(child, {
+          opacity: 0,
+          y: -8,
+          duration: 1.2,
+          ease: 'power2.in'
+        }, '+=2.2');
+      } else {
+        tl.to(child, {
+          opacity: 0,
+          y: -8,
+          duration: 1.4,
+          ease: 'power2.in'
+        }, '+=2.8');
+        tl.call(() => this.scene?.resumeAmbientMotion(), undefined, '-=0.6');
+      }
     });
   }
 
@@ -182,5 +237,21 @@ export class LoveUniverseComponent implements OnDestroy {
 
   private updateSceneVisibility(): void {
     this.scene?.setVisible(this.inViewport && this.visibility.pageVisible());
+  }
+
+  private startCursorLoop(): void {
+    const tick = (): void => {
+      const prox = this.living.getDiscoveryProximity();
+      this.cursorNearDiscovery.set(prox > 0.35);
+      this.cursorRaf = requestAnimationFrame(tick);
+    };
+    this.cursorRaf = requestAnimationFrame(tick);
+
+    const host = this.canvasHost.nativeElement;
+    host.addEventListener('mousemove', (e: MouseEvent) => {
+      const rect = host.getBoundingClientRect();
+      this.cursorX.set(((e.clientX - rect.left) / rect.width) * 100);
+      this.cursorY.set(((e.clientY - rect.top) / rect.height) * 100);
+    });
   }
 }

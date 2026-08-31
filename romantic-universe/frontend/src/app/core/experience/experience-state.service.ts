@@ -3,6 +3,8 @@ import { applyPlacementWithFallback } from './heart-composition.util';
 import {
   ChapterId,
   ConstellationStar,
+  DiscoveryHistory,
+  DiscoveryMilestoneKey,
   HeartObject,
   HeartObjectType,
   SerializedExperienceState
@@ -29,6 +31,7 @@ export class ExperienceStateService {
   readonly experienceCompleted = signal(false);
   /** User was sent from the heart section to find discoveries in the starfield. */
   readonly heartDiscoveryHunt = signal(false);
+  readonly discoveryHistory = signal<DiscoveryHistory>({ milestones: {}, dwellMs: {} });
 
   readonly totalDiscoveries = computed(() => {
     return (
@@ -70,9 +73,47 @@ export class ExperienceStateService {
     this.persist();
   }
 
+  recordDiscoveryMilestone(key: DiscoveryMilestoneKey, referenceId: number | string): void {
+    const history = this.discoveryHistory();
+    if (history.milestones[key] !== undefined) return;
+    this.discoveryHistory.set({
+      ...history,
+      milestones: { ...history.milestones, [key]: referenceId }
+    });
+    this.persist();
+  }
+
+  addDiscoveryDwell(type: HeartObjectType, referenceId: number | string, ms: number): void {
+    if (ms <= 0) return;
+    const key = `${type}-${referenceId}`;
+    const history = this.discoveryHistory();
+    this.discoveryHistory.set({
+      ...history,
+      dwellMs: { ...history.dwellMs, [key]: (history.dwellMs[key] ?? 0) + ms }
+    });
+    this.persist();
+  }
+
+  /** Most emotionally visited discovery — for subtle finale callbacks. */
+  getCherishedDiscovery(): { type: HeartObjectType; referenceId: number | string } | null {
+    const entries = Object.entries(this.discoveryHistory().dwellMs);
+    if (entries.length === 0) return null;
+    entries.sort((a, b) => b[1] - a[1]);
+    const [topKey] = entries[0];
+    const dash = topKey.indexOf('-');
+    if (dash < 0) return null;
+    const type = topKey.slice(0, dash) as HeartObjectType;
+    const ref = topKey.slice(dash + 1);
+    const referenceId = /^\d+$/.test(ref) ? Number(ref) : ref;
+    return { type, referenceId };
+  }
+
   discoverPhoto(id: number, label?: string, imageUrl?: string): boolean {
     if (this.discoveredPhotos().has(id)) return false;
     this.discoveredPhotos.update(set => new Set(set).add(id));
+    if (this.discoveredPhotos().size === 1) {
+      this.recordDiscoveryMilestone('firstPhoto', id);
+    }
     this.addConstellationStar('photo', id);
     this.addToHeartPool({
       type: 'photo',
@@ -88,6 +129,9 @@ export class ExperienceStateService {
   discoverMemory(id: number, label?: string, imageUrl?: string): boolean {
     if (this.discoveredMemories().has(id)) return false;
     this.discoveredMemories.update(set => new Set(set).add(id));
+    if (this.discoveredMemories().size === 1) {
+      this.recordDiscoveryMilestone('firstMemory', id);
+    }
     this.addConstellationStar('memory', id);
     this.addToHeartPool({
       type: 'memory',
@@ -103,6 +147,9 @@ export class ExperienceStateService {
   discoverReason(id: number, label?: string): boolean {
     if (this.discoveredReasons().has(id)) return false;
     this.discoveredReasons.update(set => new Set(set).add(id));
+    if (this.discoveredReasons().size === 1) {
+      this.recordDiscoveryMilestone('firstReason', id);
+    }
     this.addConstellationStar('reason', id);
     this.addToHeartPool({ type: 'reason', referenceId: id, label });
     this.persist();
@@ -112,6 +159,9 @@ export class ExperienceStateService {
   discoverFlower(id = 1, label?: string): boolean {
     if (this.discoveredFlowers().has(id)) return false;
     this.discoveredFlowers.update(set => new Set(set).add(id));
+    if (this.discoveredFlowers().size === 1) {
+      this.recordDiscoveryMilestone('firstFlower', id);
+    }
     this.addConstellationStar('flower', id);
     this.addToHeartPool({ type: 'flower', referenceId: id, label: label ?? 'A little surprise' });
     this.persist();
@@ -121,6 +171,9 @@ export class ExperienceStateService {
   activateQuote(id: number, label?: string): boolean {
     if (this.activatedQuotes().has(id)) return false;
     this.activatedQuotes.update(set => new Set(set).add(id));
+    if (this.activatedQuotes().size === 1) {
+      this.recordDiscoveryMilestone('firstQuote', id);
+    }
     this.addConstellationStar('quote', id);
     this.addToHeartPool({ type: 'quote', referenceId: id, label });
     this.persist();
@@ -130,6 +183,9 @@ export class ExperienceStateService {
   triggerLoveBomb(id: number, label?: string): boolean {
     if (this.triggeredLoveBombs().has(id)) return false;
     this.triggeredLoveBombs.update(set => new Set(set).add(id));
+    if (this.triggeredLoveBombs().size === 1) {
+      this.recordDiscoveryMilestone('firstLoveBomb', id);
+    }
     this.addConstellationStar('love-bomb', id);
     this.addToHeartPool({ type: 'love-bomb', referenceId: id, label });
     this.persist();
@@ -139,6 +195,7 @@ export class ExperienceStateService {
   discoverSecret(key: string, label?: string): boolean {
     if (this.foundSecrets().has(key)) return false;
     this.foundSecrets.update(set => new Set(set).add(key));
+    this.recordDiscoveryMilestone('secretDiscovered', key);
     this.addConstellationStar('secret', key);
     this.addToHeartPool({ type: 'secret', referenceId: key, label: label ?? 'A secret' });
     this.persist();
@@ -196,6 +253,7 @@ export class ExperienceStateService {
     this.musicEnabled.set(false);
     this.experienceStarted.set(false);
     this.experienceCompleted.set(false);
+    this.discoveryHistory.set({ milestones: {}, dwellMs: {} });
     sessionStorage.removeItem(STORAGE_KEY);
   }
 
@@ -349,6 +407,7 @@ export class ExperienceStateService {
       this.musicEnabled.set(data.musicEnabled ?? false);
       this.experienceStarted.set(data.experienceStarted ?? false);
       this.experienceCompleted.set(data.experienceCompleted ?? false);
+      this.discoveryHistory.set(data.discoveryHistory ?? { milestones: {}, dwellMs: {} });
       if (!data.heartPool?.length) {
         this.rebuildHeartPoolFromDiscoveries();
       }
@@ -370,6 +429,7 @@ export class ExperienceStateService {
       selectedHeartObjects: this.selectedHeartObjects(),
       heartPool: this.heartPool(),
       constellationStars: this.constellationStars(),
+      discoveryHistory: this.discoveryHistory(),
       currentChapter: this.currentChapter(),
       musicEnabled: this.musicEnabled(),
       experienceStarted: this.experienceStarted(),

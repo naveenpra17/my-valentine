@@ -38,10 +38,10 @@
 
 .letter__paper {
   position: relative;
-  padding: clamp(2rem, 5vw, 3rem);
-  border: 1px solid rgba(245, 240, 232, 0.1);
-  background: rgba(5, 3, 8, 0.45);
-  backdrop-filter: blur(10px);
+  padding: clamp(2.25rem, 6vw, 3.25rem) clamp(1.75rem, 4vw, 2.5rem);
+  border: none;
+  background: transparent;
+  backdrop-filter: none;
   text-align: left;
   will-change: transform, opacity, filter;
 }

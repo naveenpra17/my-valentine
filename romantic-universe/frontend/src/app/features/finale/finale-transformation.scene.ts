@@ -169,6 +169,8 @@ export class FinaleTransformationScene {
   private disposed = false;
   private convergeStartedAt = 0;
   private convergeDurationMs = 3200;
+  private giantBreathT = -1;
+  private giantBreathDone = false;
 
   constructor(
     container: HTMLElement,
@@ -286,11 +288,11 @@ export class FinaleTransformationScene {
     };
 
     setPhase('hold');
-    await wait(3400);
+    await wait(4200);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('glow');
-    await this.animateGlow(2600, gen);
+    await this.animateGlow(3000, gen);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('detach');
@@ -298,36 +300,38 @@ export class FinaleTransformationScene {
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('dissolve');
-    await wait(800);
+    await wait(1200);
     await this.dissolveHeart(gen);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('spread');
     this.spawnParticlesFromAttached();
     this.particles.beginSpread(this.reducedMotion ? 0.6 : 1);
-    await wait(3200);
+    await wait(3800);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('pullback');
-    this.targetCameraZ = 11;
-    await wait(2400);
+    this.targetCameraZ = 11.5;
+    await wait(3000);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('silence');
-    await wait(2200);
+    await wait(3000);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('converge');
     this.convergeStartedAt = performance.now();
-    this.convergeDurationMs = this.reducedMotion ? 1800 : 3200;
-    this.particles.beginConverge(this.reducedMotion ? 1.8 : 3.2);
-    await wait(5800);
+    this.convergeDurationMs = this.reducedMotion ? 2200 : 4200;
+    this.particles.beginConverge(this.reducedMotion ? 2.2 : 4.2);
+    await wait(6800);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('giant');
-    this.targetCameraZ = 4.2;
-    await wait(3200);
-    await this.pulseHeart(3, gen);
+    this.targetCameraZ = 4.4;
+    this.giantBreathT = 0;
+    this.giantBreathDone = false;
+    await wait(4200);
+    await this.pulseHeart(1, gen);
     if (!this.lifecycle.isActive(gen)) return;
 
     setPhase('complete');
@@ -411,7 +415,7 @@ export class FinaleTransformationScene {
   }
 
   private async detachAllObjects(gen: number): Promise<void> {
-    const stagger = this.reducedMotion ? 120 : 380;
+    const stagger = this.reducedMotion ? 140 : 520;
     for (let i = 0; i < this.attached.length; i++) {
       if (!this.lifecycle.isActive(gen)) return;
       const item = this.attached[i];
@@ -522,13 +526,25 @@ export class FinaleTransformationScene {
     const dt = this.clock.getDelta();
     const elapsed = this.clock.getElapsedTime();
 
-    this.cameraZ += (this.targetCameraZ - this.cameraZ) * 0.04;
+    this.cameraZ += (this.targetCameraZ - this.cameraZ) * 0.028;
     this.camera.position.z = this.cameraZ;
 
     if (this.heartVisible) {
       this.rotY += 0.003;
       this.heartRoot.rotation.y = this.rotY;
-      const breath = 1 + Math.sin(elapsed * 1.1) * 0.015;
+      let breath = 1;
+      if (this.phase === 'giant' || this.phase === 'complete') {
+        if (!this.giantBreathDone && this.giantBreathT >= 0) {
+          this.giantBreathT += dt;
+          if (this.giantBreathT < 2.8) {
+            breath = 1 + Math.sin(Math.min(this.giantBreathT / 2.8, 1) * Math.PI) * 0.04;
+          } else {
+            this.giantBreathDone = true;
+          }
+        }
+      } else {
+        breath = 1 + Math.sin(elapsed * 0.68) * 0.01;
+      }
       this.heartMesh.scale.setScalar(0.38 * breath * (1 + this.heartGlow * 0.04));
     }
 

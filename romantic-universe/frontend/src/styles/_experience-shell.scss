@@ -26,6 +26,17 @@
   will-change: opacity;
 }
 
+html:has(.experience-shell) {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html:has(.experience-shell)::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 .experience-shell__universe {
   position: fixed;
   inset: 0;
@@ -51,10 +62,10 @@
   padding-bottom: clamp(2rem, 8vh, 4rem);
   background: linear-gradient(
     180deg,
-    rgba(5, 3, 8, 0.5) 0%,
-    rgba(5, 3, 8, 0.72) 24%,
-    rgba(5, 3, 8, 0.9) 76%,
-    rgba(5, 3, 8, 0.5) 100%
+    rgba(5, 3, 8, 0.42) 0%,
+    rgba(5, 3, 8, 0.65) 24%,
+    rgba(5, 3, 8, 0.82) 76%,
+    rgba(5, 3, 8, 0.42) 100%
   );
 
   > * {
@@ -72,14 +83,6 @@
   justify-content: center;
   align-items: center;
   padding: 2rem 1.5rem;
-
-  .experience-discovery-hint {
-    margin: 0;
-    max-width: 28ch;
-    text-align: center;
-    opacity: 0.55;
-    pointer-events: none;
-  }
 }
 
 .experience-beat--hero {

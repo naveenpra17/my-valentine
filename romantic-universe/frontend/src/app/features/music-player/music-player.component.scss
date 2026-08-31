@@ -53,10 +53,16 @@
 }
 
 .music-player__hint {
-  opacity: 0.35;
+  opacity: 0;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.music-player:hover .music-player__hint,
+.music-player:focus-within .music-player__hint {
+  opacity: 0.35;
 }
 
 @keyframes sound-pulse {

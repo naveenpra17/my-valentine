@@ -2,6 +2,7 @@ export type QualityTier = 'low' | 'medium' | 'high';
 
 export interface UniverseQuality {
   tier: QualityTier;
+  /** Legacy count — starfield uses tier-based counts in universe-starfield.ts */
   starCount: number;
   dustCount: number;
   heartCount: number;
@@ -15,8 +16,8 @@ export function detectUniverseQuality(reducedMotion: boolean): UniverseQuality {
   if (reducedMotion) {
     return {
       tier: 'low',
-      starCount: 80,
-      dustCount: 40,
+      starCount: 900,
+      dustCount: 60,
       heartCount: 0,
       petalCount: 8,
       maxPhotos: 3,
@@ -32,8 +33,8 @@ export function detectUniverseQuality(reducedMotion: boolean): UniverseQuality {
   if (isMobile || lowMemory) {
     return {
       tier: 'low',
-      starCount: 200,
-      dustCount: 120,
+      starCount: 1100,
+      dustCount: 140,
       heartCount: 6,
       petalCount: 12,
       maxPhotos: 4,
@@ -45,8 +46,8 @@ export function detectUniverseQuality(reducedMotion: boolean): UniverseQuality {
   if (window.innerWidth < 1200) {
     return {
       tier: 'medium',
-      starCount: 350,
-      dustCount: 200,
+      starCount: 2000,
+      dustCount: 220,
       heartCount: 10,
       petalCount: 20,
       maxPhotos: 5,
@@ -57,8 +58,8 @@ export function detectUniverseQuality(reducedMotion: boolean): UniverseQuality {
 
   return {
     tier: 'high',
-    starCount: 500,
-    dustCount: 300,
+    starCount: 2800,
+    dustCount: 320,
     heartCount: 14,
     petalCount: 28,
     maxPhotos: 6,

@@ -3,7 +3,7 @@
 
   <div class="little-heart__canvas-wrap" #canvasHost>
     @if (!sceneReady() && !sceneFailed()) {
-      <div class="little-heart__loading cine-micro" aria-hidden="true">Preparing your heart...</div>
+      <div class="little-heart__loading" aria-hidden="true"></div>
     }
     @if (sceneFailed()) {
       <div class="little-heart__fallback" role="img" aria-label="Heart">
@@ -58,10 +58,7 @@
         <div class="little-heart__empty-help">
           @if (guidance() === 'empty') {
             <p class="little-heart__guidance-steps cine-whisper">
-              1. Tap <strong>Take me to the stars</strong> below<br />
-              2. Tap a floating photograph in the starfield<br />
-              3. Or catch hearts in Love Bomb<br />
-              4. Scroll back here — your finds appear as little lights
+              Tap the stars above to find something first.
             </p>
           } @else {
             <p class="little-heart__guidance-steps cine-whisper">

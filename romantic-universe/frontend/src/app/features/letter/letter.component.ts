@@ -143,54 +143,46 @@ export class LetterComponent implements OnDestroy {
     this.timeline
       .fromTo(this.introRef.nativeElement, {
         opacity: 0,
-        y: 12,
-        filter: 'blur(6px)'
+        y: 10
       }, {
         opacity: 1,
         y: 0,
-        filter: 'blur(0px)',
-        duration: 1.2,
-        ease: 'power3.out'
+        duration: 1.4,
+        ease: 'power2.out'
       })
       .fromTo(this.paperRef.nativeElement, {
         opacity: 0,
-        scale: 0.97,
-        filter: 'blur(4px)'
+        y: 8
       }, {
         opacity: 1,
-        scale: 1,
-        filter: 'blur(0px)',
-        duration: 1,
-        ease: 'power3.out'
-      }, '-=0.6');
+        y: 0,
+        duration: 1.2,
+        ease: 'power2.out'
+      }, '-=0.5');
 
     if (lines.length > 0) {
       this.timeline.fromTo(lines, {
         opacity: 0,
-        y: 16,
-        filter: 'blur(8px)'
+        y: 12
       }, {
         opacity: 1,
         y: 0,
-        filter: 'blur(0px)',
-        duration: 1.1,
-        stagger: 0.55,
-        ease: 'power3.out'
-      }, '-=0.4');
+        duration: 1.2,
+        stagger: 0.75,
+        ease: 'power2.out'
+      }, '-=0.3');
     }
 
     const sign = this.signRef?.nativeElement;
     if (sign && this.myName()) {
       this.timeline.fromTo(sign, {
         opacity: 0,
-        y: 10,
-        filter: 'blur(4px)'
+        y: 8
       }, {
         opacity: 1,
         y: 0,
-        filter: 'blur(0px)',
         duration: 1,
-        ease: 'power3.out'
+        ease: 'power2.out'
       }, '-=0.2');
     }
   }

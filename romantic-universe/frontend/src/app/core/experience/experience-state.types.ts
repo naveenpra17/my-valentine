@@ -34,6 +34,21 @@ export interface ConstellationStar {
   discoveredAt: number;
 }
 
+export type DiscoveryMilestoneKey =
+  | 'firstPhoto'
+  | 'firstMemory'
+  | 'firstReason'
+  | 'firstFlower'
+  | 'firstLoveBomb'
+  | 'firstQuote'
+  | 'secretDiscovered';
+
+export interface DiscoveryHistory {
+  milestones: Partial<Record<DiscoveryMilestoneKey, number | string>>;
+  /** Milliseconds spent with each discovery moment open — key: `type-referenceId` */
+  dwellMs: Record<string, number>;
+}
+
 export interface SerializedExperienceState {
   discoveredPhotos: number[];
   discoveredMemories: number[];
@@ -46,6 +61,7 @@ export interface SerializedExperienceState {
   selectedHeartObjects: HeartObject[];
   heartPool: HeartObject[];
   constellationStars: ConstellationStar[];
+  discoveryHistory?: DiscoveryHistory;
   currentChapter: ChapterId;
   musicEnabled: boolean;
   experienceStarted: boolean;

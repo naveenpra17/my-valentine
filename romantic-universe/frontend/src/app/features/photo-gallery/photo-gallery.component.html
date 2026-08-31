@@ -3,7 +3,6 @@
   <div class="cine-fade-edge cine-fade-edge--top"></div>
 
   <div class="photo-gallery__header">
-    <p class="act-marker">Act IV · Gallery</p>
     <h2 class="cine-statement photo-gallery__title">{{ title() }}</h2>
     <p class="cine-whisper photo-gallery__subtitle">{{ subtitle() }}</p>
   </div>
@@ -13,7 +12,7 @@
   } @else if (error()) {
     <div class="photo-gallery__state photo-gallery__state--error cine-body">{{ error() }}</div>
   } @else if (photos().length === 0) {
-    <div class="photo-gallery__state cine-body">No photos yet — add some in data.sql!</div>
+    <div class="photo-gallery__state cine-whisper">The starfield is still waking up...</div>
   } @else {
     <div
       class="photo-gallery__stage"

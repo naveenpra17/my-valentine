@@ -31,9 +31,9 @@ export const STATE_CROSSFADE_SEC: Partial<Record<MusicalState, number>> = {
   discovery: 1.8,
   memory: 2.2,
   heart: 2.8,
-  remembers: 3.2,
-  transformation: 3.5,
-  giant_heart: 4,
+  remembers: 3.8,
+  transformation: 4,
+  giant_heart: 4.8,
   letter: 2.5,
   secret: 2,
   ending: 4

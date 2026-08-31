@@ -4,10 +4,18 @@
   <div class="constellation-ceremony__content">
     <p class="cine-intimate constellation-ceremony__line" #line1El>{{ line1() }}</p>
     <p class="cine-editorial-sm constellation-ceremony__look" #line2El>{{ line2() }}</p>
-    @if (hasStars()) {
-      <canvas class="constellation-ceremony__canvas" #canvas aria-hidden="true"></canvas>
-    } @else {
-      <p class="cine-whisper constellation-ceremony__empty">Every discovery you make leaves a star behind. Keep exploring — they'll gather here.</p>
+
+    <canvas
+      class="constellation-ceremony__canvas"
+      [class.constellation-ceremony__canvas--visible]="revealed()"
+      #canvas
+      aria-hidden="true"
+    ></canvas>
+
+    @if (revealed() && !hasStars()) {
+      <p class="cine-whisper constellation-ceremony__empty">
+        Every discovery you make leaves a star behind. Keep exploring — they'll gather here.
+      </p>
     }
   </div>
 </section>

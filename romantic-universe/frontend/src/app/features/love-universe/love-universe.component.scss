@@ -12,14 +12,67 @@
   position: absolute;
   inset: 0;
   z-index: 0;
+  pointer-events: auto;
+  cursor: none;
 
   ::ng-deep canvas {
     display: block;
     width: 100% !important;
     height: 100% !important;
+    cursor: none;
   }
 }
 
+.universe__cursor {
+  position: absolute;
+  z-index: 5;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s ease;
+}
+
+.universe__cursor-core {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  border-radius: 50%;
+  background: rgba(232, 220, 198, 0.75);
+  box-shadow:
+    0 0 3px rgba(196, 176, 138, 0.35),
+    0 0 8px rgba(201, 160, 168, 0.12);
+  opacity: 0.4;
+  transition: transform 0.35s ease, box-shadow 0.35s ease, opacity 0.35s ease;
+}
+
+.universe__cursor-trail {
+  display: none;
+}
+
+.universe__cursor--near .universe__cursor-core {
+  transform: scale(1.25);
+  box-shadow:
+    0 0 5px rgba(201, 160, 168, 0.4),
+    0 0 12px rgba(196, 176, 138, 0.15);
+  opacity: 0.65;
+}
+
+.universe__cursor--near .universe__cursor-trail {
+  display: none;
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+  .universe__canvas-wrap,
+  .universe__canvas-wrap ::ng-deep canvas {
+    cursor: auto;
+  }
+
+  .universe__cursor {
+    display: none;
+  }
+}
 .universe__intro {
   position: absolute;
   inset: 0;
@@ -53,13 +106,20 @@
   &--hunt {
     justify-content: center;
     padding-bottom: clamp(3rem, 10vh, 5rem);
-    background: radial-gradient(ellipse at center, rgba(5, 3, 8, 0.15) 0%, transparent 65%);
+    background: radial-gradient(ellipse at center, rgba(5, 3, 8, 0.12) 0%, transparent 65%);
+  }
+
+  &--quiet {
+    opacity: 0;
+    pointer-events: none;
   }
 }
 
 .universe__hint {
   margin-bottom: 2rem;
-  opacity: 0.5;
+  opacity: 0.72;
+  text-shadow: 0 0 24px rgba(5, 3, 8, 0.85);
+  letter-spacing: 0.04em;
 
   &--hunt {
     margin-bottom: 0.75rem;
@@ -89,8 +149,36 @@
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
-  opacity: 0.45;
+  opacity: 0.62;
+  pointer-events: auto;
+  cursor: default;
+  transition: opacity 0.45s ease;
   animation: universe-bob 3s ease-in-out infinite;
+
+  .cine-micro {
+    letter-spacing: 0.2em;
+    transition: letter-spacing 0.45s ease, opacity 0.45s ease, text-shadow 0.45s ease;
+  }
+
+  &:hover,
+  &:focus-within {
+    opacity: 0.92;
+
+    .cine-micro {
+      letter-spacing: 0.28em;
+      text-shadow: 0 0 12px rgba(196, 176, 138, 0.25);
+    }
+
+    .universe__chevron {
+      border-color: var(--champagne);
+      opacity: 0.85;
+    }
+  }
+
+  &:active {
+    opacity: 0.75;
+    transition-duration: 0.15s;
+  }
 }
 
 .universe__chevron {
@@ -99,6 +187,8 @@
   border-right: 1px solid var(--ivory-ghost);
   border-bottom: 1px solid var(--ivory-ghost);
   transform: rotate(45deg);
+  opacity: 0.55;
+  transition: border-color 0.45s ease, opacity 0.45s ease;
 }
 
 @keyframes universe-bob {

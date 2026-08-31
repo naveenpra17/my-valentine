@@ -27,13 +27,51 @@
   inset: 0;
   z-index: 500;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2rem;
-  background: rgba(5, 3, 8, 0.97);
-  text-align: center;
-  padding: 2rem;
+  background: rgba(5, 3, 8, 0.98);
+  pointer-events: auto;
+}
+
+.finale-secret__anomaly {
+  position: relative;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--rose);
+    outline-offset: 8px;
+    border-radius: 50%;
+  }
+}
+
+.finale-secret__star {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  border-radius: 50%;
+  background: var(--champagne);
+  box-shadow: 0 0 8px rgba(196, 176, 138, 0.7);
+  animation: secret-star-drift 6s ease-in-out infinite;
+}
+
+@keyframes secret-star-drift {
+  0%, 100% { transform: translate(0, 0); opacity: 0.5; }
+  25% { transform: translate(18px, -12px); opacity: 1; }
+  50% { transform: translate(-8px, 8px); opacity: 0.7; }
+  75% { transform: translate(12px, 14px); opacity: 0.95; }
+}
+
+.finale-secret__text {
+  opacity: 0.65;
+  margin: 0;
 }
 
 .finale-secret__light {

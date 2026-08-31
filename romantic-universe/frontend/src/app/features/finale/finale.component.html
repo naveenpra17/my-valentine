@@ -10,7 +10,7 @@
 
       @if (!sceneReady() && !sceneFailed()) {
 
-        <div class="finale__loading cine-micro" aria-hidden="true">Preparing the finale...</div>
+        <div class="finale__loading" aria-hidden="true"></div>
 
       }
 
@@ -61,29 +61,16 @@
 
 
     @if (showSecret() && !secretDone()) {
-
-      <div class="finale-secret" role="dialog" aria-label="One last thing">
-
-        <p class="cine-whisper finale-secret__text">One last thing...</p>
-
-        <p class="cine-micro finale-secret__hint">There's one more surprise waiting for you.</p>
-
+      <div class="finale-secret" role="presentation" aria-label="One last whisper">
         <button
-
-          class="finale-secret__surprise cine-enter-btn"
-
+          class="finale-secret__anomaly"
           type="button"
-
           (click)="triggerSecret()"
-
+          aria-label="A star moved differently"
         >
-
-          One more surprise
-
+          <span class="finale-secret__star" aria-hidden="true"></span>
         </button>
-
       </div>
-
     }
 
 

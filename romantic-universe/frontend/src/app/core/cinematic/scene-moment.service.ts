@@ -31,7 +31,7 @@ export class SceneMomentService {
   async transitionIn(payload: SceneMomentPayload): Promise<void> {
     this.transitioning.set(true);
     if (!this.motion.prefersReducedMotion()) {
-      await this.transitions.fadeThroughDarkness(0.9);
+      await this.transitions.fadeThroughDarkness(1.1);
     }
     this.active.set(payload);
     this.transitioning.set(false);
@@ -41,8 +41,8 @@ export class SceneMomentService {
     this.transitioning.set(true);
     this.active.set(null);
     if (!this.motion.prefersReducedMotion()) {
-      await this.camera.returnToUniverse(1600);
-      await this.transitions.fadeThroughDarkness(0.7);
+      await this.camera.returnToUniverse(1800);
+      await this.transitions.fadeThroughDarkness(0.9);
     }
     this.transitioning.set(false);
   }

@@ -114,31 +114,6 @@ a:focus-visible {
   }
 }
 
-.section {
-  padding: var(--scene-padding);
-  background: var(--void);
-  color: var(--ivory);
-}
-
-.section-title {
-  font-family: var(--font-display);
-  font-size: var(--text-statement);
-  text-align: center;
-  margin-bottom: 0.75rem;
-  color: var(--ivory);
-  font-weight: 400;
-}
-
-.section-subtitle {
-  text-align: center;
-  color: var(--ivory-ghost);
-  margin-bottom: 3rem;
-  font-size: var(--text-whisper);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  font-weight: 300;
-}
-
 .sr-only {
   position: absolute;
   width: 1px;

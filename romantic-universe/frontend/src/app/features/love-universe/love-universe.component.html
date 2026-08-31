@@ -4,6 +4,18 @@
 
   <div class="universe__canvas-wrap" #canvasHost></div>
 
+  @if (showUniverseCursor()) {
+    <div
+      class="universe__cursor"
+      [class.universe__cursor--near]="cursorNearDiscovery()"
+      [style.left.%]="cursorX()"
+      [style.top.%]="cursorY()"
+      aria-hidden="true"
+    >
+      <span class="universe__cursor-core"></span>
+      <span class="universe__cursor-trail"></span>
+    </div>
+  }
   @if (introVisible()) {
     <div class="universe__intro" #introText>
       <p class="cine-whisper universe__intro-line">{{ line1() }}</p>
@@ -11,19 +23,20 @@
     </div>
   }
 
-  <div class="universe__overlay" [class.universe__overlay--hunt]="discoveryHunt()">
+  <div class="universe__overlay" [class.universe__overlay--hunt]="discoveryHunt()" [class.universe__overlay--quiet]="introVisible()">
     @if (discoveryHunt()) {
-      <p class="universe__hint universe__hint--hunt cine-discovery-hint">Tap a floating photograph in the stars</p>
-      <p class="universe__hint-sub cine-whisper">Each one you find can go in your heart.</p>
+      <p class="universe__hint universe__hint--hunt cine-discovery-hint">Something is still out there.</p>
       <button class="cine-enter-btn universe__back-heart" type="button" (click)="returnToHeart()">
         Back to the heart
       </button>
-    } @else {
-      <p class="universe__hint cine-micro">Tap a floating photograph in the stars</p>
+    } @else if (!introVisible()) {
+      <p class="universe__hint cine-whisper">Something is floating out there.</p>
     }
-    <div class="universe__scroll-hint">
-      <span class="cine-micro">Continue</span>
-      <div class="universe__chevron" aria-hidden="true"></div>
-    </div>
+    @if (!introVisible()) {
+      <div class="universe__scroll-hint">
+        <span class="cine-micro">Continue</span>
+        <div class="universe__chevron" aria-hidden="true"></div>
+      </div>
+    }
   </div>
 </section>

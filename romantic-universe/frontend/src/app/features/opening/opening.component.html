@@ -22,23 +22,8 @@
       (click)="showCta() ? onStageActivate() : null"
     ></div>
 
-    @if (showCta()) {
-      <p class="void__hint cine-micro" [class.void__hint--visible]="invitationVisible()">
-        Tap the light
-      </p>
-
-      <button
-        class="void__invitation"
-        #ctaEl
-        type="button"
-        (click)="onEnter()"
-        [disabled]="exiting()"
-        [class.void__invitation--visible]="invitationVisible()"
-        aria-label="Enter the experience"
-      >
-        <span class="void__invitation-core" aria-hidden="true"></span>
-        <span class="void__invitation-halo" aria-hidden="true"></span>
-      </button>
+    @if (showCta() && invitationVisible()) {
+      <p class="sr-only">Tap the light to enter</p>
     }
   </div>
 </div>

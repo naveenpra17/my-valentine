@@ -22,7 +22,6 @@ import { MusicalChoreographyService } from '../../core/audio/musical-choreograph
 export class OpeningComponent implements OnDestroy {
   @ViewChild('container') containerRef!: ElementRef<HTMLElement>;
   @ViewChild('linesWrap') linesWrapRef!: ElementRef<HTMLElement>;
-  @ViewChild('ctaEl') ctaRef!: ElementRef<HTMLElement>;
   @ViewChild('lightPoint') lightRef!: ElementRef<HTMLElement>;
 
   readonly void1 = input('Hey...');
@@ -69,7 +68,7 @@ export class OpeningComponent implements OnDestroy {
     if (this.motion.prefersReducedMotion()) {
       this.showAllLines(lines);
       this.showCta.set(true);
-      this.scheduleInvitationReveal();
+      this.revealInvitation();
       return;
     }
 
@@ -88,13 +87,16 @@ export class OpeningComponent implements OnDestroy {
   private playVoidSequence(lines: string[]): void {
     const wrap = this.linesWrapRef.nativeElement;
     wrap.innerHTML = '';
-    const linePause = this.motion.isMobile() ? 1.4 : 2.2;
-    const hidePause = this.motion.isMobile() ? 1.2 : 2.2;
+    const linePause = this.motion.isMobile() ? 2.2 : 2.8;
+    const hidePause = this.motion.isMobile() ? 1.8 : 2.4;
 
     this.timeline = gsap.timeline({
       defaults: { ease: 'power3.out' },
       onComplete: () => this.revealInvitation()
     });
+
+    // Darkness holds — curiosity before words
+    this.timeline.add(() => {}, '+=2.6');
 
     lines.forEach((text, index) => {
       const pause = index === 0 ? 0 : `+=${linePause}`;
@@ -111,15 +113,14 @@ export class OpeningComponent implements OnDestroy {
     p.className = lineClass(text, index);
     p.textContent = text;
     p.style.opacity = '0';
-    p.style.filter = 'blur(10px)';
+    p.style.transform = 'translateY(12px)';
     container.appendChild(p);
 
     gsap.to(p, {
       opacity: 1,
-      filter: 'blur(0px)',
       y: 0,
-      duration: index === 0 ? 2 : 1.4,
-      ease: 'power3.out'
+      duration: index === 0 ? 2.4 : 1.6,
+      ease: 'power2.out'
     });
   }
 
@@ -128,58 +129,26 @@ export class OpeningComponent implements OnDestroy {
     if (!p) return;
     gsap.to(p, {
       opacity: 0,
-      filter: 'blur(8px)',
-      y: -6,
-      duration: 0.9,
+      y: -8,
+      duration: 1.1,
       ease: 'power2.in'
     });
   }
 
   private revealInvitation(): void {
     this.showCta.set(true);
-    this.scheduleInvitationReveal();
-  }
-
-  /** Wait for @if block to render the CTA before animating it. */
-  private scheduleInvitationReveal(): void {
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => this.animateInvitation());
-    });
-  }
-
-  private animateInvitation(): void {
-    const el = this.ctaRef?.nativeElement;
-    if (!el) {
       this.invitationVisible.set(true);
-      return;
-    }
-
-    if (this.motion.prefersReducedMotion()) {
-      gsap.set(el, { opacity: 1, scale: 1 });
-      this.invitationVisible.set(true);
-      return;
-    }
-
-    gsap.fromTo(el, {
-      opacity: 0,
-      scale: 0.6
-    }, {
-      opacity: 1,
-      scale: 1,
-      duration: 1.6,
-      ease: 'power3.out',
-      onComplete: () => this.invitationVisible.set(true)
+      const light = this.lightRef?.nativeElement;
+      if (light && !this.motion.prefersReducedMotion()) {
+        gsap.to(light, {
+          scale: 1.6,
+          opacity: 0.95,
+          duration: 2.6,
+          ease: 'power2.out'
+        });
+      }
     });
-
-    const light = this.lightRef?.nativeElement;
-    if (light) {
-      gsap.to(light, {
-        scale: 2.5,
-        opacity: 1,
-        duration: 1.4,
-        ease: 'power3.out'
-      });
-    }
   }
 
   private playEnterExpansion(): void {

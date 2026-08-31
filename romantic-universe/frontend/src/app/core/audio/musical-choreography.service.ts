@@ -115,14 +115,27 @@ export class MusicalChoreographyService implements OnDestroy {
   // ——— Journey hooks ———
 
   enterOpening(): void {
-    this.transitionTo('silence', 2);
-    this.rampLayer('universe', 0.04, 4);
+    this.transitionTo('silence', 2.5);
+    this.rampLayer('universe', 0.025, 5);
+  }
+
+  beginMomentFocus(): void {
+    this.dipToNearSilence(0.8);
+    this.musicIntensity.set(0.08);
+  }
+
+  endMomentFocus(): void {
+    const state = this.musicalState();
+    if (state === 'silence' || state === 'memory' || state === 'discovery') {
+      this.transitionTo(state === 'memory' ? 'memory' : 'discovery', 2);
+    }
+    this.musicIntensity.set(STATE_INTENSITY[state] ?? 0.18);
   }
 
   onFirstInteraction(): void {
     this.enable();
-    this.playMotif('star', 0.7);
-    this.transitionTo('universe', 3);
+    this.playMotif('star', 0.5);
+    this.transitionTo('universe', 3.5);
   }
 
   enterUniverse(): void {

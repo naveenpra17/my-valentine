@@ -3,7 +3,7 @@
 
   <div class="remembers__canvas" #canvasHost>
     @if (!sceneReady() && !sceneFailed()) {
-      <div class="remembers__loading cine-micro" aria-hidden="true">The universe is remembering...</div>
+      <div class="remembers__loading cine-micro" aria-hidden="true"></div>
     }
     @if (sceneFailed()) {
       <div class="remembers__fallback" aria-hidden="true">

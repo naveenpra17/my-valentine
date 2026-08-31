@@ -95,6 +95,7 @@ export class OurLittleHeartScene {
   private rotVelX = 0;
   private rotVelY = 0;
   private isDragging = false;
+  private interactionUntil = 0;
   private lastPointerX = 0;
   private lastPointerY = 0;
   private pinchStartDist = 0;
@@ -108,6 +109,9 @@ export class OurLittleHeartScene {
   private introProgress = 0;
   private timeScale = 1;
   private poolHighlight = false;
+  private pointerProximity = 0;
+  private universeRipple = 0;
+  private cherishedKey: string | null = null;
 
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
@@ -125,6 +129,7 @@ export class OurLittleHeartScene {
     }
 
     this.isDragging = true;
+    this.interactionUntil = performance.now() + 2800;
     this.lastPointerX = e.clientX;
     this.lastPointerY = e.clientY;
     this.rotVelX = 0;
@@ -149,6 +154,7 @@ export class OurLittleHeartScene {
 
     if (!this.isDragging) {
       this.updateHover();
+      this.updatePointerProximity();
       return;
     }
     const dx = e.clientX - this.lastPointerX;
@@ -444,6 +450,8 @@ export class OurLittleHeartScene {
           if (obj.type === 'flower') this.burstFlowerPetals(target);
           if (obj.type === 'love-bomb') this.burstLoveBomb(target);
           this.triggerHeartPulse();
+          this.sendUniverseRipple();
+          this.updateHeartRichness();
           this.callbacks.onAttachComplete?.(obj);
           this.callbacks.onPulse?.();
           this.timeScale = 1;
@@ -573,16 +581,20 @@ export class OurLittleHeartScene {
     this.targetCameraZ = this.reducedMotion ? 5.8 : 6.2;
   }
 
+  highlightCherishedMarker(type: string, referenceId: number | string): void {
+    this.cherishedKey = `${type}-${referenceId}`;
+  }
+
   /** Reconstruct heart objects one at a time from saved state (read-only). */
   async reconstructSequential(objects: HeartObject[]): Promise<void> {
     this.prepareReconstruction();
-    await this.pause(1200);
+    await this.pause(1800);
 
     for (let i = 0; i < objects.length; i++) {
       const obj = objects[i];
       await this.flyReconstructAttach(obj);
       this.callbacks.onReconstructItem?.(obj, i);
-      await this.pause(this.reducedMotion ? 350 : 750);
+      await this.pause(this.reducedMotion ? 400 : 1100);
     }
 
     this.setPhase('complete');
@@ -629,6 +641,7 @@ export class OurLittleHeartScene {
         onComplete: () => {
           if (obj.rotation) group.rotation.set(obj.rotation.x, obj.rotation.y, obj.rotation.z);
           this.attached.set(key, { key, object: obj, group });
+          this.flashObjectSignature(obj);
           this.triggerHeartPulse();
           this.callbacks.onPulse?.();
           resolve();
@@ -871,6 +884,63 @@ export class OurLittleHeartScene {
     this.heartRoot.add(this.rippleMesh);
   }
 
+  private flashObjectSignature(obj: HeartObject): void {
+    if (this.reducedMotion) return;
+    const entry = this.attached.get(objectKey(obj));
+    if (!entry) return;
+    const isCherished = objectKey(obj) === this.cherishedKey;
+    const colors: Record<string, number> = {
+      photo: 0xc4b08a,
+      memory: 0xc9a0a8,
+      reason: 0x9a8fa8,
+      flower: 0xd4b0b8,
+      secret: 0x6a5088,
+      'love-bomb': 0xd4b0b8
+    };
+    const light = new THREE.PointLight(colors[obj.type] ?? 0xc9a0a8, isCherished ? 1 : 0.6, isCherished ? 3.5 : 2.5);
+    light.position.copy(entry.group.position);
+    this.attachedGroup.add(light);
+    setTimeout(() => {
+      this.attachedGroup.remove(light);
+      light.dispose();
+    }, isCherished ? 1400 : 900);
+  }
+
+  private sendUniverseRipple(): void {
+    if (this.reducedMotion) return;
+    this.universeRipple = 1;
+    const pos = this.particles.geometry.attributes['position'] as THREE.BufferAttribute;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const z = pos.getZ(i);
+      const d = Math.sqrt(x * x + y * y + z * z);
+      if (d < 3) {
+        pos.setXYZ(i, x * 1.04, y * 1.04, z * 1.04);
+      }
+    }
+    pos.needsUpdate = true;
+  }
+
+  private updateHeartRichness(): void {
+    const count = this.attached.size;
+    const richness = Math.min(1, count / 6);
+    const particleMat = this.particles.material as THREE.PointsMaterial;
+    particleMat.opacity = 0.12 + richness * 0.18;
+    this.heartMat.emissiveIntensity = 0.14 + richness * 0.08;
+  }
+
+  private updatePointerProximity(): void {
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const heartHits = this.raycaster.intersectObject(this.heartMesh, true);
+    const dist = heartHits.length > 0 ? heartHits[0].distance : 12;
+    const prox = THREE.MathUtils.clamp(1 - dist / 10, 0, 1);
+    this.pointerProximity += (prox - this.pointerProximity) * 0.08;
+    if (prox > 0.2) {
+      this.targetCameraZ = THREE.MathUtils.lerp(this.targetCameraZ, 5.6 - prox * 0.4, 0.02);
+    }
+  }
+
   private burstFlowerPetals(center: THREE.Vector3): void {
     if (this.reducedMotion) return;
     for (let i = 0; i < 6; i++) {
@@ -1007,7 +1077,10 @@ export class OurLittleHeartScene {
 
     if (!this.reducedMotion) {
       if (!this.isDragging) {
-        this.targetRotY += 0.0012 * slow;
+        const interacting = performance.now() < this.interactionUntil;
+        if (!interacting) {
+          this.targetRotY += 0.0008 * slow;
+        }
         this.rotVelX *= 0.92;
         this.rotVelY *= 0.92;
       }
@@ -1016,12 +1089,14 @@ export class OurLittleHeartScene {
       this.heartRoot.rotation.x = this.rotX;
       this.heartRoot.rotation.y = this.rotY;
 
-      const breath = 1 + Math.sin(elapsed * 1.1) * 0.018;
-      const pulse = this.pulseAmount > 0 ? 1 + this.pulseAmount * 0.06 * Math.sin(this.pulseAmount * Math.PI) : 0;
+      const breath = 1 + Math.sin(elapsed * 1.05) * 0.012;
+      const pulse = this.pulseAmount > 0 ? 1 + this.pulseAmount * 0.05 * Math.sin(this.pulseAmount * Math.PI) : 0;
       this.heartMesh.scale.setScalar(this.heartScale * breath * (1 + pulse));
-      if (this.pulseAmount > 0) this.pulseAmount = Math.max(0, this.pulseAmount - dt * 1.8);
+      if (this.pulseAmount > 0) this.pulseAmount = Math.max(0, this.pulseAmount - dt * 1.5);
 
-      this.heartMat.emissiveIntensity = 0.18 + Math.sin(elapsed * 0.8) * 0.04 + this.pulseAmount * 0.15;
+      const warmth = 0.14 + Math.sin(elapsed * 0.55) * 0.025 + this.pulseAmount * 0.1
+        + this.pointerProximity * 0.06 + this.universeRipple * 0.08;
+      this.heartMat.emissiveIntensity = warmth;
 
       if (this.rippleMesh) {
         const s = 1 + (1 - this.pulseAmount) * 0.5;
@@ -1054,6 +1129,12 @@ export class OurLittleHeartScene {
 
       this.stars.rotation.y = elapsed * 0.008;
       this.particles.rotation.y = -elapsed * 0.012;
+
+      if (this.universeRipple > 0) {
+        this.universeRipple = Math.max(0, this.universeRipple - dt * 0.45);
+        const starMat = this.stars.material as THREE.PointsMaterial;
+        starMat.opacity = 0.35 + this.universeRipple * 0.25;
+      }
 
       for (const child of this.echoGroup.children) {
         if (child instanceof THREE.Mesh && child.userData['echoAngle'] != null) {

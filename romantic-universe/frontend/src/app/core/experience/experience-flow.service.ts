@@ -8,6 +8,7 @@ import { HeartObject } from './experience-state.types';
 import { SoundDesignService } from '../services/sound-design.service';
 import { MusicalChoreographyService } from '../audio/musical-choreography.service';
 import { MotionService } from '../services/motion.service';
+import { UniverseLivingService } from '../cinematic/universe-living.service';
 import { Memory, Photo, Reason } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -19,13 +20,16 @@ export class ExperienceFlowService {
   private readonly sounds = inject(SoundDesignService);
   private readonly music = inject(MusicalChoreographyService);
   private readonly motion = inject(MotionService);
+  private readonly living = inject(UniverseLivingService);
 
   private memoriesCache: Memory[] | null = null;
   private reasonsCache: Reason[] | null = null;
   private busy = false;
+  private momentOpenedAt = 0;
+  private lastMemoryOrbPos: { x: number; y: number; z: number } | null = null;
 
   async handlePhotoDiscovery(photoId: number, title?: string): Promise<void> {
-    if (this.busy || this.state.isPhotoDiscovered(photoId)) return;
+    if (this.busy) return;
     this.busy = true;
 
     try {
@@ -51,15 +55,16 @@ export class ExperienceFlowService {
 
       if (!this.motion.prefersReducedMotion()) {
         await this.camera.focusPhoto(photoId, 1400);
+        this.lastMemoryOrbPos = { x: 0, y: 0, z: -2 };
       }
 
-      const isNew = this.state.discoverPhoto(
-        photo.id,
-        photo.caption ?? photo.title ?? title,
-        photo.imageUrl
-      );
-
-      if (!isNew) return;
+      if (!this.state.isPhotoDiscovered(photoId)) {
+        this.state.discoverPhoto(
+          photo.id,
+          photo.caption ?? photo.title ?? title,
+          photo.imageUrl
+        );
+      }
 
       await this.moments.transitionIn({
         kind: 'photo',
@@ -68,11 +73,18 @@ export class ExperienceFlowService {
         imageUrl: photo.imageUrl
       });
 
-      await this.pause(1200);
+      this.momentOpenedAt = performance.now();
+      this.living.beginTimeStop();
+      this.music.beginMomentFocus();
+
+      await this.pause(1600);
 
       if (photo.memoryId) {
         await this.revealLinkedMemory(photo.memoryId);
       } else {
+        this.recordMomentDwell('photo', photo.id);
+        this.living.endTimeStop();
+        this.music.endMomentFocus();
         await this.moments.transitionOut();
       }
     } finally {
@@ -99,7 +111,7 @@ export class ExperienceFlowService {
       });
 
       this.state.discoverReason(next.id, next.shortLabel);
-      await this.pause(2200);
+      await this.pause(2800);
       await this.moments.transitionOut();
     } finally {
       this.busy = false;
@@ -124,6 +136,10 @@ export class ExperienceFlowService {
       location: memory.location
     });
 
+    this.momentOpenedAt = performance.now();
+    this.living.beginTimeStop();
+    this.music.beginMomentFocus();
+
     if (!this.motion.prefersReducedMotion()) {
       await this.camera.enterMemory(1400);
     }
@@ -133,13 +149,24 @@ export class ExperienceFlowService {
       this.state.discoverMemory(memory.id, memory.title, memory.imageUrl);
     }
 
-    await this.pause(2400);
+    await this.pause(3000);
 
     if (!this.motion.prefersReducedMotion()) {
-      await this.camera.exitMemory(1400);
+      await this.camera.exitMemory(1600);
     }
 
     await this.moments.transitionOut();
+
+    this.recordMomentDwell('memory', memory.id);
+    this.living.endTimeStop();
+    this.music.endMomentFocus();
+    if (this.lastMemoryOrbPos) {
+      this.living.addWarmAfterimage(
+        this.lastMemoryOrbPos.x,
+        this.lastMemoryOrbPos.y,
+        this.lastMemoryOrbPos.z
+      );
+    }
 
     this.music.onMemoryExit();
 
@@ -165,6 +192,13 @@ export class ExperienceFlowService {
       this.reasonsCache = await firstValueFrom(this.api.getReasons());
     }
     return this.reasonsCache;
+  }
+
+  private recordMomentDwell(type: 'photo' | 'memory', referenceId: number): void {
+    if (this.momentOpenedAt <= 0) return;
+    const ms = performance.now() - this.momentOpenedAt;
+    this.state.addDiscoveryDwell(type, referenceId, ms);
+    this.momentOpenedAt = 0;
   }
 
   private pause(ms: number): Promise<void> {
