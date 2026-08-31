@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, effect, inject, input } from '@angular/core';
 import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 
 @Component({
@@ -8,10 +8,16 @@ import { MusicalChoreographyService } from '../../core/audio/musical-choreograph
   styleUrl: './music-player.component.scss'
 })
 export class MusicPlayerComponent {
-  /** Legacy config key — procedural layers are used; file optional for future stems. */
   readonly musicUrl = input('/assets/audio/background.mp3');
 
   readonly music = inject(MusicalChoreographyService);
+
+  constructor() {
+    effect(() => {
+      const url = this.musicUrl();
+      if (url) this.music.setBackgroundUrl(url);
+    });
+  }
 
   onSoundToggle(): void {
     if (!this.music.enabled()) {

@@ -51,6 +51,12 @@ export class MusicalChoreographyService implements OnDestroy {
   private heartCompleteTimer: ReturnType<typeof setTimeout> | null = null;
   private dipTimer: ReturnType<typeof setTimeout> | null = null;
   private preFinalePreloaded = false;
+  private backgroundUrl: string | null = null;
+  private backgroundEl: HTMLAudioElement | null = null;
+  private backgroundSource: MediaElementAudioSourceNode | null = null;
+  private backgroundGain: GainNode | null = null;
+  private backgroundReady = false;
+  private backgroundWired = false;
 
   readonly enabled = signal(false);
   readonly muted = signal(false);
@@ -73,14 +79,42 @@ export class MusicalChoreographyService implements OnDestroy {
     this.dispose();
   }
 
+  /** Point at a looped background track (e.g. MUSIC_URL / background.mp3). */
+  setBackgroundUrl(url: string): void {
+    const trimmed = url.trim();
+    if (!trimmed || this.backgroundUrl === trimmed) return;
+
+    this.disposeBackground();
+    this.backgroundUrl = trimmed;
+    this.backgroundEl = new Audio(trimmed);
+    this.backgroundEl.loop = true;
+    this.backgroundEl.preload = 'auto';
+
+    const onReady = (): void => {
+      this.backgroundReady = true;
+      if (this.enabled() && !this.userMuted) {
+        void this.startBackground();
+      }
+    };
+
+    this.backgroundEl.addEventListener('canplaythrough', onReady, { once: true });
+    this.backgroundEl.addEventListener('error', () => {
+      this.backgroundReady = false;
+      console.warn('[music] background track failed to load:', trimmed);
+    });
+    this.backgroundEl.load();
+  }
+
   /** Unlock audio after first user gesture. */
   enable(): void {
-    if (this.motion.prefersReducedMotion()) return;
     const ctx = this.ensureContext();
     void ctx.resume();
-    this.startLayers();
+    if (!this.motion.prefersReducedMotion()) {
+      this.startLayers();
+    }
     this.enabled.set(true);
     this.experience.setMusicEnabled(true);
+    void this.startBackground();
     if (this.musicalState() === 'silence') {
       this.enterOpening();
     }
@@ -90,6 +124,11 @@ export class MusicalChoreographyService implements OnDestroy {
     this.userMuted = muted;
     this.muted.set(muted);
     this.applyMasterGain();
+    if (muted) {
+      this.pauseBackground();
+    } else if (this.enabled()) {
+      void this.startBackground();
+    }
   }
 
   toggleMute(): boolean {
@@ -511,14 +550,63 @@ export class MusicalChoreographyService implements OnDestroy {
     let gain = this.musicVolume;
     if (this.userMuted || this.tabHidden) gain = 0;
     this.master.gain.setTargetAtTime(gain, this.ctx.currentTime, 0.06);
+    this.applyBackgroundGain();
+  }
+
+  private applyBackgroundGain(): void {
+    if (!this.backgroundGain || !this.ctx) return;
+    let gain = this.backgroundReady ? 0.72 * this.musicVolume : 0;
+    if (this.userMuted || this.tabHidden) gain = 0;
+    this.backgroundGain.gain.setTargetAtTime(gain, this.ctx.currentTime, 0.06);
+  }
+
+  private async startBackground(): Promise<void> {
+    if (!this.backgroundEl || !this.backgroundReady || !this.enabled() || this.userMuted) return;
+
+    const ctx = this.ensureContext();
+    await ctx.resume();
+
+    if (!this.backgroundWired) {
+      this.backgroundSource = ctx.createMediaElementSource(this.backgroundEl);
+      this.backgroundGain = ctx.createGain();
+      this.backgroundGain.gain.value = 0;
+      this.backgroundSource.connect(this.backgroundGain);
+      this.backgroundGain.connect(ctx.destination);
+      this.backgroundWired = true;
+    }
+
+    this.applyBackgroundGain();
+
+    try {
+      await this.backgroundEl.play();
+    } catch {
+      // Browser blocked playback until a later gesture.
+    }
+  }
+
+  private pauseBackground(): void {
+    this.backgroundEl?.pause();
+  }
+
+  private disposeBackground(): void {
+    this.pauseBackground();
+    this.backgroundSource?.disconnect();
+    this.backgroundGain?.disconnect();
+    this.backgroundSource = null;
+    this.backgroundGain = null;
+    this.backgroundEl = null;
+    this.backgroundUrl = null;
+    this.backgroundReady = false;
+    this.backgroundWired = false;
   }
 
   private canPlay(): boolean {
-    return this.enabled() && !this.userMuted && !this.motion.prefersReducedMotion();
+    return this.enabled() && !this.userMuted;
   }
 
   private intensityScale(): number {
-    return this.motion.prefersReducedMotion() ? 0.55 : 1;
+    if (this.motion.prefersReducedMotion()) return 0.55;
+    return this.backgroundReady ? 0.22 : 1;
   }
 
   private zeroLayers(): Record<MusicLayerId, number> {
@@ -559,6 +647,7 @@ export class MusicalChoreographyService implements OnDestroy {
   private dispose(): void {
     cancelAnimationFrame(this.crossfadeRaf);
     this.clearTimers();
+    this.disposeBackground();
 
     for (const nodes of this.layers.values()) {
       for (const osc of nodes.oscillators) {
