@@ -20,6 +20,7 @@ import { SoundDesignService } from '../../core/services/sound-design.service';
 import { Photo } from '../../core/models';
 import { CinematicLightboxComponent } from '../../shared/components/cinematic-lightbox/cinematic-lightbox.component';
 import { finalizeScrollReveal, revealOnScroll } from '../../core/utils/scroll-reveal';
+import { getImageFallbacks } from '../../core/utils/image-fallback';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -109,6 +110,21 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
   }
 
   onImageError(id: number): void {
+    const current = this.photos().find(photo => photo.id === id)?.imageUrl ?? '';
+    const photo = this.photos().find(item => item.id === id);
+    if (!photo) {
+      this.imageErrors.update(set => new Set(set).add(id));
+      return;
+    }
+
+    const candidates = getImageFallbacks(current);
+    const next = candidates.find(candidate => candidate !== current && !this.photos().some(item => item.id === id && item.imageUrl === candidate));
+
+    if (next) {
+      this.photos.update(items => items.map(item => item.id === id ? { ...item, imageUrl: next } : item));
+      return;
+    }
+
     this.imageErrors.update(set => new Set(set).add(id));
   }
 

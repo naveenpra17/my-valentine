@@ -10,7 +10,7 @@
           @if (!imageError()) {
             <img
               class="hero__photo"
-              [src]="imageUrl()"
+              [src]="resolvedImageUrl()"
               [alt]="'Photo of ' + herName()"
               loading="lazy"
               (error)="onImageError()"

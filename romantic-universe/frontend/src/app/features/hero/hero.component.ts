@@ -4,6 +4,7 @@ import {
   OnDestroy,
   ViewChild,
   afterNextRender,
+  effect,
   inject,
   input,
   signal
@@ -13,6 +14,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MotionService } from '../../core/services/motion.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { finalizeScrollReveal, revealOnScroll } from '../../core/utils/scroll-reveal';
+import { getImageFallbacks } from '../../core/utils/image-fallback';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -47,8 +49,16 @@ export class HeroComponent implements OnDestroy {
   private scrollTriggers: ScrollTrigger[] = [];
 
   readonly imageError = signal(false);
+  readonly resolvedImageUrl = signal('/assets/images/hero/hero.jpg');
+  private imageFallbacks = new Set<string>();
 
   constructor() {
+    effect(() => {
+      const next = this.imageUrl();
+      this.resolvedImageUrl.set(next);
+      this.imageError.set(false);
+      this.imageFallbacks.clear();
+    });
     afterNextRender(() => this.bootstrap());
   }
 
@@ -58,6 +68,17 @@ export class HeroComponent implements OnDestroy {
   }
 
   onImageError(): void {
+    const current = this.resolvedImageUrl();
+    const candidates = getImageFallbacks(current);
+    const next = candidates.find(candidate => candidate !== current && !this.imageFallbacks.has(candidate));
+
+    if (next) {
+      this.imageFallbacks.add(current);
+      this.resolvedImageUrl.set(next);
+      this.imageError.set(false);
+      return;
+    }
+
     this.imageError.set(true);
   }
 

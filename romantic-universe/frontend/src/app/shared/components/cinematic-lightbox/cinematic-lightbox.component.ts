@@ -6,11 +6,13 @@ import {
   effect,
   inject,
   input,
-  output
+  output,
+  signal
 } from '@angular/core';
 import gsap from 'gsap';
 import { MotionService } from '../../../core/services/motion.service';
 import { FocusTrapService } from '../../../core/services/focus-trap.service';
+import { getImageFallbacks } from '../../../core/utils/image-fallback';
 
 interface DustParticle {
   x: number;
@@ -41,9 +43,10 @@ interface DustParticle {
           @if (imageUrl()) {
             <img
               class="cine-lightbox__img"
-              [src]="imageUrl()"
+              [src]="resolvedImageUrl()"
               [alt]="title() || 'Photo'"
               #img
+              (error)="onImageError()"
             />
           } @else {
             <div class="cine-lightbox__placeholder" aria-hidden="true">💕</div>
@@ -146,6 +149,8 @@ export class CinematicLightboxComponent implements OnDestroy {
 
   readonly close = output<void>();
 
+  readonly resolvedImageUrl = signal('');
+  readonly imageError = signal(false);
   private readonly motion = inject(MotionService);
   private readonly focusTrap = inject(FocusTrapService);
   private dustParticles: DustParticle[] = [];
@@ -153,6 +158,12 @@ export class CinematicLightboxComponent implements OnDestroy {
   private wasOpen = false;
 
   constructor() {
+    effect(() => {
+      const image = this.imageUrl();
+      this.resolvedImageUrl.set(image);
+      this.imageError.set(false);
+    });
+
     effect(() => {
       const isOpen = this.open();
       if (isOpen && !this.wasOpen) {
@@ -181,6 +192,20 @@ export class CinematicLightboxComponent implements OnDestroy {
 
   requestClose(): void {
     void this.playClose().then(() => this.close.emit());
+  }
+
+  onImageError(): void {
+    const current = this.resolvedImageUrl();
+    const candidates = getImageFallbacks(current);
+    const next = candidates.find(candidate => candidate !== current && candidate.length > 0);
+
+    if (next) {
+      this.resolvedImageUrl.set(next);
+      this.imageError.set(false);
+      return;
+    }
+
+    this.imageError.set(true);
   }
 
   onBackdrop(event: MouseEvent): void {
