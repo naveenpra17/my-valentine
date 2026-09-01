@@ -14,6 +14,23 @@ export function getImageFallbacks(url: string): string[] {
   return [trimmed];
 }
 
+/** Elegant SVG placeholder when personal photos are not yet in assets. */
+export function placeholderImageDataUrl(label = 'Photo'): string {
+  const safe = label.replace(/[<>&"']/g, '').slice(0, 32);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500" viewBox="0 0 400 500">
+    <defs>
+      <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#1a1218"/>
+        <stop offset="100%" stop-color="#2d1f28"/>
+      </linearGradient>
+    </defs>
+    <rect width="400" height="500" fill="url(#g)"/>
+    <circle cx="200" cy="210" r="72" fill="none" stroke="#c9a0a8" stroke-opacity="0.35" stroke-width="1.5"/>
+    <text x="200" y="330" text-anchor="middle" fill="#f5f0e8" fill-opacity="0.45" font-family="Georgia, serif" font-size="18">${safe}</text>
+  </svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
 export function tryNextImageUrl(currentUrl: string, seen = new Set<string>()): string | null {
   const candidates = getImageFallbacks(currentUrl);
   const next = candidates.find(candidate => !seen.has(candidate));

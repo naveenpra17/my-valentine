@@ -20,7 +20,7 @@ import { SoundDesignService } from '../../core/services/sound-design.service';
 import { Photo } from '../../core/models';
 import { CinematicLightboxComponent } from '../../shared/components/cinematic-lightbox/cinematic-lightbox.component';
 import { finalizeScrollReveal, revealOnScroll } from '../../core/utils/scroll-reveal';
-import { getImageFallbacks } from '../../core/utils/image-fallback';
+import { getImageFallbacks, placeholderImageDataUrl } from '../../core/utils/image-fallback';
 import { BodyScrollLockService } from '../../core/services/body-scroll-lock.service';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -112,18 +112,33 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
   }
 
   onImageError(id: number): void {
-    const current = this.photos().find(photo => photo.id === id)?.imageUrl ?? '';
     const photo = this.photos().find(item => item.id === id);
     if (!photo) {
       this.imageErrors.update(set => new Set(set).add(id));
       return;
     }
 
+    const current = photo.imageUrl ?? '';
     const candidates = getImageFallbacks(current);
-    const next = candidates.find(candidate => candidate !== current && !this.photos().some(item => item.id === id && item.imageUrl === candidate));
+    const next = candidates.find(
+      candidate => candidate !== current && !candidate.startsWith('data:')
+    );
 
     if (next) {
-      this.photos.update(items => items.map(item => item.id === id ? { ...item, imageUrl: next } : item));
+      this.photos.update(items =>
+        items.map(item => (item.id === id ? { ...item, imageUrl: next } : item))
+      );
+      return;
+    }
+
+    if (!current.startsWith('data:')) {
+      this.photos.update(items =>
+        items.map(item =>
+          item.id === id
+            ? { ...item, imageUrl: placeholderImageDataUrl(photo.title ?? 'Photo') }
+            : item
+        )
+      );
       return;
     }
 
@@ -198,7 +213,9 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
     if (this.motion.prefersReducedMotion() || !this.sectionRef) return;
 
     const header = this.sectionRef.nativeElement.querySelector('.photo-gallery__header');
-    const stage = this.sectionRef.nativeElement.querySelector('.photo-gallery__stage');
+    const stage = this.isMobile
+      ? this.sectionRef.nativeElement.querySelector('.photo-gallery__mobile-scroll')
+      : this.sectionRef.nativeElement.querySelector('.photo-gallery__stage');
     const revealTargets: Element[] = [];
 
     if (header) {
@@ -215,10 +232,10 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
       revealTargets.push(stage);
       revealOnScroll(stage, {
         opacity: 0,
-        scale: 0.92,
-        duration: 1.2,
+        y: 24,
+        duration: 1,
         ease: 'power3.out'
-      }, { trigger: stage, start: 'top 85%' });
+      }, { trigger: stage, start: 'top 90%' });
     }
 
     finalizeScrollReveal(...revealTargets);

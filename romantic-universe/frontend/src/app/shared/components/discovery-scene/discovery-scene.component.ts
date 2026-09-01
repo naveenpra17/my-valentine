@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { SceneMomentService } from '../../../core/cinematic/scene-moment.service';
+import { getImageFallbacks, placeholderImageDataUrl } from '../../../core/utils/image-fallback';
 
 @Component({
   selector: 'app-discovery-scene',
@@ -13,7 +14,13 @@ import { SceneMomentService } from '../../../core/cinematic/scene-moment.service
         <div class="discovery-scene__content">
           @if (scene.imageUrl) {
             <div class="discovery-scene__frame discovery-scene__reveal discovery-scene__reveal--first">
-              <img [src]="scene.imageUrl" [alt]="scene.title ?? ''" />
+              <img
+                [src]="resolvedImageUrl()"
+                [alt]="scene.title ?? ''"
+                loading="eager"
+                decoding="async"
+                (error)="onImageError(scene.imageUrl, scene.title)"
+              />
             </div>
           }
           @if (scene.subtitle) {
@@ -65,7 +72,7 @@ import { SceneMomentService } from '../../../core/cinematic/scene-moment.service
 
     .discovery-scene__reveal {
       opacity: 0;
-      animation: discoveryReveal 1.4s var(--ease-cine, ease) both;
+      animation: discoveryReveal 1.4s var(--ease-cine, ease) forwards;
     }
 
     .discovery-scene__reveal--first { animation-delay: 0.4s; }
@@ -81,14 +88,17 @@ import { SceneMomentService } from '../../../core/cinematic/scene-moment.service
 
     .discovery-scene__frame {
       margin: 0 auto 1.5rem;
-      max-width: 320px;
+      max-width: min(320px, 88vw);
+      min-height: 200px;
       border: 1px solid rgba(245, 240, 232, 0.12);
       overflow: hidden;
       box-shadow: 0 0 60px rgba(201, 160, 168, 0.15);
+      background: radial-gradient(ellipse at center, rgba(201, 160, 168, 0.12), rgba(5, 3, 8, 0.6));
 
       img {
         display: block;
         width: 100%;
+        min-height: 200px;
         aspect-ratio: 3 / 4;
         object-fit: cover;
       }
@@ -114,11 +124,44 @@ import { SceneMomentService } from '../../../core/cinematic/scene-moment.service
       to { opacity: 1; transform: translateY(0); }
     }
 
+    @media (max-width: 767px) {
+      .discovery-scene__frame {
+        max-width: min(300px, 86vw);
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      .discovery-scene__reveal { animation: none; opacity: 1; }
+      .discovery-scene__reveal {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
     }
   `]
 })
 export class DiscoverySceneComponent {
   readonly moments = inject(SceneMomentService);
+  readonly resolvedImageUrl = signal('');
+
+  constructor() {
+    effect(() => {
+      const scene = this.moments.active();
+      this.resolvedImageUrl.set(scene?.imageUrl ?? '');
+    });
+  }
+
+  onImageError(originalUrl: string, title?: string): void {
+    const current = this.resolvedImageUrl();
+    const candidates = getImageFallbacks(originalUrl);
+    const next = candidates.find(
+      candidate => candidate !== current && !candidate.startsWith('data:')
+    );
+
+    if (next) {
+      this.resolvedImageUrl.set(next);
+      return;
+    }
+
+    this.resolvedImageUrl.set(placeholderImageDataUrl(title ?? 'Photo'));
+  }
 }

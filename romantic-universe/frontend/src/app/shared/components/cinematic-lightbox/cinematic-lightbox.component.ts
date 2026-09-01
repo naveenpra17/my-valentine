@@ -13,7 +13,7 @@ import gsap from 'gsap';
 import { MotionService } from '../../../core/services/motion.service';
 import { FocusTrapService } from '../../../core/services/focus-trap.service';
 import { BodyScrollLockService } from '../../../core/services/body-scroll-lock.service';
-import { getImageFallbacks } from '../../../core/utils/image-fallback';
+import { getImageFallbacks, placeholderImageDataUrl } from '../../../core/utils/image-fallback';
 
 interface DustParticle {
   x: number;
@@ -207,7 +207,9 @@ export class CinematicLightboxComponent implements OnDestroy {
       return;
     }
 
-    this.imageError.set(true);
+    this.imageError.set(false);
+    const title = this.title();
+    this.resolvedImageUrl.set(placeholderImageDataUrl(title || 'Photo'));
   }
 
   onBackdrop(event: MouseEvent): void {
@@ -236,12 +238,12 @@ export class CinematicLightboxComponent implements OnDestroy {
       gsap.set(body, { opacity: 0, y: 20 });
     }
 
-    if (rect) {
+    if (rect && frame.offsetWidth > 0 && frame.offsetHeight > 0) {
       const cx = window.innerWidth / 2;
       const cy = window.innerHeight / 2 - 40;
       const scaleX = rect.width / frame.offsetWidth;
       const scaleY = rect.height / frame.offsetHeight;
-      const scale = Math.max(scaleX, scaleY, 0.2);
+      const scale = Math.min(Math.max(scaleX, scaleY, 0.2), 1.2);
 
       gsap.set(frame, {
         x: rect.left + rect.width / 2 - cx,
@@ -251,7 +253,7 @@ export class CinematicLightboxComponent implements OnDestroy {
         transformOrigin: 'center center'
       });
     } else {
-      gsap.set(frame, { scale: 0.85, opacity: 0, y: 30 });
+      gsap.set(frame, { x: 0, y: 0, scale: 0.92, opacity: 0, clearProps: 'filter' });
     }
 
     const tl = gsap.timeline();

@@ -25,6 +25,7 @@ import { SceneManagerService } from '../../core/cinematic/scene-manager.service'
 import { Memory } from '../../core/models';
 import { CinematicLightboxComponent } from '../../shared/components/cinematic-lightbox/cinematic-lightbox.component';
 import { finalizeScrollReveal, revealOnScroll } from '../../core/utils/scroll-reveal';
+import { getImageFallbacks, placeholderImageDataUrl } from '../../core/utils/image-fallback';
 import { BodyScrollLockService } from '../../core/services/body-scroll-lock.service';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -133,6 +134,36 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
   }
 
   onImageError(id: number): void {
+    const memory = this.memories().find(item => item.id === id);
+    if (!memory) {
+      this.imageErrors.update(set => new Set(set).add(id));
+      return;
+    }
+
+    const current = memory.imageUrl ?? '';
+    const candidates = getImageFallbacks(current);
+    const next = candidates.find(
+      candidate => candidate !== current && !candidate.startsWith('data:')
+    );
+
+    if (next) {
+      this.memories.update(items =>
+        items.map(item => (item.id === id ? { ...item, imageUrl: next } : item))
+      );
+      return;
+    }
+
+    if (!current.startsWith('data:')) {
+      this.memories.update(items =>
+        items.map(item =>
+          item.id === id
+            ? { ...item, imageUrl: placeholderImageDataUrl(memory.title) }
+            : item
+        )
+      );
+      return;
+    }
+
     this.imageErrors.update(set => new Set(set).add(id));
   }
 
@@ -277,18 +308,20 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
 
       if (st) this.scrollTriggers.push(st);
 
-      const parallax = gsap.to(imageWrap, {
-        y: -12,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: card.nativeElement,
-          start: 'top bottom',
-          end: 'bottom top',
-          scrub: true
-        }
-      }).scrollTrigger;
+      if (!this.motion.isMobile()) {
+        const parallax = gsap.to(imageWrap, {
+          y: -12,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: card.nativeElement,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true
+          }
+        }).scrollTrigger;
 
-      if (parallax) this.scrollTriggers.push(parallax);
+        if (parallax) this.scrollTriggers.push(parallax);
+      }
     });
 
     finalizeScrollReveal(...revealTargets);
