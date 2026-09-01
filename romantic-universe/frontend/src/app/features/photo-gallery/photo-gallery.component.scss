@@ -39,6 +39,16 @@
   justify-content: center;
   min-height: 420px;
   padding: 2rem 0;
+}
+
+.photo-gallery__stage::before {
+  content: '';
+  position: absolute;
+  inset: 8% 15% 14%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201, 160, 168, 0.11), rgba(154, 143, 168, 0.02), transparent 70%);
+  filter: blur(18px);
+  pointer-events: none;
 
   @media (max-width: 767px) {
     display: none;
@@ -84,7 +94,7 @@
   border-radius: var(--radius-lg);
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.35);
   cursor: pointer;
-  transition: box-shadow var(--transition), filter var(--transition);
+  transition: box-shadow var(--transition), filter var(--transition), transform var(--transition);
   backface-visibility: hidden;
   color: var(--ivory);
 
@@ -92,6 +102,7 @@
   &--active {
     box-shadow: var(--shadow-glow), 0 12px 40px rgba(0, 0, 0, 0.5);
     filter: brightness(1.08);
+    transform: translateY(-2px);
   }
 
   &:focus-visible {
