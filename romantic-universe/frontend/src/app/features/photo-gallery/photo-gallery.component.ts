@@ -21,6 +21,7 @@ import { Photo } from '../../core/models';
 import { CinematicLightboxComponent } from '../../shared/components/cinematic-lightbox/cinematic-lightbox.component';
 import { finalizeScrollReveal, revealOnScroll } from '../../core/utils/scroll-reveal';
 import { getImageFallbacks } from '../../core/utils/image-fallback';
+import { BodyScrollLockService } from '../../core/services/body-scroll-lock.service';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -43,6 +44,7 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
   private readonly experienceState = inject(ExperienceStateService);
   private readonly scenes = inject(SceneManagerService);
   private readonly sounds = inject(SoundDesignService);
+  private readonly scrollLock = inject(BodyScrollLockService);
   private observer?: IntersectionObserver;
 
   readonly photos = signal<Photo[]>([]);
@@ -72,7 +74,7 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.observer?.disconnect();
     if (this.lightboxOpen()) {
-      document.body.style.overflow = '';
+      this.scrollLock.unlock();
     }
   }
 
@@ -94,7 +96,7 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
     this.sourceRect.set(target.getBoundingClientRect());
     this.selected.set(photo);
     this.lightboxOpen.set(true);
-    document.body.style.overflow = 'hidden';
+    this.scrollLock.lock();
     const isNew = this.experienceState.discoverPhoto(photo.id, photo.caption ?? photo.title ?? undefined, photo.imageUrl);
     if (isNew) {
       this.sounds.enable();
@@ -106,7 +108,7 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
     this.lightboxOpen.set(false);
     this.selected.set(null);
     this.sourceRect.set(null);
-    document.body.style.overflow = '';
+    this.scrollLock.unlock();
   }
 
   onImageError(id: number): void {

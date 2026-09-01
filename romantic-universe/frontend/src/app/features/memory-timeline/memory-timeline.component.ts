@@ -25,6 +25,7 @@ import { SceneManagerService } from '../../core/cinematic/scene-manager.service'
 import { Memory } from '../../core/models';
 import { CinematicLightboxComponent } from '../../shared/components/cinematic-lightbox/cinematic-lightbox.component';
 import { finalizeScrollReveal, revealOnScroll } from '../../core/utils/scroll-reveal';
+import { BodyScrollLockService } from '../../core/services/body-scroll-lock.service';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -52,6 +53,7 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
   private readonly sounds = inject(SoundDesignService);
   private readonly experienceState = inject(ExperienceStateService);
   private readonly scenes = inject(SceneManagerService);
+  private readonly scrollLock = inject(BodyScrollLockService);
   private observer?: IntersectionObserver;
   private scrollTriggers: ScrollTrigger[] = [];
 
@@ -83,7 +85,7 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
     this.observer?.disconnect();
     this.scrollTriggers.forEach(st => st.kill());
     if (this.lightboxOpen()) {
-      document.body.style.overflow = '';
+      this.scrollLock.unlock();
     }
   }
 
@@ -116,7 +118,7 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
     this.sourceRect.set(target?.getBoundingClientRect() ?? null);
     this.selected.set(memory);
     this.lightboxOpen.set(true);
-    document.body.style.overflow = 'hidden';
+    this.scrollLock.lock();
     this.experienceState.discoverMemory(memory.id, memory.title, memory.imageUrl);
     this.sounds.enable();
     this.sounds.play('memory');
@@ -127,7 +129,7 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
     this.lightboxOpen.set(false);
     this.selected.set(null);
     this.sourceRect.set(null);
-    document.body.style.overflow = '';
+    this.scrollLock.unlock();
   }
 
   onImageError(id: number): void {

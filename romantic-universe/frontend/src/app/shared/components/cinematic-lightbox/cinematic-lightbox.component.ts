@@ -12,6 +12,7 @@ import {
 import gsap from 'gsap';
 import { MotionService } from '../../../core/services/motion.service';
 import { FocusTrapService } from '../../../core/services/focus-trap.service';
+import { BodyScrollLockService } from '../../../core/services/body-scroll-lock.service';
 import { getImageFallbacks } from '../../../core/utils/image-fallback';
 
 interface DustParticle {
@@ -153,6 +154,7 @@ export class CinematicLightboxComponent implements OnDestroy {
   readonly imageError = signal(false);
   private readonly motion = inject(MotionService);
   private readonly focusTrap = inject(FocusTrapService);
+  private readonly scrollLock = inject(BodyScrollLockService);
   private dustParticles: DustParticle[] = [];
   private dustAnimId = 0;
   private wasOpen = false;
@@ -168,7 +170,7 @@ export class CinematicLightboxComponent implements OnDestroy {
       const isOpen = this.open();
       if (isOpen && !this.wasOpen) {
         this.wasOpen = true;
-        document.body.style.overflow = 'hidden';
+        this.scrollLock.lock();
         requestAnimationFrame(() => {
           this.playOpen();
           const overlay = this.overlayRef?.nativeElement;
@@ -178,7 +180,7 @@ export class CinematicLightboxComponent implements OnDestroy {
         });
       } else if (!isOpen && this.wasOpen) {
         this.wasOpen = false;
-        document.body.style.overflow = '';
+        this.scrollLock.unlock();
         this.focusTrap.deactivate();
       }
     });
@@ -186,7 +188,7 @@ export class CinematicLightboxComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     cancelAnimationFrame(this.dustAnimId);
-    document.body.style.overflow = '';
+    this.scrollLock.unlock();
     this.focusTrap.deactivate();
   }
 
