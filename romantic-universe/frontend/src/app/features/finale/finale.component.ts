@@ -343,9 +343,11 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
       const pin = ScrollTrigger.create({
         trigger: this.sectionRef.nativeElement,
         start: 'top top',
-        end: '+=180%',
+        end: '+=120%',
         pin: this.pinWrapRef.nativeElement,
-        anticipatePin: 1
+        pinSpacing: false,
+        anticipatePin: 0,
+        invalidateOnRefresh: true
       });
       this.scrollTriggers.push(pin);
     }

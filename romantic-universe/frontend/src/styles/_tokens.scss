@@ -3,18 +3,19 @@
 :root {
   // Core palette — midnight world with romantic accents
   --void: #050308;
-  --midnight: #0a0610;
-  --night: #100a14;
+  --midnight: #0d0913;
+  --night: #110c16;
   --night-soft: #1a1020;
-  --ivory: #f5f0e8;
-  --ivory-dim: rgba(245, 240, 232, 0.72);
-  --ivory-ghost: rgba(245, 240, 232, 0.38);
-  --rose: #c9a0a8;
-  --rose-soft: rgba(201, 160, 168, 0.55);
-  --dust-pink: #d4b0b8;
-  --lavender-muted: #9a8fa8;
-  --champagne: #c4b08a;
-  --burgundy-deep: #3d1a28;
+  --ivory: #f6f1ea;
+  --ivory-dim: rgba(246, 241, 234, 0.76);
+  --ivory-ghost: rgba(246, 241, 234, 0.42);
+  --rose: #d8aab1;
+  --rose-soft: rgba(216, 170, 177, 0.58);
+  --dust-pink: #e7c3c9;
+  --lavender-muted: #b1a5c6;
+  --champagne: #d9c39a;
+  --burgundy-deep: #3f1a2a;
+  --pearl: #f4e8db;
 
   // Legacy aliases (backward compat)
   --blush: #1a1020;
@@ -22,8 +23,9 @@
   --lavender: var(--lavender-muted);
   --cream: var(--ivory);
   --burgundy: var(--ivory);
-  --glass: rgba(245, 240, 232, 0.04);
-  --glow-rose: rgba(201, 160, 168, 0.25);
+  --glass: rgba(255, 255, 255, 0.05);
+  --glow-rose: rgba(216, 170, 177, 0.32);
+  --glow-lavender: rgba(177, 165, 198, 0.18);
 
   // Typography
   --font-display: 'Cormorant Garamond', 'Georgia', serif;
@@ -32,25 +34,25 @@
   --font-letter: 'Cormorant Garamond', Georgia, serif;
 
   // Scale
-  --text-void: clamp(2.5rem, 8vw, 5.5rem);
-  --text-statement: clamp(1.75rem, 5vw, 3.5rem);
-  --text-whisper: clamp(1rem, 2.5vw, 1.25rem);
-  --text-micro: clamp(0.7rem, 1.5vw, 0.85rem);
+  --text-void: clamp(2.8rem, 8vw, 6.1rem);
+  --text-statement: clamp(2.25rem, 5vw, 4rem);
+  --text-whisper: clamp(1rem, 2.5vw, 1.3rem);
+  --text-micro: clamp(0.72rem, 1.5vw, 0.88rem);
 
   // Spacing & motion
-  --scene-padding: clamp(2rem, 8vw, 6rem);
+  --scene-padding: clamp(2.5rem, 7vw, 6.5rem);
   --ease-cine: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-breathe: cubic-bezier(0.4, 0, 0.2, 1);
-  --duration-slow: 1.8s;
-  --duration-medium: 1s;
-  --duration-fast: 0.5s;
+  --duration-slow: 2.2s;
+  --duration-medium: 1.2s;
+  --duration-fast: 0.7s;
 
-  --radius-lg: 10px;
+  --radius-lg: 22px;
   --radius-pill: 999px;
-  --shadow-soft: 0 20px 55px rgba(0, 0, 0, 0.24);
-  --shadow-glow: 0 0 60px var(--glow-rose), 0 18px 60px rgba(0, 0, 0, 0.2);
-  --shadow-card: 0 18px 40px rgba(5, 3, 8, 0.28), 0 0 30px rgba(201, 160, 168, 0.08);
-  --glow-soft: rgba(201, 160, 168, 0.14);
-  --glow-lavender: rgba(154, 143, 168, 0.12);
+  --shadow-soft: 0 24px 65px rgba(0, 0, 0, 0.28);
+  --shadow-glow: 0 0 80px rgba(216, 170, 177, 0.22), 0 22px 80px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 24px 48px rgba(5, 3, 8, 0.32), 0 0 40px rgba(216, 170, 177, 0.08);
+  --glow-soft: rgba(216, 170, 177, 0.14);
+  --glow-lavender: rgba(177, 165, 198, 0.12);
   --transition: var(--duration-fast) var(--ease-breathe);
 }

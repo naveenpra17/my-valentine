@@ -5,7 +5,7 @@
   background: radial-gradient(ellipse at 50% 80%, var(--night-soft) 0%, var(--void) 65%);
   padding: var(--scene-padding);
   text-align: center;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .flower__header {
@@ -220,9 +220,10 @@
 .flower__message {
   max-width: 420px;
   padding: clamp(1.5rem, 4vw, 2rem);
-  border: 1px solid rgba(245, 240, 232, 0.1);
-  background: rgba(5, 3, 8, 0.55);
-  backdrop-filter: blur(10px);
+  border: 1px solid rgba(245, 240, 232, 0.09);
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(5,3,8,0.58));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 38px rgba(5,3,8,0.12);
+  backdrop-filter: blur(12px);
 
   p {
     margin: 0;

@@ -18,8 +18,12 @@
 
 html {
   scroll-behavior: auto;
-  background: var(--void);
-  scrollbar-color: rgba(201, 160, 168, 0.45) var(--void);
+  background:
+    radial-gradient(circle at top, rgba(216, 170, 177, 0.14), transparent 30%),
+    radial-gradient(circle at bottom, rgba(177, 165, 198, 0.1), transparent 35%),
+    var(--void);
+  scrollbar-color: rgba(216, 170, 177, 0.45) var(--void);
+  color-scheme: dark;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -43,13 +47,30 @@ body {
   font-family: var(--font-body);
   font-weight: 300;
   color: var(--ivory);
-  background: var(--void);
+  background:
+    radial-gradient(circle at 15% 15%, rgba(216, 170, 177, 0.12), transparent 18%),
+    radial-gradient(circle at 80% 12%, rgba(177, 165, 198, 0.08), transparent 22%),
+    linear-gradient(180deg, #07040a 0%, #0d0913 24%, #09060d 100%);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
   text-rendering: optimizeLegibility;
+  letter-spacing: 0.01em;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at 50% 10%, rgba(216, 170, 177, 0.05), transparent 20%),
+    radial-gradient(circle at 50% 50%, transparent 0%, rgba(0, 0, 0, 0.18) 100%);
+  z-index: 0;
 }
 
 ::selection {
@@ -90,10 +111,11 @@ a:focus-visible {
 
 /* Legacy utilities — gradually migrating */
 .glass-card {
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(245, 240, 232, 0.08);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.022));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(245, 240, 232, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 48px rgba(5, 3, 8, 0.16);
   border-radius: var(--radius-lg);
 }
 
