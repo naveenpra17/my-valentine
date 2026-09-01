@@ -53,18 +53,19 @@
   text-transform: uppercase;
   color: var(--ivory-dim);
   padding: 1rem 2.5rem;
-  border: 1px solid rgba(196, 176, 138, 0.42);
+  border: 1px solid rgba(247, 213, 150, 0.55);
   border-radius: var(--radius-pill);
-  background: linear-gradient(135deg, rgba(201, 160, 168, 0.14), rgba(196, 176, 138, 0.08));
-  box-shadow: inset 0 1px 0 rgba(245, 240, 232, 0.09), 0 12px 34px rgba(0, 0, 0, 0.14);
+  background: linear-gradient(135deg, rgba(243, 193, 191, 0.18), rgba(247, 213, 150, 0.08), rgba(247, 213, 150, 0.04));
+  box-shadow: inset 0 1px 0 rgba(255, 247, 241, 0.12), 0 12px 34px rgba(0, 0, 0, 0.1), 0 0 28px rgba(247, 213, 150, 0.14);
   transition: transform 0.8s var(--ease-cine), color var(--transition), border-color var(--transition), box-shadow var(--duration-medium) var(--ease-cine), background var(--transition), filter 0.8s var(--ease-cine);
 
   &:hover:not(:disabled) {
     color: var(--ivory);
-    border-color: rgba(196, 176, 138, 0.78);
-    background: linear-gradient(135deg, rgba(201, 160, 168, 0.25), rgba(196, 176, 138, 0.16));
-    box-shadow: inset 0 1px 0 rgba(245, 240, 232, 0.16), 0 0 40px rgba(201, 160, 168, 0.19);
-    transform: translateY(-2px);
+    border-color: rgba(247, 213, 150, 0.82);
+    background: linear-gradient(135deg, rgba(243, 193, 191, 0.22), rgba(247, 213, 150, 0.12), rgba(247, 213, 150, 0.06));
+    box-shadow: inset 0 1px 0 rgba(255, 247, 241, 0.15), 0 0 46px rgba(247, 213, 150, 0.15), 0 12px 36px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px) scale(1.01);
+    filter: saturate(1.1);
   }
 
   &:disabled {

@@ -2,20 +2,21 @@
 
 :root {
   // Core palette — midnight world with romantic accents
-  --void: #050308;
-  --midnight: #0d0913;
-  --night: #110c16;
-  --night-soft: #1a1020;
-  --ivory: #f6f1ea;
-  --ivory-dim: rgba(246, 241, 234, 0.76);
-  --ivory-ghost: rgba(246, 241, 234, 0.42);
-  --rose: #d8aab1;
-  --rose-soft: rgba(216, 170, 177, 0.58);
-  --dust-pink: #e7c3c9;
-  --lavender-muted: #b1a5c6;
-  --champagne: #d9c39a;
-  --burgundy-deep: #3f1a2a;
-  --pearl: #f4e8db;
+  --void: #08040a;
+  --midnight: #120b13;
+  --night: #1a1016;
+  --night-soft: #2c1d24;
+  --ivory: #fff7f1;
+  --ivory-dim: rgba(255, 247, 241, 0.84);
+  --ivory-ghost: rgba(255, 247, 241, 0.54);
+  --rose: #f3c1bf;
+  --rose-soft: rgba(243, 193, 191, 0.78);
+  --dust-pink: #fce7dc;
+  --lavender-muted: #dac7d8;
+  --champagne: #f3d79e;
+  --gold-warm: #f7d596;
+  --burgundy-deep: #4d2531;
+  --pearl: #fffaf4;
 
   // Legacy aliases (backward compat)
   --blush: #1a1020;
@@ -23,9 +24,11 @@
   --lavender: var(--lavender-muted);
   --cream: var(--ivory);
   --burgundy: var(--ivory);
-  --glass: rgba(255, 255, 255, 0.05);
-  --glow-rose: rgba(216, 170, 177, 0.32);
-  --glow-lavender: rgba(177, 165, 198, 0.18);
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-strong: rgba(255, 255, 255, 0.085);
+  --glow-rose: rgba(216, 170, 177, 0.36);
+  --glow-lavender: rgba(177, 165, 198, 0.2);
+  --panel-warm: rgba(216, 170, 177, 0.08);
 
   // Typography
   --font-display: 'Cormorant Garamond', 'Georgia', serif;

@@ -190,8 +190,12 @@ export class OurLittleHeartScene {
   }
 
   private onWheel = (e: WheelEvent): void => {
-    e.preventDefault();
-    this.targetCameraZ = THREE.MathUtils.clamp(this.targetCameraZ + e.deltaY * 0.004, 3.8, 9);
+    if (this.mobile || e.ctrlKey || e.metaKey) return;
+
+    const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (Math.abs(delta) < 1) return;
+
+    this.targetCameraZ = THREE.MathUtils.clamp(this.targetCameraZ + delta * 0.004, 3.8, 9);
   };
 
   private onResize = (): void => this.resize();

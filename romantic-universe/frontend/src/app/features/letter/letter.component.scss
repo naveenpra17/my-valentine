@@ -4,7 +4,8 @@
   min-height: 100dvh;
   background: radial-gradient(ellipse at 50% 30%, var(--night-soft) 0%, var(--void) 70%);
   padding: var(--scene-padding);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .letter__glow {

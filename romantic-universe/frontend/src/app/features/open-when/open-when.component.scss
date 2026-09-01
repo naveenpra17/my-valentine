@@ -4,7 +4,8 @@
   min-height: 100dvh;
   background: var(--void);
   padding: var(--scene-padding) 0 clamp(3rem, 10vh, 5rem);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
   transition: background 1.2s var(--ease-cine);
 
   &--mood-warm {
