@@ -146,12 +146,12 @@ export class LoveUniverseComponent implements OnDestroy {
       this.photosLoaded.set(true);
     } catch {
       await this.scene.loadPhotos([
-        { id: 1, imageUrl: '/assets/images/gallery/photo-1.png', title: 'Us' },
-        { id: 2, imageUrl: '/assets/images/gallery/photo-2.png', title: 'Sunset' },
-        { id: 3, imageUrl: '/assets/images/gallery/photo-3.png', title: 'Adventure' },
-        { id: 4, imageUrl: '/assets/images/gallery/photo-4.png', title: 'Candid' },
-        { id: 5, imageUrl: '/assets/images/gallery/photo-5.png', title: 'Together' },
-        { id: 6, imageUrl: '/assets/images/gallery/photo-6.png', title: 'Smile' }
+        { id: 1, imageUrl: '/assets/images/gallery/photo-1.jpg', title: 'Us' },
+        { id: 2, imageUrl: '/assets/images/gallery/photo-2.jpg', title: 'Sunset' },
+        { id: 3, imageUrl: '/assets/images/gallery/photo-3.jpg', title: 'Adventure' },
+        { id: 4, imageUrl: '/assets/images/gallery/photo-4.jpg', title: 'Candid' },
+        { id: 5, imageUrl: '/assets/images/gallery/photo-5.jpg', title: 'Together' },
+        { id: 6, imageUrl: '/assets/images/gallery/photo-6.jpg', title: 'Smile' }
       ]);
       this.photosLoaded.set(true);
     }

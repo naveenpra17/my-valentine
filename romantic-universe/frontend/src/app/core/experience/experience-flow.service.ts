@@ -45,7 +45,7 @@ export class ExperienceFlowService {
         photo = {
           id: photoId,
           title: title ?? `Photo ${photoId}`,
-          imageUrl: `/assets/images/gallery/photo-${photoId}.png`,
+          imageUrl: `/assets/images/gallery/photo-${photoId}.jpg`,
           caption: title
         } as Photo;
       }
@@ -239,8 +239,8 @@ export class ExperienceFlowService {
             type: 'photo',
             referenceId: id,
             label: item.label ?? `Photo ${id}`,
-            imageUrl: `/assets/images/gallery/photo-${id}.png`,
-            thumbnailUrl: `/assets/images/gallery/photo-${id}.png`
+            imageUrl: `/assets/images/gallery/photo-${id}.jpg`,
+            thumbnailUrl: `/assets/images/gallery/photo-${id}.jpg`
           });
         }
       }
@@ -268,8 +268,8 @@ export class ExperienceFlowService {
             type: 'memory',
             referenceId: id,
             label: item.label ?? `Memory ${id}`,
-            imageUrl: `/assets/images/memories/memory-${id}.png`,
-            thumbnailUrl: `/assets/images/memories/memory-${id}.png`
+            imageUrl: `/assets/images/memories/memory-${id}.jpg`,
+            thumbnailUrl: `/assets/images/memories/memory-${id}.jpg`
           });
         }
       }
