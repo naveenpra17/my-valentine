@@ -15,7 +15,7 @@ CROSS JOIN (
     ('HERO_LINE_1', 'Some people make the world beautiful just by being in it.'),
     ('HERO_LINE_2', 'And somehow, I got lucky enough to find you.'),
     ('HERO_TITLE', 'Her.'),
-    ('ENTRY_LOCK_ENABLED', 'true'),
+    ('ENTRY_LOCK_ENABLED', 'false'),
     ('ENTRY_LOCK_QUESTION', 'What''s the nickname only I call you? ❤️'),
     ('MUSIC_URL', '/assets/sites/kavi/audio/background.mp3'),
     ('HERO_IMAGE_URL', '/assets/sites/kavi/hero/hero.jpg')
