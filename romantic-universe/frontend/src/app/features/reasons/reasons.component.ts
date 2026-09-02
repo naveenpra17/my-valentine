@@ -115,19 +115,21 @@ export class ReasonsComponent implements OnInit, OnDestroy {
     this.experienceState.discoverReason(reason.id, reason.shortLabel);
     this.floatTweens.forEach(t => t.pause());
 
-    if (!this.motion.prefersReducedMotion() && this.focusPanelRef) {
-      gsap.fromTo(this.focusPanelRef.nativeElement, {
-        opacity: 0,
-        y: 20,
-        filter: 'blur(8px)'
-      }, {
-        opacity: 1,
-        y: 0,
-        filter: 'blur(0px)',
-        duration: 0.9,
-        ease: 'power3.out'
-      });
-    }
+    queueMicrotask(() => {
+      if (!this.motion.prefersReducedMotion() && this.focusPanelRef) {
+        gsap.fromTo(this.focusPanelRef.nativeElement, {
+          opacity: 0,
+          y: 20,
+          filter: 'blur(8px)'
+        }, {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          duration: 0.9,
+          ease: 'power3.out'
+        });
+      }
+    });
   }
 
   closeReason(): void {

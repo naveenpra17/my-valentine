@@ -131,6 +131,20 @@ html:has(.experience-shell)::-webkit-scrollbar {
   );
 }
 
+.experience-beat--gallery,
+.experience-beat--reasons {
+  justify-content: flex-start;
+  padding-top: clamp(2rem, 6vh, 4rem);
+  padding-bottom: clamp(2rem, 6vh, 4rem);
+  pointer-events: auto;
+  background: rgba(5, 3, 8, 0.94);
+
+  > * {
+    pointer-events: auto;
+    width: 100%;
+  }
+}
+
 .experience-beat--heart {
   min-height: 100vh;
   min-height: 100dvh;

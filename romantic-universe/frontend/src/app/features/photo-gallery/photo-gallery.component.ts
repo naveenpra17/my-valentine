@@ -19,8 +19,7 @@ import { SoundDesignService } from '../../core/services/sound-design.service';
 import { Photo } from '../../core/models';
 import { CinematicLightboxComponent } from '../../shared/components/cinematic-lightbox/cinematic-lightbox.component';
 import { finalizeScrollReveal, revealOnScroll } from '../../core/utils/scroll-reveal';
-import { getImageFallbacks, placeholderImageDataUrl } from '../../core/utils/image-fallback';
-import { BodyScrollLockService } from '../../core/services/body-scroll-lock.service';
+import { placeholderImageDataUrl, resolveAccessibleImageUrl } from '../../core/utils/image-fallback';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -33,7 +32,6 @@ gsap.registerPlugin(ScrollTrigger);
 })
 export class PhotoGalleryComponent implements OnInit, OnDestroy {
   @ViewChild('section') sectionRef!: ElementRef<HTMLElement>;
-  @ViewChild('carousel') carouselRef!: ElementRef<HTMLElement>;
 
   readonly title = input('Our Moments');
   readonly subtitle = input('Polaroids from our little universe');
@@ -43,7 +41,6 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
   private readonly experienceState = inject(ExperienceStateService);
   private readonly scenes = inject(SceneManagerService);
   private readonly sounds = inject(SoundDesignService);
-  private readonly scrollLock = inject(BodyScrollLockService);
   private observer?: IntersectionObserver;
 
   readonly photos = signal<Photo[]>([]);
@@ -52,19 +49,21 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
   readonly selected = signal<Photo | null>(null);
   readonly lightboxOpen = signal(false);
   readonly sourceRect = signal<DOMRect | null>(null);
-  readonly activeIndex = signal(0);
   readonly imageErrors = signal<Set<number>>(new Set());
+  readonly loadedImages = signal<Set<number>>(new Set());
 
-  private touchStartX = 0;
-  private isMobile = false;
+  private opening = false;
 
   isDiscovered(id: number): boolean {
     return this.experienceState.isPhotoDiscovered(id);
   }
 
+  isImageLoaded(id: number): boolean {
+    return this.loadedImages().has(id);
+  }
+
   constructor() {
     afterNextRender(() => {
-      this.isMobile = window.innerWidth < 768;
       this.initAnimations();
       this.initSceneObserver();
     });
@@ -72,36 +71,67 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.observer?.disconnect();
-    if (this.lightboxOpen()) {
-      this.scrollLock.unlock();
-    }
   }
 
   async ngOnInit(): Promise<void> {
-    this.photos.set(this.siteData.photos());
+    const items = this.siteData.photos();
+    const resolved = await Promise.all(
+      items.map(async photo => ({
+        ...photo,
+        imageUrl: await resolveAccessibleImageUrl(photo.imageUrl, photo.title ?? 'Photo')
+      }))
+    );
+
+    this.photos.set(resolved);
     this.loading.set(false);
+
+    for (const photo of resolved) {
+      if (photo.imageUrl.startsWith('data:')) {
+        this.onImageLoad(photo.id);
+      } else {
+        this.preloadImage(photo);
+      }
+    }
+
     setTimeout(() => this.initAnimations(), 50);
   }
 
   openPhoto(photo: Photo, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (this.opening || this.lightboxOpen()) return;
+
+    this.opening = true;
     const target = (event.currentTarget as HTMLElement).querySelector('.polaroid__image-wrap')
       ?? event.currentTarget as HTMLElement;
     this.sourceRect.set(target.getBoundingClientRect());
     this.selected.set(photo);
     this.lightboxOpen.set(true);
-    this.scrollLock.lock();
-    const isNew = this.experienceState.discoverPhoto(photo.id, photo.caption ?? photo.title ?? undefined, photo.imageUrl);
+
+    const isNew = this.experienceState.discoverPhoto(
+      photo.id,
+      photo.caption ?? photo.title ?? undefined,
+      photo.imageUrl
+    );
     if (isNew) {
       this.sounds.enable();
       this.sounds.play('photo');
     }
+
+    setTimeout(() => {
+      this.opening = false;
+    }, 400);
   }
 
   closeLightbox(): void {
+    if (!this.lightboxOpen()) return;
     this.lightboxOpen.set(false);
     this.selected.set(null);
     this.sourceRect.set(null);
-    this.scrollLock.unlock();
+  }
+
+  onImageLoad(id: number): void {
+    this.loadedImages.update(set => new Set(set).add(id));
   }
 
   onImageError(id: number): void {
@@ -111,20 +141,7 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const current = photo.imageUrl ?? '';
-    const candidates = getImageFallbacks(current);
-    const next = candidates.find(
-      candidate => candidate !== current && !candidate.startsWith('data:')
-    );
-
-    if (next) {
-      this.photos.update(items =>
-        items.map(item => (item.id === id ? { ...item, imageUrl: next } : item))
-      );
-      return;
-    }
-
-    if (!current.startsWith('data:')) {
+    if (!photo.imageUrl.startsWith('data:')) {
       this.photos.update(items =>
         items.map(item =>
           item.id === id
@@ -132,6 +149,7 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
             : item
         )
       );
+      this.onImageLoad(id);
       return;
     }
 
@@ -142,51 +160,15 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
     return this.imageErrors().has(id);
   }
 
-  getCarouselTransform(): string {
-    const photos = this.photos();
-    if (photos.length === 0) return 'none';
-
-    if (this.isMobile) {
-      return 'none';
-    }
-
-    const index = this.activeIndex();
-    const angleStep = 360 / photos.length;
-    const angle = -index * angleStep;
-    return `translateZ(-320px) rotateY(${angle}deg)`;
+  hasRealPhoto(photo: Photo): boolean {
+    return !photo.imageUrl.startsWith('data:');
   }
 
-  getCardTransform(i: number): string {
-    const photos = this.photos();
-    if (photos.length === 0 || this.isMobile) return 'none';
-
-    const angle = (360 / photos.length) * i;
-    return `rotateY(${angle}deg) translateZ(320px)`;
-  }
-
-  setActive(index: number): void {
-    const len = this.photos().length;
-    if (len === 0) return;
-    this.activeIndex.set(((index % len) + len) % len);
-  }
-
-  prev(): void {
-    this.setActive(this.activeIndex() - 1);
-  }
-
-  next(): void {
-    this.setActive(this.activeIndex() + 1);
-  }
-
-  onTouchStart(event: TouchEvent): void {
-    this.touchStartX = event.touches[0].clientX;
-  }
-
-  onTouchEnd(event: TouchEvent): void {
-    const diff = this.touchStartX - event.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) {
-      diff > 0 ? this.next() : this.prev();
-    }
+  private preloadImage(photo: Photo): void {
+    const img = new Image();
+    img.onload = () => this.onImageLoad(photo.id);
+    img.onerror = () => this.onImageError(photo.id);
+    img.src = photo.imageUrl;
   }
 
   private initSceneObserver(): void {
@@ -206,9 +188,7 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
     if (this.motion.prefersReducedMotion() || !this.sectionRef) return;
 
     const header = this.sectionRef.nativeElement.querySelector('.photo-gallery__header');
-    const stage = this.isMobile
-      ? this.sectionRef.nativeElement.querySelector('.photo-gallery__mobile-scroll')
-      : this.sectionRef.nativeElement.querySelector('.photo-gallery__stage');
+    const grid = this.sectionRef.nativeElement.querySelector('.photo-gallery__grid');
     const revealTargets: Element[] = [];
 
     if (header) {
@@ -221,14 +201,14 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
       }, { trigger: this.sectionRef.nativeElement, start: 'top 80%' });
     }
 
-    if (stage) {
-      revealTargets.push(stage);
-      revealOnScroll(stage, {
+    if (grid) {
+      revealTargets.push(grid);
+      revealOnScroll(grid, {
         opacity: 0,
         y: 24,
         duration: 1,
         ease: 'power3.out'
-      }, { trigger: stage, start: 'top 90%' });
+      }, { trigger: grid, start: 'top 90%' });
     }
 
     finalizeScrollReveal(...revealTargets);

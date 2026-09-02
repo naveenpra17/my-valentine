@@ -130,6 +130,38 @@
 
 
 
+        <section class="experience-beat experience-beat--gallery" appChapterVisit="4">
+
+          <app-photo-gallery
+
+            [title]="config.get('GALLERY_TITLE', 'Discover Our Moments')"
+
+            [subtitle]="config.get('GALLERY_SUBTITLE', 'Each photograph waits in the void')"
+
+          />
+
+        </section>
+
+
+
+        <section class="experience-beat experience-beat--reasons" appChapterVisit="5">
+
+          <app-reasons
+
+            [title]="config.get('REASONS_TITLE', 'What I Love About You')"
+
+            [subtitle]="config.get('REASONS_SUBTITLE', 'Tap a whisper to hear more')"
+
+            [introLine1]="config.get('REASONS_INTRO_1', 'There are things I love about you...')"
+
+            [introLine2]="reasonsIntroLine2()"
+
+          />
+
+        </section>
+
+
+
         <section class="experience-beat" appChapterVisit="6">
 
           <app-love-bomb
@@ -270,14 +302,6 @@
 
       <div class="experience-fallback" aria-label="Accessible content archive">
 
-        <app-photo-gallery
-
-          [title]="config.get('GALLERY_TITLE', 'Discover Our Moments')"
-
-          [subtitle]="config.get('GALLERY_SUBTITLE', 'Each photograph waits in the void')"
-
-        />
-
         <app-memory-timeline
 
           [discoveredOnly]="true"
@@ -285,14 +309,6 @@
           [title]="config.get('MEMORIES_TITLE', 'Things I Remember')"
 
           [subtitle]="config.get('MEMORIES_SUBTITLE', 'Every beautiful story leaves something behind')"
-
-        />
-
-        <app-reasons
-
-          [title]="config.get('REASONS_TITLE', 'What I Love About You')"
-
-          [subtitle]="config.get('REASONS_SUBTITLE', 'Tap a whisper to hear more')"
 
         />
 

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { detectUniverseQuality, PhotoOrbData, UniverseQuality } from './universe-quality';
 import { UniverseStarfield } from './universe-starfield';
+import { getImageFallbacks } from '../../core/utils/image-fallback';
 interface PhotoOrb {
   group: THREE.Group;
   mesh: THREE.Mesh;
@@ -841,8 +842,24 @@ export class LoveUniverseScene {
   }
 
   private loadTexture(url: string): Promise<THREE.Texture> {
+    const candidates = getImageFallbacks(url);
     return new Promise((resolve, reject) => {
-      this.textureLoader.load(url, resolve, undefined, reject);
+      const tryLoad = (index: number): void => {
+        const candidate = candidates[index];
+        if (!candidate) {
+          reject(new Error(`Failed to load texture: ${url}`));
+          return;
+        }
+
+        this.textureLoader.load(
+          candidate,
+          texture => resolve(texture),
+          undefined,
+          () => tryLoad(index + 1)
+        );
+      };
+
+      tryLoad(0);
     });
   }
 

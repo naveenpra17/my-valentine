@@ -31,11 +31,58 @@ export function placeholderImageDataUrl(label = 'Photo'): string {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-export function tryNextImageUrl(currentUrl: string, seen = new Set<string>()): string | null {
-  const candidates = getImageFallbacks(currentUrl);
-  const next = candidates.find(candidate => !seen.has(candidate));
-  if (!next) return null;
+/** Try each candidate URL; return the first that loads, else an SVG placeholder. */
+export function resolveAccessibleImageUrl(url: string, label = 'Photo'): Promise<string> {
+  const candidates = expandImageCandidates(url);
+  if (!candidates.length) {
+    return Promise.resolve(placeholderImageDataUrl(label));
+  }
 
-  seen.add(next);
-  return next;
+  return new Promise(resolve => {
+    const tryNext = (index: number): void => {
+      const candidate = candidates[index];
+      if (!candidate) {
+        resolve(placeholderImageDataUrl(label));
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => resolve(candidate);
+      img.onerror = () => tryNext(index + 1);
+      img.src = candidate;
+    };
+
+    tryNext(0);
+  });
+}
+
+function expandImageCandidates(url: string): string[] {
+  const trimmed = (url ?? '').trim();
+  if (!trimmed) return [];
+
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+
+  const add = (candidate: string): void => {
+    const value = candidate.trim();
+    if (!value || seen.has(value)) return;
+    seen.add(value);
+    ordered.push(value);
+  };
+
+  for (const candidate of getImageFallbacks(trimmed)) {
+    add(candidate);
+  }
+
+  const siteGalleryMatch = trimmed.match(/\/assets\/sites\/[^/]+\/gallery\/(.+)$/i);
+  if (siteGalleryMatch) {
+    add(`/assets/images/gallery/${siteGalleryMatch[1]}`);
+  }
+
+  const legacyGalleryMatch = trimmed.match(/\/assets\/images\/gallery\/(.+)$/i);
+  if (legacyGalleryMatch) {
+    add(`/assets/sites/kavi/gallery/${legacyGalleryMatch[1]}`);
+  }
+
+  return ordered;
 }

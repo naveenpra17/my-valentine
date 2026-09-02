@@ -68,7 +68,7 @@ export class ExperienceFlowService {
       this.living.beginTimeStop();
       this.music.beginMomentFocus();
 
-      await this.pause(1600);
+      await this.pause(4500);
 
       if (photo.memoryId) {
         await this.revealLinkedMemory(photo.memoryId);

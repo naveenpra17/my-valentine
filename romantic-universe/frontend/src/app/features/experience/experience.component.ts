@@ -194,6 +194,11 @@ export class ExperienceComponent implements OnDestroy, AfterViewInit {
 
   readonly transitioning = signal(false);
 
+  readonly reasonsIntroLine2 = computed(() => {
+    const value = this.config.get('REASONS_INTRO_2').trim();
+    return value || "The little things you probably don't even notice.";
+  });
+
 
 
   readonly showEntryLock = computed(() => {
