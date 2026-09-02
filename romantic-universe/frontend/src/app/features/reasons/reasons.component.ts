@@ -107,19 +107,15 @@ export class ReasonsComponent implements OnInit, OnDestroy {
   }
 
   focusReason(reason: Reason): void {
-    const next = this.focusedId() === reason.id ? null : reason.id;
-    this.focusedId.set(next);
+    if (this.focusedId() === reason.id) return;
 
-    if (next !== null) {
-      this.sounds.enable();
-      this.sounds.play('star');
-      this.experienceState.discoverReason(reason.id, reason.shortLabel);
-      this.floatTweens.forEach(t => t.pause());
-    } else {
-      this.floatTweens.forEach(t => t.resume());
-    }
+    this.focusedId.set(reason.id);
+    this.sounds.enable();
+    this.sounds.play('star');
+    this.experienceState.discoverReason(reason.id, reason.shortLabel);
+    this.floatTweens.forEach(t => t.pause());
 
-    if (!this.motion.prefersReducedMotion() && next !== null && this.focusPanelRef) {
+    if (!this.motion.prefersReducedMotion() && this.focusPanelRef) {
       gsap.fromTo(this.focusPanelRef.nativeElement, {
         opacity: 0,
         y: 20,
@@ -132,6 +128,13 @@ export class ReasonsComponent implements OnInit, OnDestroy {
         ease: 'power3.out'
       });
     }
+  }
+
+  closeReason(): void {
+    if (this.focusedId() === null) return;
+
+    this.focusedId.set(null);
+    this.floatTweens.forEach(t => t.resume());
   }
 
   private initSceneObserver(): void {

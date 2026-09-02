@@ -36,7 +36,7 @@
         <div class="reason-focus" #focusPanel role="region" [attr.aria-label]="reason.shortLabel">
           <p class="reason-focus__label cine-micro">{{ reason.shortLabel }}</p>
           <p class="reason-focus__message cine-letter">{{ reason.longMessage }}</p>
-          <button class="reason-focus__close cine-enter-btn" type="button" (click)="focusReason(reason)">
+          <button class="reason-focus__close cine-enter-btn" type="button" (click)="closeReason()">
             Close
           </button>
         </div>
