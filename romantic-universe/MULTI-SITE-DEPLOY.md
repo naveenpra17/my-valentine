@@ -58,9 +58,9 @@ Flyway `V2` assigns orphan rows to `kavi`. Then run `neon-update-multisite-paths
 | `CORS_ALLOWED_ORIGINS` | `https://your-app.vercel.app` |
 | `ENTRY_LOCK_ENABLED` | `false` (use per-site DB config instead) |
 
-4. Verify: `GET https://YOUR-API.onrender.com/api/health` → `{"status":"UP"}`
-5. Verify: `GET https://YOUR-API.onrender.com/api/sites` → list of sites
-6. Verify: `GET https://YOUR-API.onrender.com/api/sites/kavi` → full bundle
+4. Verify: `GET https://my-valentine-2.onrender.com/api/health` → `{"status":"UP"}`
+5. Verify: `GET https://my-valentine-2.onrender.com/api/sites` → list of sites
+6. Verify: `GET https://my-valentine-2.onrender.com/api/sites/kavi` → full bundle
 
 ---
 
@@ -71,7 +71,7 @@ Flyway `V2` assigns orphan rows to `kavi`. Then run `neon-update-multisite-paths
 
 | Name | Value |
 |------|-------|
-| `API_URL` | `https://YOUR-API.onrender.com/api` |
+| `API_URL` | `https://my-valentine-2.onrender.com/api` |
 
 Build runs `node scripts/write-config.mjs` then `ng build` — no manual `config.json` edit needed on Vercel.
 

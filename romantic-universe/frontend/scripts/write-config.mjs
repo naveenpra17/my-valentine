@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const outPath = join(__dirname, '..', 'src', 'assets', 'config.json');
 
-const apiUrl = (process.env.API_URL || 'http://localhost:8080/api').replace(/\/$/, '');
+const apiUrl = (process.env.API_URL || 'https://my-valentine-2.onrender.com/api').replace(/\/$/, '');
 
 writeFileSync(outPath, JSON.stringify({ apiUrl }, null, 2) + '\n', 'utf8');
 console.log(`[write-config] apiUrl = ${apiUrl}`);
