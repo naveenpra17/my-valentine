@@ -5,7 +5,12 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./features/site-selector/site-selector.component').then(m => m.SiteSelectorComponent)
+      import('./features/site-empty/site-empty.component').then(m => m.SiteEmptyComponent)
+  },
+  {
+    path: 'site',
+    loadComponent: () =>
+      import('./features/site-empty/site-empty.component').then(m => m.SiteEmptyComponent)
   },
   {
     path: 'not-found',

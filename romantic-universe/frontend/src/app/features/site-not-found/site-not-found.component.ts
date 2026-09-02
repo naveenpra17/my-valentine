@@ -11,7 +11,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
       @if (slug) {
         <p class="cine-micro missing__slug">{{ slug }}</p>
       }
-      <a routerLink="/" class="cine-enter-btn missing__back">Return</a>
+      <a routerLink="/" class="cine-enter-btn missing__back">Back</a>
     </main>
   `,
   styles: [`
