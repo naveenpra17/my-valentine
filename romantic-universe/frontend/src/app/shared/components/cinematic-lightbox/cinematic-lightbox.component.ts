@@ -44,9 +44,11 @@ interface DustParticle {
           @if (imageUrl()) {
             <img
               class="cine-lightbox__img"
+              [class.cine-lightbox__img--loaded]="imageLoaded()"
               [src]="resolvedImageUrl()"
               [alt]="title() || 'Photo'"
               #img
+              (load)="onImageLoad()"
               (error)="onImageError()"
             />
           } @else {
@@ -106,6 +108,12 @@ interface DustParticle {
       max-height: 55vh;
       object-fit: cover;
       aspect-ratio: 4 / 5;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .cine-lightbox__img--loaded {
+      opacity: 1;
     }
 
     .cine-lightbox__placeholder {
@@ -152,6 +160,7 @@ export class CinematicLightboxComponent implements OnDestroy {
 
   readonly resolvedImageUrl = signal('');
   readonly imageError = signal(false);
+  readonly imageLoaded = signal(false);
   private readonly motion = inject(MotionService);
   private readonly focusTrap = inject(FocusTrapService);
   private readonly scrollLock = inject(BodyScrollLockService);
@@ -164,6 +173,7 @@ export class CinematicLightboxComponent implements OnDestroy {
       const image = this.imageUrl();
       this.resolvedImageUrl.set(image);
       this.imageError.set(false);
+      this.imageLoaded.set(false);
     });
 
     effect(() => {
@@ -196,6 +206,10 @@ export class CinematicLightboxComponent implements OnDestroy {
     void this.playClose().then(() => this.close.emit());
   }
 
+  onImageLoad(): void {
+    this.imageLoaded.set(true);
+  }
+
   onImageError(): void {
     const current = this.resolvedImageUrl();
     const candidates = getImageFallbacks(current);
@@ -204,12 +218,14 @@ export class CinematicLightboxComponent implements OnDestroy {
     if (next) {
       this.resolvedImageUrl.set(next);
       this.imageError.set(false);
+      this.imageLoaded.set(false);
       return;
     }
 
     this.imageError.set(false);
     const title = this.title();
     this.resolvedImageUrl.set(placeholderImageDataUrl(title || 'Photo'));
+    this.imageLoaded.set(true);
   }
 
   onBackdrop(event: MouseEvent): void {
