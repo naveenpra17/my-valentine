@@ -18,7 +18,7 @@ CROSS JOIN (
     ('HERO_TITLE', '{{HERO_TITLE}}'),
     ('HERO_IMAGE_URL', '/assets/sites/{{SITE_SLUG}}/hero/hero.jpg'),
     ('MUSIC_URL', '/assets/sites/{{SITE_SLUG}}/audio/background.mp3'),
-    ('ENTRY_LOCK_ENABLED', '{{ENTRY_LOCK_ENABLED}}'),
+    ('ENTRY_LOCK_ENABLED', 'true'),
     ('ENTRY_LOCK_QUESTION', '{{ENTRY_LOCK_QUESTION}}'),
     ('ENTRY_LOCK_ANSWER', '{{ENTRY_LOCK_ANSWER}}')
 ) AS v(config_key, config_value)

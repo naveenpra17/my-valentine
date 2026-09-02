@@ -17,7 +17,7 @@ export class ConfigService {
   );
 
   readonly entryLockEnabled = computed(
-    () => this.siteData.config()?.entryLockEnabled ?? false
+    () => this.siteData.config()?.entryLockEnabled ?? true
   );
 
   async load(): Promise<void> {

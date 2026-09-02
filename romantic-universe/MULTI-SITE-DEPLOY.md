@@ -26,17 +26,7 @@ UPDATE site_config sc SET config_value = 'Naveen'
 FROM sites s WHERE sc.site_id = s.id AND s.slug = 'kavi' AND sc.config_key = 'MY_NAME';
 ```
 
-**Entry lock (per site):**
-
-```sql
-UPDATE site_config sc SET config_value = 'true'
-FROM sites s WHERE sc.site_id = s.id AND s.slug = 'kavi' AND sc.config_key = 'ENTRY_LOCK_ENABLED';
-
-UPDATE site_config sc SET config_value = 'her-nickname'
-FROM sites s WHERE sc.site_id = s.id AND s.slug = 'kavi' AND sc.config_key = 'ENTRY_LOCK_ANSWER';
-```
-
-`ENTRY_LOCK_ANSWER` is never returned to the browser.
+Entry lock is **on by default for every site**. Set `ENTRY_LOCK_ANSWER` per site in Neon. To disable one site: `ENTRY_LOCK_ENABLED = false` in `site_config`.
 
 **Migrating old single-site Neon data?**  
 Flyway `V2` assigns orphan rows to `kavi`. Then run `neon-update-multisite-paths.sql` if paths still use `/assets/images/...`.
@@ -56,7 +46,7 @@ Flyway `V2` assigns orphan rows to `kavi`. Then run `neon-update-multisite-paths
 | `SPRING_PROFILES_ACTIVE` | `prod` |
 | `DATABASE_URL` | Neon pooled connection string |
 | `CORS_ALLOWED_ORIGINS` | `https://your-app.vercel.app` |
-| `ENTRY_LOCK_ENABLED` | `false` (use per-site DB config instead) |
+| `ENTRY_LOCK_ENABLED` | `false` (optional global fallback; per-site DB config is preferred) |
 
 4. Verify: `GET https://my-valentine-2.onrender.com/api/health` → `{"status":"UP"}`
 5. Verify: `GET https://my-valentine-2.onrender.com/api/sites` → list of sites

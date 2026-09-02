@@ -101,7 +101,7 @@ public class SiteService {
     private SiteBundleDto buildBundle(Site site) {
         Long siteId = site.getId();
         Map<String, String> publicConfig = toPublicSettings(siteId);
-        boolean entryLockEnabled = parseBoolean(publicConfig.get("ENTRY_LOCK_ENABLED"), false);
+        boolean entryLockEnabled = parseBoolean(publicConfig.get("ENTRY_LOCK_ENABLED"), true);
         String entryLockQuestion = publicConfig.getOrDefault(
                 "ENTRY_LOCK_QUESTION",
                 "What's the nickname only I call you? ❤️"
@@ -129,7 +129,7 @@ public class SiteService {
 
     private SiteConfigDto toPublicConfig(Long siteId) {
         Map<String, String> settings = toPublicSettings(siteId);
-        boolean entryLockEnabled = parseBoolean(settings.get("ENTRY_LOCK_ENABLED"), false);
+        boolean entryLockEnabled = parseBoolean(settings.get("ENTRY_LOCK_ENABLED"), true);
         String entryLockQuestion = settings.getOrDefault(
                 "ENTRY_LOCK_QUESTION",
                 "What's the nickname only I call you? ❤️"

@@ -57,10 +57,13 @@ public class AuthService {
 
     private boolean isEntryLockEnabled(Long siteId) {
         String enabled = siteService.getRawSettings(siteId).get("ENTRY_LOCK_ENABLED");
-        if (enabled != null) {
-            return "true".equalsIgnoreCase(enabled.trim()) || "1".equals(enabled.trim());
+        if (enabled == null) {
+            return true;
         }
-        return entryLockProperties.isEnabled();
+        if ("false".equalsIgnoreCase(enabled.trim()) || "0".equals(enabled.trim())) {
+            return false;
+        }
+        return "true".equalsIgnoreCase(enabled.trim()) || "1".equals(enabled.trim());
     }
 
     private String resolveExpectedAnswer(Site site, String answer) {
