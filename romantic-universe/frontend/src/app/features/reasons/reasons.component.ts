@@ -114,6 +114,9 @@ export class ReasonsComponent implements OnInit, OnDestroy {
       this.sounds.enable();
       this.sounds.play('star');
       this.experienceState.discoverReason(reason.id, reason.shortLabel);
+      this.floatTweens.forEach(t => t.pause());
+    } else {
+      this.floatTweens.forEach(t => t.resume());
     }
 
     if (!this.motion.prefersReducedMotion() && next !== null && this.focusPanelRef) {
@@ -193,15 +196,20 @@ export class ReasonsComponent implements OnInit, OnDestroy {
     floats.forEach((ref, i) => {
       const el = ref.nativeElement;
       const tween = gsap.to(el, {
-        y: `+=${8 + (i % 3) * 4}`,
-        x: `+=${i % 2 === 0 ? 6 : -6}`,
-        duration: 2.5 + (i % 4) * 0.5,
+        y: `+=${4 + (i % 3) * 2}`,
+        x: `+=${i % 2 === 0 ? 3 : -3}`,
+        duration: 4.5 + (i % 4) * 0.75,
         ease: 'sine.inOut',
         yoyo: true,
-        repeat: -1
+        repeat: -1,
+        overwrite: false
       });
       this.floatTweens.push(tween);
     });
+
+    if (this.focusedId() !== null) {
+      this.floatTweens.forEach(t => t.pause());
+    }
   }
 
   private playIntro(): void {
