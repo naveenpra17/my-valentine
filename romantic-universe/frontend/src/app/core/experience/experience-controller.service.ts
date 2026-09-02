@@ -3,8 +3,10 @@ import { ExperienceStateService } from './experience-state.service';
 import { DirectorChapterId } from './experience-state.types';
 import { SessionService } from '../services/session.service';
 import { HeartShareService } from '../services/heart-share.service';
+import { SiteStorageService } from '../site/site-storage.service';
+import { SiteContextService } from '../site/site-context.service';
 
-const CONTROLLER_STORAGE_KEY = 'ru_controller_v1';
+const CONTROLLER_STORAGE_BASE = 'ru_controller_v1';
 
 /** Central cinematic orchestrator — emotional pacing, chapter gates, story flow. */
 type EmotionalBeat =
@@ -35,6 +37,8 @@ export class ExperienceControllerService {
   private readonly state = inject(ExperienceStateService);
   private readonly session = inject(SessionService);
   private readonly heartShare = inject(HeartShareService);
+  private readonly siteStorage = inject(SiteStorageService);
+  private readonly siteContext = inject(SiteContextService);
 
   /** Single source of truth — delegated to ExperienceStateService. */
   readonly experienceStarted = this.state.experienceStarted;
@@ -50,6 +54,10 @@ export class ExperienceControllerService {
   readonly canShowProgress = computed(() => false);
 
   constructor() {
+    // Restored when a site route activates via initializeForSite().
+  }
+
+  initializeForSite(): void {
     this.restore();
   }
 
@@ -135,11 +143,12 @@ export class ExperienceControllerService {
     this.resetForRestart();
     this.session.clearEntered();
     this.heartShare.clearPreviewCache();
-    sessionStorage.removeItem('love_bombs_count');
-    sessionStorage.removeItem('ru_heart_intro_seen');
-    sessionStorage.removeItem('ru_heart_first_attach');
-    sessionStorage.removeItem('ru_heart_complete_seen');
-    window.location.assign(window.location.pathname || '/');
+    this.siteStorage.removeItem(sessionStorage, 'love_bombs_count');
+    this.siteStorage.removeItem(sessionStorage, 'ru_heart_intro_seen');
+    this.siteStorage.removeItem(sessionStorage, 'ru_heart_first_attach');
+    this.siteStorage.removeItem(sessionStorage, 'ru_heart_complete_seen');
+    const slug = this.siteContext.slug();
+    window.location.assign(slug ? `/site/${slug}` : '/');
   }
 
   private resetForRestart(): void {
@@ -148,7 +157,9 @@ export class ExperienceControllerService {
     this.constellationRevealed.set(false);
     this.finaleSecretShown.set(false);
     this.emotionalBeat.set('curious');
-    sessionStorage.removeItem(CONTROLLER_STORAGE_KEY);
+    if (typeof sessionStorage !== 'undefined') {
+      this.siteStorage.removeItem(sessionStorage, CONTROLLER_STORAGE_BASE);
+    }
   }
 
   openEnvelope(id: number): void {
@@ -171,12 +182,12 @@ export class ExperienceControllerService {
       constellationRevealed: this.constellationRevealed(),
       finaleSecretShown: this.finaleSecretShown()
     };
-    sessionStorage.setItem(CONTROLLER_STORAGE_KEY, JSON.stringify(data));
+    this.siteStorage.setItem(sessionStorage, CONTROLLER_STORAGE_BASE, JSON.stringify(data));
   }
 
   private restore(): void {
     if (typeof sessionStorage === 'undefined') return;
-    const raw = sessionStorage.getItem(CONTROLLER_STORAGE_KEY);
+    const raw = this.siteStorage.getItem(sessionStorage, CONTROLLER_STORAGE_BASE);
     if (!raw) return;
 
     try {
@@ -194,7 +205,7 @@ export class ExperienceControllerService {
         this.state.setExperienceCompleted(true);
       }
     } catch {
-      sessionStorage.removeItem(CONTROLLER_STORAGE_KEY);
+      this.siteStorage.removeItem(sessionStorage, CONTROLLER_STORAGE_BASE);
     }
   }
 }

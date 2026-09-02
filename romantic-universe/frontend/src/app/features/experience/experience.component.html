@@ -34,7 +34,7 @@
 
     <app-entry-lock
 
-      [question]="config.get('ENTRY_LOCK_QUESTION')"
+      [question]="config.entryLockQuestion()"
 
       (unlocked)="onUnlocked()"
 
@@ -100,7 +100,7 @@
 
           <app-hero
 
-            [herName]="config.get('HER_NAME', 'Beautiful')"
+            [herName]="config.get('HER_NAME')"
 
             [title]="config.get('HERO_TITLE', 'Her.')"
 
@@ -108,7 +108,7 @@
 
             [discoverLine2]="config.get('CHAPTER_2_LINE_2', '...there\'s someone I wanted you to meet.')"
 
-            [pauseLine1]="config.get('HERO_PAUSE_1', 'Beautiful?')"
+            [pauseLine1]="config.get('HERO_PAUSE_1')"
 
             [pauseLine2]="config.get('HERO_PAUSE_2', 'Obviously.')"
 
@@ -118,7 +118,7 @@
 
             [line2]="config.get('HERO_LINE_2')"
 
-            [imageUrl]="config.get('HERO_IMAGE_URL', '/assets/images/hero/hero.jpg')"
+            [imageUrl]="config.get('HERO_IMAGE_URL')"
 
           />
 
@@ -242,7 +242,7 @@
 
           <app-finale
 
-            [herName]="config.get('HER_NAME', 'Beautiful')"
+            [herName]="config.get('HER_NAME')"
 
             [line1]="config.get('FINAL_LINE_1')"
 

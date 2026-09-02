@@ -11,6 +11,9 @@ public class LoveBomb {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "site_id", nullable = false)
+    private Long siteId;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
@@ -25,6 +28,8 @@ public class LoveBomb {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public Long getSiteId() { return siteId; }
+    public void setSiteId(Long siteId) { this.siteId = siteId; }
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
     public int getDisplayOrder() { return displayOrder; }

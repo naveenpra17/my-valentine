@@ -1,21 +1,16 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ExperienceStateService } from '../experience/experience-state.service';
+import { SiteStorageService } from '../site/site-storage.service';
 
 @Injectable({ providedIn: 'root' })
 export class EasterEggService {
   private readonly experienceState = inject(ExperienceStateService);
-  readonly secretHeartFound = signal(
-    localStorage.getItem('egg_secret_heart') === 'true'
-  );
-  readonly voidWhisperFound = signal(
-    localStorage.getItem('egg_void_whisper') === 'true'
-  );
-  readonly hiddenStarFound = signal(
-    localStorage.getItem('egg_hidden_star') === 'true'
-  );
-  readonly titleClicked = signal(
-    localStorage.getItem('egg_title_click') === 'true'
-  );
+  private readonly siteStorage = inject(SiteStorageService);
+
+  readonly secretHeartFound = signal(false);
+  readonly voidWhisperFound = signal(false);
+  readonly hiddenStarFound = signal(false);
+  readonly titleClicked = signal(false);
 
   readonly showVoidWhisper = signal(false);
   readonly voidWhisperMessage = signal('');
@@ -33,6 +28,7 @@ export class EasterEggService {
   private listenerAttached = false;
 
   initHiddenWorld(): void {
+    this.restoreFlags();
     if (this.listenerAttached || typeof document === 'undefined') return;
     document.addEventListener('keydown', this.onKeyDown);
     this.listenerAttached = true;
@@ -45,25 +41,25 @@ export class EasterEggService {
   }
 
   markSecretHeartFound(): void {
-    localStorage.setItem('egg_secret_heart', 'true');
+    this.siteStorage.setItem(localStorage, 'egg_secret_heart', 'true');
     this.secretHeartFound.set(true);
     this.experienceState.discoverSecret('secret-heart');
   }
 
   markVoidWhisperFound(): void {
-    localStorage.setItem('egg_void_whisper', 'true');
+    this.siteStorage.setItem(localStorage, 'egg_void_whisper', 'true');
     this.voidWhisperFound.set(true);
     this.experienceState.discoverSecret('void-whisper');
   }
 
   markHiddenStarFound(): void {
-    localStorage.setItem('egg_hidden_star', 'true');
+    this.siteStorage.setItem(localStorage, 'egg_hidden_star', 'true');
     this.hiddenStarFound.set(true);
     this.experienceState.discoverSecret('hidden-star');
   }
 
   markTitleClicked(): void {
-    localStorage.setItem('egg_title_click', 'true');
+    this.siteStorage.setItem(localStorage, 'egg_title_click', 'true');
     this.titleClicked.set(true);
     this.experienceState.discoverSecret('title-click');
   }
@@ -89,4 +85,11 @@ export class EasterEggService {
       this.triggerVoidWhisper();
     }
   };
+
+  private restoreFlags(): void {
+    this.secretHeartFound.set(this.siteStorage.getItem(localStorage, 'egg_secret_heart') === 'true');
+    this.voidWhisperFound.set(this.siteStorage.getItem(localStorage, 'egg_void_whisper') === 'true');
+    this.hiddenStarFound.set(this.siteStorage.getItem(localStorage, 'egg_hidden_star') === 'true');
+    this.titleClicked.set(this.siteStorage.getItem(localStorage, 'egg_title_click') === 'true');
+  }
 }

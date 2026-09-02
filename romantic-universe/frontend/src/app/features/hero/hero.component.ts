@@ -32,16 +32,16 @@ export class HeroComponent implements OnDestroy {
   @ViewChild('textBlock') textBlockRef!: ElementRef<HTMLElement>;
   @ViewChild('dustLayer') dustLayerRef!: ElementRef<HTMLElement>;
 
-  readonly herName = input('Beautiful');
-  readonly title = input('Look at This Beautiful Human');
-  readonly discoverLine1 = input('Somewhere in this little universe...');
-  readonly discoverLine2 = input('...there\'s someone I wanted you to meet.');
-  readonly pauseLine1 = input('Beautiful?');
+  readonly herName = input('');
+  readonly title = input('');
+  readonly discoverLine1 = input('');
+  readonly discoverLine2 = input('');
+  readonly pauseLine1 = input('');
   readonly pauseLine2 = input('Obviously.');
   readonly pauseLine3 = input('But that\'s not even the best part.');
   readonly line1 = input('Some people make the world beautiful just by being in it.');
   readonly line2 = input('And somehow, I got lucky enough to find you.');
-  readonly imageUrl = input('/assets/images/hero/hero.jpg');
+  readonly imageUrl = input('');
 
   private readonly motion = inject(MotionService);
   private readonly scenes = inject(SceneManagerService);
@@ -49,7 +49,7 @@ export class HeroComponent implements OnDestroy {
   private scrollTriggers: ScrollTrigger[] = [];
 
   readonly imageError = signal(false);
-  readonly resolvedImageUrl = signal('/assets/images/hero/hero.jpg');
+  readonly resolvedImageUrl = signal('');
   private imageFallbacks = new Set<string>();
 
   constructor() {

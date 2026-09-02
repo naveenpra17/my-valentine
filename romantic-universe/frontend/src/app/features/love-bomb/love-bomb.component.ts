@@ -11,6 +11,8 @@ import {
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
+import { SiteContextService } from '../../core/site/site-context.service';
+import { SiteStorageService } from '../../core/site/site-storage.service';
 import { SessionService } from '../../core/services/session.service';
 import { MotionService } from '../../core/services/motion.service';
 import { LiveAnnouncerService } from '../../core/services/live-announcer.service';
@@ -20,6 +22,8 @@ import { MusicalChoreographyService } from '../../core/audio/musical-choreograph
 import { ExperienceNavigationService } from '../../core/experience/experience-navigation.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
 import { LoveBomb } from '../../core/models';
+
+const LOVE_BOMBS_COUNT_KEY = 'love_bombs_count';
 
 interface GameHeart {
   id: number;
@@ -47,6 +51,8 @@ export class LoveBombComponent implements OnDestroy, AfterViewInit {
   readonly introLine3 = input('You\'ve been warned.');
 
   private readonly api = inject(ApiService);
+  private readonly siteContext = inject(SiteContextService);
+  private readonly siteStorage = inject(SiteStorageService);
   private readonly session = inject(SessionService);
   private readonly motion = inject(MotionService);
   private readonly announcer = inject(LiveAnnouncerService);
@@ -81,7 +87,7 @@ export class LoveBombComponent implements OnDestroy, AfterViewInit {
   private readonly spawnIntervalMs = 700;
 
   constructor() {
-    const stored = sessionStorage.getItem('love_bombs_count');
+    const stored = this.siteStorage.getItem(sessionStorage, LOVE_BOMBS_COUNT_KEY);
     if (stored) this.totalCaught.set(parseInt(stored, 10));
   }
 
@@ -176,11 +182,12 @@ export class LoveBombComponent implements OnDestroy, AfterViewInit {
     this.showMessage.set(false);
 
     try {
-      const bomb = await firstValueFrom(this.api.getLoveBomb(this.session.getId()));
+      const slug = this.siteContext.requireSlug();
+      const bomb = await firstValueFrom(this.api.getLoveBomb(this.session.getId(), slug));
       this.currentBomb.set(bomb);
       this.totalCaught.update(n => {
         const next = n + 1;
-        sessionStorage.setItem('love_bombs_count', String(next));
+        this.siteStorage.setItem(sessionStorage, LOVE_BOMBS_COUNT_KEY, String(next));
         return next;
       });
       this.streak.update(s => s + 1);

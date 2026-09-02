@@ -11,8 +11,7 @@ import {
   signal
 } from '@angular/core';
 import gsap from 'gsap';
-import { firstValueFrom } from 'rxjs';
-import { ApiService } from '../../core/services/api.service';
+import { SiteDataService } from '../../core/site/site-data.service';
 import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
@@ -44,7 +43,7 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
   readonly title = input('Messages Written in Stars');
   readonly subtitle = input('Tap a star — they form a heart for you');
 
-  private readonly api = inject(ApiService);
+  private readonly siteData = inject(SiteDataService);
   private readonly motion = inject(MotionService);
   private readonly visibility = inject(VisibilityService);
   private readonly experienceState = inject(ExperienceStateService);
@@ -82,16 +81,11 @@ export class QuoteConstellationComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
-    try {
-      this.quotes = await firstValueFrom(this.api.getQuotes());
-      this.layoutStars();
-    } catch {
-      this.error.set('Could not load quotes.');
-    } finally {
-      this.loading.set(false);
-      afterNextRender(() => this.tryInitCanvas(), { injector: this.injector });
-      this.initSceneObserver();
-    }
+    this.quotes = this.siteData.quotes();
+    this.layoutStars();
+    this.loading.set(false);
+    afterNextRender(() => this.tryInitCanvas(), { injector: this.injector });
+    this.initSceneObserver();
   }
 
   closeQuote(): void {

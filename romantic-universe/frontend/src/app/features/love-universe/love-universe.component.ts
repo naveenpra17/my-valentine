@@ -9,9 +9,8 @@ import {
   input,
   signal
 } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
 import gsap from 'gsap';
-import { ApiService } from '../../core/services/api.service';
+import { SiteDataService } from '../../core/site/site-data.service';
 import { MotionService } from '../../core/services/motion.service';
 import { VisibilityService } from '../../core/services/visibility.service';
 import { CameraDirectorService } from '../../core/cinematic/camera-director.service';
@@ -43,7 +42,7 @@ export class LoveUniverseComponent implements OnDestroy {
 
   private readonly motion = inject(MotionService);
   private readonly visibility = inject(VisibilityService);
-  private readonly api = inject(ApiService);
+  private readonly siteData = inject(SiteDataService);
   private readonly scenes = inject(SceneManagerService);
   private readonly experienceFlow = inject(ExperienceFlowService);
   private readonly experienceState = inject(ExperienceStateService);
@@ -138,23 +137,13 @@ export class LoveUniverseComponent implements OnDestroy {
       this.startCursorLoop();
     }
 
-    try {
-      const photos = await firstValueFrom(this.api.getPhotos());
+    const photos = this.siteData.photos();
+    if (photos.length) {
       await this.scene.loadPhotos(
         photos.map(p => ({ id: p.id, imageUrl: p.imageUrl, title: p.title }))
       );
-      this.photosLoaded.set(true);
-    } catch {
-      await this.scene.loadPhotos([
-        { id: 1, imageUrl: '/assets/images/gallery/photo-1.jpg', title: 'Us' },
-        { id: 2, imageUrl: '/assets/images/gallery/photo-2.jpg', title: 'Sunset' },
-        { id: 3, imageUrl: '/assets/images/gallery/photo-3.jpg', title: 'Adventure' },
-        { id: 4, imageUrl: '/assets/images/gallery/photo-4.jpg', title: 'Candid' },
-        { id: 5, imageUrl: '/assets/images/gallery/photo-5.jpg', title: 'Together' },
-        { id: 6, imageUrl: '/assets/images/gallery/photo-6.jpg', title: 'Smile' }
-      ]);
-      this.photosLoaded.set(true);
     }
+    this.photosLoaded.set(true);
 
     this.observer = new IntersectionObserver(
       ([entry]) => {

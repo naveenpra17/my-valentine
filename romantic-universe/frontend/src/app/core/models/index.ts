@@ -48,3 +48,26 @@ export interface SiteConfig {
   entryLockEnabled: boolean;
   entryLockQuestion: string;
 }
+
+export interface SiteIdentity {
+  slug: string;
+  name: string;
+}
+
+export interface SiteSummary {
+  slug: string;
+  name: string;
+}
+
+export interface SiteBundle {
+  site: SiteIdentity;
+  config: Record<string, string>;
+  entryLockEnabled: boolean;
+  entryLockQuestion: string;
+  memories: Memory[];
+  photos: Photo[];
+  quotes: Quote[];
+  reasons: Reason[];
+  loveBombs: LoveBomb[];
+  openWhenMessages: OpenWhenMessage[];
+}

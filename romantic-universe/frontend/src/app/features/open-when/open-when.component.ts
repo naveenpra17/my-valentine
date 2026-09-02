@@ -13,15 +13,13 @@ import {
 } from '@angular/core';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { firstValueFrom } from 'rxjs';
-import { ApiService } from '../../core/services/api.service';
 import { MotionService } from '../../core/services/motion.service';
 import { ExperienceControllerService } from '../../core/experience/experience-controller.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
 import { MusicalChoreographyService } from '../../core/audio/musical-choreography.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
+import { SiteDataService } from '../../core/site/site-data.service';
 import { OpenWhenMessage } from '../../core/models';
-import { OPEN_WHEN_FALLBACK } from './open-when-fallback';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -44,7 +42,7 @@ export class OpenWhenComponent implements OnInit, OnDestroy {
   readonly title = input('Messages for Different Days');
   readonly subtitle = input('Open one whenever you need it');
 
-  private readonly api = inject(ApiService);
+  private readonly siteData = inject(SiteDataService);
   private readonly motion = inject(MotionService);
   private readonly scenes = inject(SceneManagerService);
   private readonly sounds = inject(SoundDesignService);
@@ -70,20 +68,17 @@ export class OpenWhenComponent implements OnInit, OnDestroy {
     this.scrollTriggers.forEach(st => st.kill());
   }
 
-  async ngOnInit(): Promise<void> {
-    try {
-      const data = await firstValueFrom(this.api.getOpenWhenMessages());
-      this.messages.set(data.length > 0 ? data : OPEN_WHEN_FALLBACK);
-    } catch {
-      this.messages.set(OPEN_WHEN_FALLBACK);
-      this.error.set(null);
-    } finally {
-      this.loading.set(false);
-      setTimeout(() => {
-        this.initScrollAnimations();
-        this.initSceneObserver();
-      }, 100);
+  ngOnInit(): void {
+    const data = this.siteData.openWhenMessages();
+    this.messages.set(data);
+    if (!data.length) {
+      this.error.set('No messages are available yet.');
     }
+    this.loading.set(false);
+    setTimeout(() => {
+      this.initScrollAnimations();
+      this.initSceneObserver();
+    }, 100);
   }
 
   openedMessage(): OpenWhenMessage | null {

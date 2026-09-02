@@ -1,5 +1,6 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { applyPlacementWithFallback } from './heart-composition.util';
+import { SiteStorageService } from '../site/site-storage.service';
 import {
   ChapterId,
   ConstellationStar,
@@ -10,10 +11,11 @@ import {
   SerializedExperienceState
 } from './experience-state.types';
 
-const STORAGE_KEY = 'ru_experience_v3';
+const STORAGE_BASE = 'ru_experience_v3';
 
 @Injectable({ providedIn: 'root' })
 export class ExperienceStateService {
+  private readonly siteStorage = inject(SiteStorageService);
   readonly discoveredPhotos = signal<Set<number>>(new Set());
   readonly discoveredMemories = signal<Set<number>>(new Set());
   readonly discoveredReasons = signal<Set<number>>(new Set());
@@ -60,6 +62,10 @@ export class ExperienceStateService {
   });
 
   constructor() {
+    // Restored when a site route activates via initializeForSite().
+  }
+
+  initializeForSite(): void {
     this.restore();
   }
 
@@ -254,7 +260,9 @@ export class ExperienceStateService {
     this.experienceStarted.set(false);
     this.experienceCompleted.set(false);
     this.discoveryHistory.set({ milestones: {}, dwellMs: {} });
-    sessionStorage.removeItem(STORAGE_KEY);
+    if (typeof sessionStorage !== 'undefined') {
+      this.siteStorage.removeItem(sessionStorage, STORAGE_BASE);
+    }
   }
 
   exportForShare(): SerializedExperienceState {
@@ -382,12 +390,12 @@ export class ExperienceStateService {
 
   private persist(): void {
     if (typeof sessionStorage === 'undefined') return;
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(this.serialize()));
+    this.siteStorage.setItem(sessionStorage, STORAGE_BASE, JSON.stringify(this.serialize()));
   }
 
   private restore(): void {
     if (typeof sessionStorage === 'undefined') return;
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const raw = this.siteStorage.getItem(sessionStorage, STORAGE_BASE);
     if (!raw) return;
 
     try {
@@ -412,7 +420,7 @@ export class ExperienceStateService {
         this.rebuildHeartPoolFromDiscoveries();
       }
     } catch {
-      sessionStorage.removeItem(STORAGE_KEY);
+      this.siteStorage.removeItem(sessionStorage, STORAGE_BASE);
     }
   }
 

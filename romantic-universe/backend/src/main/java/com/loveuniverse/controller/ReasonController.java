@@ -18,6 +18,6 @@ public class ReasonController {
 
     @GetMapping
     public List<ReasonDto> getAll() {
-        return reasonService.findAllActive();
+        return reasonService.findAllActiveForDefaultSite();
     }
 }

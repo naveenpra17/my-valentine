@@ -27,6 +27,7 @@ import { CameraDirectorService } from '../../core/cinematic/camera-director.serv
 import { HeartObject } from '../../core/experience/experience-state.types';
 import { HeartScenePhase, OurLittleHeartScene } from './our-little-heart-scene';
 import { objectKey } from './heart-object-meshes';
+import { SiteStorageService } from '../../core/site/site-storage.service';
 
 const INTRO_KEY = 'ru_heart_intro_seen';
 const FIRST_ATTACH_KEY = 'ru_heart_first_attach';
@@ -72,6 +73,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   private readonly scenes = inject(SceneManagerService);
   private readonly camera = inject(CameraDirectorService);
   private readonly ngZone = inject(NgZone);
+  private readonly siteStorage = inject(SiteStorageService);
 
   private scene?: OurLittleHeartScene;
   private observer?: IntersectionObserver;
@@ -194,7 +196,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
     this.phase.set(this.motion.prefersReducedMotion() ? 'creating' : 'entering');
     this.guidance.set(this.poolObjects().length ? 'choose' : 'empty');
     this.sounds.enable();
-    sessionStorage.setItem(INTRO_KEY, '1');
+    this.siteStorage.setItem(sessionStorage, INTRO_KEY, '1');
 
     if (!this.motion.prefersReducedMotion() && this.introRef?.nativeElement) {
       gsap.to(this.introRef.nativeElement, {
@@ -221,9 +223,9 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
       this.heartShare.clearPreviewCache();
       this.music.onHeartAttach(obj.type);
 
-      const isFirst = !sessionStorage.getItem(FIRST_ATTACH_KEY);
+      const isFirst = !this.siteStorage.getItem(sessionStorage, FIRST_ATTACH_KEY);
       if (isFirst) {
-        sessionStorage.setItem(FIRST_ATTACH_KEY, '1');
+        this.siteStorage.setItem(sessionStorage, FIRST_ATTACH_KEY, '1');
         this.guidanceLocked = true;
         this.guidance.set('first');
         this.scene?.setPoolHighlight(true);
@@ -275,7 +277,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
     this.guidance.set('done');
     this.scene?.completeCreation();
     this.music.onHeartComplete();
-    sessionStorage.setItem(HEART_COMPLETE_KEY, '1');
+    this.siteStorage.setItem(sessionStorage, HEART_COMPLETE_KEY, '1');
     this.showCompletion.set(true);
     this.animateCompletionEnter();
   }
@@ -317,7 +319,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   }
 
   skipIntro(): void {
-    sessionStorage.setItem(INTRO_KEY, '1');
+    this.siteStorage.setItem(sessionStorage, INTRO_KEY, '1');
     this.beginHeart();
   }
 
@@ -383,7 +385,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   }
 
   private restoreCompletedHeartIfNeeded(): void {
-    if (!this.canComplete() || !sessionStorage.getItem(HEART_COMPLETE_KEY)) return;
+    if (!this.canComplete() || !this.siteStorage.getItem(sessionStorage, HEART_COMPLETE_KEY)) return;
     this.showIntro.set(false);
     this.scene?.setVisible(true);
     this.scene?.completeCreation();
@@ -392,7 +394,7 @@ export class OurLittleHeartComponent implements OnDestroy, AfterViewInit {
   }
 
   private async playIntroSequence(): Promise<void> {
-    if (this.introPlayed || sessionStorage.getItem(INTRO_KEY)) {
+    if (this.introPlayed || this.siteStorage.getItem(sessionStorage, INTRO_KEY)) {
       this.showIntro.set(false);
       this.scene?.setVisible(true);
       this.scene?.beginCreation();

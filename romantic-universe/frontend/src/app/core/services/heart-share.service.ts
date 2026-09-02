@@ -1,13 +1,15 @@
 import { Injectable, inject } from '@angular/core';
+import { ConfigService } from './config.service';
+import { SiteContextService } from '../site/site-context.service';
 import { HeartStateService } from '../experience/heart-state.service';
 import { heartStateCacheKey } from '../experience/heart-state-hash.util';
-import { ConfigService } from './config.service';
 import { renderHeartSnapshot } from './heart-capture.renderer';
 
 @Injectable({ providedIn: 'root' })
 export class HeartShareService {
   private readonly heartState = inject(HeartStateService);
   private readonly config = inject(ConfigService);
+  private readonly siteContext = inject(SiteContextService);
   private previewUrl: string | null = null;
   private previewCacheKey: string | null = null;
 
@@ -34,7 +36,8 @@ export class HeartShareService {
   }
 
   async getPreviewDataUrl(): Promise<string | null> {
-    const cacheKey = heartStateCacheKey(this.heartState.captureHeartState());
+    const slug = this.siteContext.slug() ?? 'unknown';
+    const cacheKey = `${slug}:${heartStateCacheKey(this.heartState.captureHeartState())}`;
     if (this.previewUrl && this.previewCacheKey === cacheKey) {
       return this.previewUrl;
     }

@@ -18,6 +18,6 @@ public class PhotoController {
 
     @GetMapping
     public List<PhotoDto> getAll() {
-        return photoService.findAllActive();
+        return photoService.findAllActiveForDefaultSite();
     }
 }

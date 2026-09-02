@@ -18,6 +18,6 @@ public class OpenWhenController {
 
     @GetMapping
     public List<OpenWhenDto> getAll() {
-        return openWhenService.findAllActive();
+        return openWhenService.findAllActiveForDefaultSite();
     }
 }

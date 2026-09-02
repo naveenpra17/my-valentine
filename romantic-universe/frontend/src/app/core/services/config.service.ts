@@ -1,30 +1,32 @@
-import { Injectable, signal, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
-import { ApiService } from './api.service';
-import { SiteConfig } from '../models';
+import { Injectable, computed, inject } from '@angular/core';
+import { SiteDataService } from '../site/site-data.service';
+import { SiteContextService } from '../site/site-context.service';
 
 @Injectable({ providedIn: 'root' })
 export class ConfigService {
-  private readonly api = inject(ApiService);
+  private readonly siteData = inject(SiteDataService);
+  private readonly siteContext = inject(SiteContextService);
 
-  readonly config = signal<SiteConfig | null>(null);
-  readonly loading = signal(true);
-  readonly error = signal<string | null>(null);
+  readonly config = this.siteData.config;
+  readonly loading = this.siteData.loading;
+  readonly error = this.siteData.error;
+
+  /** Authoritative entry-lock question from the site bundle (not settings map). */
+  readonly entryLockQuestion = computed(
+    () => this.siteData.config()?.entryLockQuestion ?? ''
+  );
+
+  readonly entryLockEnabled = computed(
+    () => this.siteData.config()?.entryLockEnabled ?? false
+  );
 
   async load(): Promise<void> {
-    this.loading.set(true);
-    this.error.set(null);
-    try {
-      const data = await firstValueFrom(this.api.getConfig());
-      this.config.set(data);
-    } catch {
-      this.error.set('Could not load site configuration. Please try again.');
-    } finally {
-      this.loading.set(false);
-    }
+    const slug = this.siteContext.slug();
+    if (!slug || this.siteData.bundle()) return;
+    await this.siteData.load(slug);
   }
 
   get(key: string, fallback = ''): string {
-    return this.config()?.settings[key] ?? fallback;
+    return this.siteData.get(key, fallback);
   }
 }

@@ -15,8 +15,7 @@ import {
 import { DatePipe } from '@angular/common';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { firstValueFrom } from 'rxjs';
-import { ApiService } from '../../core/services/api.service';
+import { SiteDataService } from '../../core/site/site-data.service';
 import { MotionService } from '../../core/services/motion.service';
 import { LiveAnnouncerService } from '../../core/services/live-announcer.service';
 import { SoundDesignService } from '../../core/services/sound-design.service';
@@ -48,7 +47,7 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
   readonly introLine2 = input('Some stay.');
   readonly introLine3 = input('I kept these.');
 
-  private readonly api = inject(ApiService);
+  private readonly siteData = inject(SiteDataService);
   private readonly motion = inject(MotionService);
   private readonly announcer = inject(LiveAnnouncerService);
   private readonly sounds = inject(SoundDesignService);
@@ -91,18 +90,12 @@ export class MemoryTimelineComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
-    try {
-      const data = await firstValueFrom(this.api.getMemories());
-      this.memories.set(data);
-    } catch {
-      this.error.set('Could not load memories.');
-    } finally {
-      this.loading.set(false);
-      setTimeout(() => {
-        this.initScrollAnimations();
-        this.initSceneObserver();
-      }, 100);
-    }
+    this.memories.set(this.siteData.memories());
+    this.loading.set(false);
+    setTimeout(() => {
+      this.initScrollAnimations();
+      this.initSceneObserver();
+    }, 100);
   }
 
   openMemory(memory: Memory, event: Event): void {

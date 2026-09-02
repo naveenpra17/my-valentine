@@ -1,148 +1,85 @@
-# Romantic Universe — Architecture
+# Romantic Universe — Multi-Site Architecture
 
-> Production architecture for the cinematic interactive love experience (Angular 19 + Three.js + Spring Boot).
+## Overview
 
----
+One Angular + Three.js frontend and one Spring Boot API power **many** personalized romantic experiences. Each experience is a **site** identified by URL slug (`/kavi`, `/anu`, …).
 
-## Experience Flow (Five Phases)
+## URL routing
 
-| Phase | Chapter | Component / Scene | Purpose |
-|-------|---------|-------------------|---------|
-| 1 — Universe Continuity | 1–7 | `discovery-scene`, universe shell | Photo → memory discovery, hidden HUD, chapter map |
-| 2 — Our Little Heart | 8 | `OurLittleHeartScene` (create) | Build personalized 3D heart, fly-to-attach, persistence |
-| 3 — Universe Remembers | 11 | `OurLittleHeartScene` (reconstruct) | Replay journey, exact heart reconstruction |
-| 4 — Final Transformation | 12 | `FinaleTransformationScene` | Dissolve → particles → giant heart → secret ending |
-| 5 — Production Polish | 12+ | `HeartCaptureRenderer`, `HeartShareService` | Personalized share image from exact heart state |
+| URL | Behavior |
+|-----|----------|
+| `/` | Site selector (auto-redirects if only one active site) |
+| `/:siteSlug` | Full cinematic experience for that site |
+| `/not-found` | Polished missing-universe page |
 
-The primary journey is **universe-first** — not a scroll-through section website.
+## API
 
----
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/sites` | List active sites (slug + name) |
+| `GET /api/sites/{slug}` | Full public site bundle |
+| `POST /api/sites/{slug}/unlock` | Entry-lock validation (`{ unlocked: boolean }`) |
+| `GET /api/sites/{slug}/love-bombs/random` | Site-scoped love bomb |
 
-## State Architecture
+Legacy endpoints (`/api/config`, `/api/photos`, …) remain for backward compatibility and resolve to the **default site** (`kavi`).
 
-```
-ExperienceStateService  ← SINGLE SOURCE OF TRUTH (sessionStorage: ru_experience_v3)
-        │
-        ├── ExperienceControllerService  (orchestration only: chapters, beats, gates)
-        ├── HeartStateService            (serialize / validate / placement)
-        └── Feature components & scenes
-```
+### Secrets
 
-### ExperienceStateService owns
+`ENTRY_LOCK_ANSWER` is stored in `site_config` but **never** returned by public APIs. Only `POST /api/sites/{slug}/unlock` validates answers server-side.
 
-- `experienceStarted`, `experienceCompleted`
-- Discovery sets (photos, memories, reasons, quotes, secrets, flowers, love-bombs)
-- `selectedHeartObjects`, `heartPool`, `constellationStars`
-- `currentChapter`, `musicEnabled`
-
-### ExperienceControllerService owns
-
-- `visitedChapters`, `unlockedChapters`
-- `emotionalBeat`, `constellationRevealed`, `finaleSecretShown`
-- Delegates `experienceStarted` / `experienceCompleted` to `ExperienceStateService`
-
-### Persistence
-
-| Storage | Key | Contents |
-|---------|-----|----------|
-| `sessionStorage` | `ru_experience_v3` | Full journey state |
-| `sessionStorage` | `ru_controller_v1` | Chapter gates, finale flags (no duplicate started/completed) |
-| `localStorage` | `romantic_universe_entered` | Entry lock preference |
-
----
-
-## Heart State
-
-- **First attach:** `applyPlacementWithFallback()` generates deterministic surface placement.
-- **After save:** persisted `position`, `rotation`, `scale` are **authoritative**.
-- **Reconstruction:** `getValidatedHeartObjects()` uses saved placement only; corrupt data gets deterministic fallback.
-- **Share cache key:** `heartStateCacheKey()` hashes asset IDs, types, positions, rotations, scales.
-
----
-
-## Three.js Scenes
-
-| Scene | Renderer Owner | Lifecycle |
-|-------|----------------|-----------|
-| `LoveUniverseScene` | Discovery universe | `init` → `start` → `stop` → `dispose` |
-| `OurLittleHeartScene` | Heart create / reconstruct | Same; `disposeGroup()` releases textures |
-| `FinaleTransformationScene` | Finale transformation | `cancel()` → `dispose()` stops all RAF/timeouts |
-| `HeartCaptureRenderer` | Temporary offscreen capture | Created per capture, disposed immediately |
-
-### WebGL Renderer Rules
-
-1. One persistent renderer per live scene component.
-2. Share capture creates a **temporary** renderer — disposed after snapshot.
-3. No second persistent WebGL context.
-
----
-
-## Texture Ownership
+## Database
 
 ```
-acquireTexture(url)  → refCount++
-releaseTexture(url)  → refCount--; dispose when 0
+sites (id, slug, name, active, …)
+  ├── site_config (site_id, config_key, config_value) UNIQUE(site_id, config_key)
+  ├── memories (site_id, …)
+  ├── photos (site_id, …)
+  ├── quotes (site_id, …)
+  ├── reasons (site_id, …)
+  ├── love_bombs (site_id, …)
+  ├── open_when_messages (site_id, …)
+  └── love_bomb_history (site_id, session_id, …)
 ```
 
-- `disposeGroup()` releases cached textures via `releaseTextureFromMap()`.
-- Canvas/text textures (quotes, reasons) are **owned** — disposed directly.
-- `loadTexture(url, maxSize)` downscales images before GPU upload.
-- Scenes must **never** call `texture.dispose()` on shared cache entries.
+Migrations: Flyway in `backend/src/main/resources/db/migration/`.
 
----
+### Existing Kavi data
 
-## Finale Particle System
+`V2__migrate_legacy_to_kavi.sql` assigns all pre-migration rows to the `kavi` site without deleting content.
 
-Three conceptual groups, one GPU `FinaleParticleSystem`:
+## Frontend services
 
-| Group | Source | Visual |
-|-------|--------|--------|
-| Personalized | Heart object positions | Per-kind color & size (photo=warm, memory=rose, etc.) |
-| Ambient | Fills remaining capacity | Soft generic universe glow |
-| Transformation | Convergence / burst | Reuses same buffers |
+| Service | Role |
+|---------|------|
+| `SiteContextService` | Current slug + name |
+| `SiteDataService` | Loads/caches `GET /api/sites/{slug}` |
+| `SiteStorageService` | Namespaces `localStorage` / `sessionStorage` keys (`site:kavi:…`) |
+| `ConfigService` | Thin wrapper over `SiteDataService` for templates |
 
-Quality tiers (`QualityService`): low / medium / high — `getParticleBudget()` returns 500–3000 target.
+Three.js scenes remain **site-agnostic** — they consume generic photo/memory/reason data from the loaded bundle.
 
-Particle groups in one `FinaleParticleSystem`:
-- **Personalized** (~48% of budget): type-weighted, origin at heart object world position
-- **Ambient** (remaining capacity): distant universe stars, low alpha, subtle drift
-- **Final heart**: all active particles receive converge targets via `beginConverge()`
+## Assets
 
-Per-particle GPU attributes: `color`, `psize`, `particleAlpha` (shader-driven, not one material per particle).
+Preferred layout for new sites:
 
----
+```
+frontend/src/assets/sites/{slug}/
+  hero/hero.jpg
+  gallery/photo-1.jpg
+  memories/memory-1.jpg
+  audio/background.mp3
+```
 
-## Animation Cancellation
+Existing Kavi URLs (`/assets/images/...`) are preserved in migrated data.
 
-`FinaleTransformationScene` uses `SceneLifecycle`:
+## Creating a new site
 
-- `begin()` increments generation token
-- `cancel()` clears RAF loops + timeouts, invalidates generation, stops render loop
-- `dispose()` calls `cancel()` then releases Three.js resources
-- `scheduleTimeout()` / `animate()` / `wait()` all respect generation
-- `FinaleComponent` tracks its own timeouts with `destroyed` flag + generation token for message/secret UI
+1. Copy `backend/src/main/resources/db/seed-site.sql` and replace placeholders.
+2. Run the SQL against Neon (or add a Flyway seed migration).
+3. Add assets under `frontend/src/assets/sites/{slug}/`.
+4. Deploy frontend + backend.
+5. Open `https://your-domain/{slug}`.
 
----
+## Rollback (Neon)
 
-## Angular Lifecycle Cleanup
-
-Each scene component cleans up on `ngOnDestroy`:
-
-- `IntersectionObserver`, `ResizeObserver`
-- GSAP `ScrollTrigger.kill()`
-- Scene `cancel()` + `dispose()`
-- Audio via `SoundDesignService` (no duplicate instances)
-
----
-
-## Backend
-
-Spring Boot REST API — photos, memories, quotes, config. PostgreSQL (prod) / H2 (dev). No secrets in Angular bundle.
-
----
-
-## Testing
-
-Unit tests cover: experience state persistence, heart placement, share hash stability, particle budgets.
-
-See `HARDENING-REPORT.md` for verification status.
+Before running migrations, back up the database. To roll back Flyway migrations, use `flyway undo` only if undo scripts exist; otherwise restore from Neon backup.

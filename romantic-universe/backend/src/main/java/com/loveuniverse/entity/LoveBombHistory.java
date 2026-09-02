@@ -11,6 +11,9 @@ public class LoveBombHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "site_id", nullable = false)
+    private Long siteId;
+
     @Column(name = "session_id", nullable = false, length = 64)
     private String sessionId;
 
@@ -22,6 +25,8 @@ public class LoveBombHistory {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public Long getSiteId() { return siteId; }
+    public void setSiteId(Long siteId) { this.siteId = siteId; }
     public String getSessionId() { return sessionId; }
     public void setSessionId(String sessionId) { this.sessionId = sessionId; }
     public Long getLoveBombId() { return loveBombId; }

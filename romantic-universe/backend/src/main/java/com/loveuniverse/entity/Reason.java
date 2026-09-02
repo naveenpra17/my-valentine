@@ -11,6 +11,9 @@ public class Reason {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "site_id", nullable = false)
+    private Long siteId;
+
     @Column(name = "short_label", nullable = false, length = 100)
     private String shortLabel;
 
@@ -28,6 +31,8 @@ public class Reason {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public Long getSiteId() { return siteId; }
+    public void setSiteId(Long siteId) { this.siteId = siteId; }
     public String getShortLabel() { return shortLabel; }
     public void setShortLabel(String shortLabel) { this.shortLabel = shortLabel; }
     public String getLongMessage() { return longMessage; }

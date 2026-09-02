@@ -18,6 +18,6 @@ public class QuoteController {
 
     @GetMapping
     public List<QuoteDto> getAll() {
-        return quoteService.findAllActive();
+        return quoteService.findAllActiveForDefaultSite();
     }
 }

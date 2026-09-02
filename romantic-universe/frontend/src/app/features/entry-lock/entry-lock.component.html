@@ -4,7 +4,7 @@
   <div class="entry-lock__content">
     <div class="entry-lock__icon">🔒</div>
     <h1 class="entry-lock__title">A little secret first...</h1>
-    <p class="entry-lock__question">{{ question() }}</p>
+    <p class="entry-lock__question">{{ displayQuestion() }}</p>
 
     <form class="entry-lock__form" (ngSubmit)="submit()">
       <input

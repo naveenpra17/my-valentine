@@ -11,8 +11,7 @@ import {
 } from '@angular/core';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { firstValueFrom } from 'rxjs';
-import { ApiService } from '../../core/services/api.service';
+import { SiteDataService } from '../../core/site/site-data.service';
 import { MotionService } from '../../core/services/motion.service';
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 import { SceneManagerService } from '../../core/cinematic/scene-manager.service';
@@ -39,7 +38,7 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
   readonly title = input('Our Moments');
   readonly subtitle = input('Polaroids from our little universe');
 
-  private readonly api = inject(ApiService);
+  private readonly siteData = inject(SiteDataService);
   private readonly motion = inject(MotionService);
   private readonly experienceState = inject(ExperienceStateService);
   private readonly scenes = inject(SceneManagerService);
@@ -79,15 +78,9 @@ export class PhotoGalleryComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
-    try {
-      const data = await firstValueFrom(this.api.getPhotos());
-      this.photos.set(data);
-      setTimeout(() => this.initAnimations(), 50);
-    } catch {
-      this.error.set('Could not load photos.');
-    } finally {
-      this.loading.set(false);
-    }
+    this.photos.set(this.siteData.photos());
+    this.loading.set(false);
+    setTimeout(() => this.initAnimations(), 50);
   }
 
   openPhoto(photo: Photo, event: Event): void {

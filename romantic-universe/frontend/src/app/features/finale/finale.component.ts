@@ -58,7 +58,7 @@ export class FinaleComponent implements OnDestroy, AfterViewInit {
   readonly personalLine = input('Something that exists because you were here.');
   readonly finalMessage = input('You mean more to me than words on a screen could ever say — but I tried anyway.');
   readonly footerCredit = input('Made with ❤️, caffeine, Java, and way too many thoughts about you.');
-  readonly herName = input('Beautiful');
+  readonly herName = input('');
   readonly myName = input('');
 
   private readonly motion = inject(MotionService);

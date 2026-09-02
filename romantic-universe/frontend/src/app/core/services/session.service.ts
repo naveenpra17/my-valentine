@@ -1,28 +1,35 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { SiteStorageService } from '../site/site-storage.service';
 
-const SESSION_KEY = 'romantic_universe_session';
-const ENTERED_KEY = 'romantic_universe_entered';
-const UNLOCKED_KEY = 'romantic_universe_unlocked';
+const SESSION_BASE = 'romantic_universe_session';
+const ENTERED_BASE = 'romantic_universe_entered';
+const UNLOCKED_BASE = 'romantic_universe_unlocked';
 
 @Injectable({ providedIn: 'root' })
 export class SessionService {
-  private sessionId: string;
+  private readonly siteStorage = inject(SiteStorageService);
+  private sessionId = '';
 
-  /** Reactive unlock state — required for computed UI gates. */
-  readonly unlocked = signal(this.readFlag(UNLOCKED_KEY));
-  readonly entered = signal(this.readFlag(ENTERED_KEY));
+  readonly unlocked = signal(false);
+  readonly entered = signal(false);
 
-  constructor() {
-    const stored = localStorage.getItem(SESSION_KEY);
+  initializeForSite(): void {
+    const stored = this.siteStorage.getItem(localStorage, SESSION_BASE);
     if (stored) {
       this.sessionId = stored;
     } else {
       this.sessionId = crypto.randomUUID();
-      localStorage.setItem(SESSION_KEY, this.sessionId);
+      this.siteStorage.setItem(localStorage, SESSION_BASE, this.sessionId);
     }
+
+    this.unlocked.set(this.readFlag(UNLOCKED_BASE));
+    this.entered.set(this.readFlag(ENTERED_BASE));
   }
 
   getId(): string {
+    if (!this.sessionId) {
+      this.initializeForSite();
+    }
     return this.sessionId;
   }
 
@@ -31,7 +38,7 @@ export class SessionService {
   }
 
   markEntered(): void {
-    localStorage.setItem(ENTERED_KEY, 'true');
+    this.siteStorage.setItem(localStorage, ENTERED_BASE, 'true');
     this.entered.set(true);
   }
 
@@ -40,17 +47,17 @@ export class SessionService {
   }
 
   markUnlocked(): void {
-    localStorage.setItem(UNLOCKED_KEY, 'true');
+    this.siteStorage.setItem(localStorage, UNLOCKED_BASE, 'true');
     this.unlocked.set(true);
   }
 
   clearEntered(): void {
-    localStorage.removeItem(ENTERED_KEY);
+    this.siteStorage.removeItem(localStorage, ENTERED_BASE);
     this.entered.set(false);
   }
 
-  private readFlag(key: string): boolean {
+  private readFlag(base: string): boolean {
     if (typeof localStorage === 'undefined') return false;
-    return localStorage.getItem(key) === 'true';
+    return this.siteStorage.getItem(localStorage, base) === 'true';
   }
 }

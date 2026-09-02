@@ -1,6 +1,4 @@
 import { Injectable, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
-import { ApiService } from '../services/api.service';
 import { CameraDirectorService } from '../cinematic/camera-director.service';
 import { SceneMomentService } from '../cinematic/scene-moment.service';
 import { ExperienceStateService } from './experience-state.service';
@@ -9,11 +7,12 @@ import { SoundDesignService } from '../services/sound-design.service';
 import { MusicalChoreographyService } from '../audio/musical-choreography.service';
 import { MotionService } from '../services/motion.service';
 import { UniverseLivingService } from '../cinematic/universe-living.service';
+import { SiteDataService } from '../site/site-data.service';
 import { Memory, Photo, Reason } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ExperienceFlowService {
-  private readonly api = inject(ApiService);
+  private readonly siteData = inject(SiteDataService);
   private readonly camera = inject(CameraDirectorService);
   private readonly moments = inject(SceneMomentService);
   private readonly state = inject(ExperienceStateService);
@@ -22,32 +21,24 @@ export class ExperienceFlowService {
   private readonly motion = inject(MotionService);
   private readonly living = inject(UniverseLivingService);
 
-  private memoriesCache: Memory[] | null = null;
-  private reasonsCache: Reason[] | null = null;
   private busy = false;
   private momentOpenedAt = 0;
   private lastMemoryOrbPos: { x: number; y: number; z: number } | null = null;
+
+  clearSiteCache(): void {
+    this.busy = false;
+    this.momentOpenedAt = 0;
+    this.lastMemoryOrbPos = null;
+  }
 
   async handlePhotoDiscovery(photoId: number, title?: string): Promise<void> {
     if (this.busy) return;
     this.busy = true;
 
     try {
-      let photo: Photo | undefined;
-      try {
-        const photos = await this.loadPhotos();
-        photo = photos.find(p => p.id === photoId);
-      } catch {
-        photo = undefined;
-      }
-
+      const photo = this.loadPhotos().find(p => p.id === photoId);
       if (!photo) {
-        photo = {
-          id: photoId,
-          title: title ?? `Photo ${photoId}`,
-          imageUrl: `/assets/images/gallery/photo-${photoId}.jpg`,
-          caption: title
-        } as Photo;
+        return;
       }
 
       this.sounds.enable();
@@ -69,7 +60,7 @@ export class ExperienceFlowService {
       await this.moments.transitionIn({
         kind: 'photo',
         title: photo.title ?? undefined,
-        subtitle: photo.caption ?? 'A moment in our universe.',
+        subtitle: photo.caption ?? undefined,
         imageUrl: photo.imageUrl
       });
 
@@ -94,7 +85,7 @@ export class ExperienceFlowService {
 
   async revealNextReason(): Promise<void> {
     if (this.busy) return;
-    const reasons = await this.loadReasons();
+    const reasons = this.loadReasons();
     const next = reasons.find(r => !this.state.discoveredReasons().has(r.id));
     if (!next) return;
 
@@ -105,7 +96,7 @@ export class ExperienceFlowService {
 
       await this.moments.transitionIn({
         kind: 'reason',
-        subtitle: 'There\'s something else I love...',
+        subtitle: undefined,
         title: next.shortLabel,
         body: next.longMessage
       });
@@ -119,8 +110,7 @@ export class ExperienceFlowService {
   }
 
   private async revealLinkedMemory(memoryId: number): Promise<void> {
-    const memories = await this.loadMemories();
-    const memory = memories.find(m => m.id === memoryId);
+    const memory = this.loadMemories().find(m => m.id === memoryId);
     if (!memory) {
       await this.moments.transitionOut();
       return;
@@ -128,7 +118,7 @@ export class ExperienceFlowService {
 
     await this.moments.transitionIn({
       kind: 'memory',
-      subtitle: 'I still remember this.',
+      subtitle: undefined,
       title: memory.title,
       body: memory.message,
       imageUrl: memory.imageUrl,
@@ -176,22 +166,16 @@ export class ExperienceFlowService {
     }
   }
 
-  private async loadPhotos(): Promise<Photo[]> {
-    return firstValueFrom(this.api.getPhotos());
+  private loadPhotos(): Photo[] {
+    return this.siteData.photos();
   }
 
-  private async loadMemories(): Promise<Memory[]> {
-    if (!this.memoriesCache) {
-      this.memoriesCache = await firstValueFrom(this.api.getMemories());
-    }
-    return this.memoriesCache;
+  private loadMemories(): Memory[] {
+    return this.siteData.memories();
   }
 
-  private async loadReasons(): Promise<Reason[]> {
-    if (!this.reasonsCache) {
-      this.reasonsCache = await firstValueFrom(this.api.getReasons());
-    }
-    return this.reasonsCache;
+  private loadReasons(): Reason[] {
+    return this.siteData.reasons();
   }
 
   private recordMomentDwell(type: 'photo' | 'memory', referenceId: number): void {
@@ -214,64 +198,32 @@ export class ExperienceFlowService {
     if (!pool.length) return;
 
     const patches: HeartObject[] = [];
-    const needsPhoto = pool.some(o => o.type === 'photo' && !o.imageUrl);
-    const needsMemory = pool.some(o => o.type === 'memory' && !o.imageUrl);
+    const photos = this.loadPhotos();
+    const memories = this.loadMemories();
 
-    if (needsPhoto) {
-      try {
-        const photos = await this.loadPhotos();
-        for (const item of pool.filter(o => o.type === 'photo' && !o.imageUrl)) {
-          const photo = photos.find(p => p.id === item.referenceId);
-          if (photo) {
-            patches.push({
-              type: 'photo',
-              referenceId: photo.id,
-              label: photo.caption ?? photo.title ?? undefined,
-              imageUrl: photo.imageUrl,
-              thumbnailUrl: photo.imageUrl
-            });
-          }
-        }
-      } catch {
-        for (const item of pool.filter(o => o.type === 'photo' && !o.imageUrl)) {
-          const id = Number(item.referenceId);
-          patches.push({
-            type: 'photo',
-            referenceId: id,
-            label: item.label ?? `Photo ${id}`,
-            imageUrl: `/assets/images/gallery/photo-${id}.jpg`,
-            thumbnailUrl: `/assets/images/gallery/photo-${id}.jpg`
-          });
-        }
+    for (const item of pool.filter(o => o.type === 'photo' && !o.imageUrl)) {
+      const photo = photos.find(p => p.id === item.referenceId);
+      if (photo) {
+        patches.push({
+          type: 'photo',
+          referenceId: photo.id,
+          label: photo.caption ?? photo.title ?? undefined,
+          imageUrl: photo.imageUrl,
+          thumbnailUrl: photo.imageUrl
+        });
       }
     }
 
-    if (needsMemory) {
-      try {
-        const memories = await this.loadMemories();
-        for (const item of pool.filter(o => o.type === 'memory' && !o.imageUrl)) {
-          const memory = memories.find(m => m.id === item.referenceId);
-          if (memory) {
-            patches.push({
-              type: 'memory',
-              referenceId: memory.id,
-              label: memory.title,
-              imageUrl: memory.imageUrl,
-              thumbnailUrl: memory.imageUrl
-            });
-          }
-        }
-      } catch {
-        for (const item of pool.filter(o => o.type === 'memory' && !o.imageUrl)) {
-          const id = Number(item.referenceId);
-          patches.push({
-            type: 'memory',
-            referenceId: id,
-            label: item.label ?? `Memory ${id}`,
-            imageUrl: `/assets/images/memories/memory-${id}.jpg`,
-            thumbnailUrl: `/assets/images/memories/memory-${id}.jpg`
-          });
-        }
+    for (const item of pool.filter(o => o.type === 'memory' && !o.imageUrl)) {
+      const memory = memories.find(m => m.id === item.referenceId);
+      if (memory) {
+        patches.push({
+          type: 'memory',
+          referenceId: memory.id,
+          label: memory.title,
+          imageUrl: memory.imageUrl,
+          thumbnailUrl: memory.imageUrl
+        });
       }
     }
 

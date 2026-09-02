@@ -35,6 +35,7 @@ import { MusicalChoreographyService } from '../../core/audio/musical-choreograph
 import { ExperienceStateService } from '../../core/experience/experience-state.service';
 
 import { ConfigService } from '../../core/services/config.service';
+import { SiteContextService } from '../../core/site/site-context.service';
 
 import { EasterEggService } from '../../core/services/easter-egg.service';
 
@@ -165,6 +166,7 @@ export class ExperienceComponent implements OnDestroy, AfterViewInit {
 
 
   readonly config = inject(ConfigService);
+  private readonly siteContext = inject(SiteContextService);
 
   private readonly session = inject(SessionService);
 
@@ -186,7 +188,7 @@ export class ExperienceComponent implements OnDestroy, AfterViewInit {
 
 
 
-  readonly showMain = signal(this.session.entered());
+  readonly showMain = signal(false);
 
   readonly burstActive = signal(false);
 
@@ -210,6 +212,10 @@ export class ExperienceComponent implements OnDestroy, AfterViewInit {
 
 
   constructor() {
+    this.session.initializeForSite();
+    this.experienceState.initializeForSite();
+    this.controller.initializeForSite();
+    this.showMain.set(this.session.entered());
 
     if (!this.session.hasEntered()) {
 
@@ -337,9 +343,10 @@ export class ExperienceComponent implements OnDestroy, AfterViewInit {
 
 
   retry(): void {
-
-    void this.config.load();
-
+    const slug = this.siteContext.slug();
+    if (slug) {
+      void this.config.load();
+    }
   }
 
 }

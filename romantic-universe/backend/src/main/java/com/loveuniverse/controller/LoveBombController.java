@@ -16,6 +16,6 @@ public class LoveBombController {
 
     @GetMapping("/random")
     public LoveBombDto getRandom(@RequestParam(required = false) String sessionId) {
-        return loveBombService.getRandom(sessionId);
+        return loveBombService.getRandomForDefaultSite(sessionId);
     }
 }

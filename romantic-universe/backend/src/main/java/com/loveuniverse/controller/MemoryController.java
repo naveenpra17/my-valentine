@@ -18,11 +18,11 @@ public class MemoryController {
 
     @GetMapping
     public List<MemoryDto> getAll() {
-        return memoryService.findAllActive();
+        return memoryService.findAllActiveForDefaultSite();
     }
 
     @GetMapping("/{id}")
     public MemoryDto getById(@PathVariable Long id) {
-        return memoryService.findById(id);
+        return memoryService.findByIdForDefaultSite(id);
     }
 }

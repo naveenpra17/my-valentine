@@ -11,6 +11,9 @@ public class OpenWhenMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "site_id", nullable = false)
+    private Long siteId;
+
     @Column(name = "envelope_label", nullable = false, length = 200)
     private String envelopeLabel;
 
@@ -28,6 +31,8 @@ public class OpenWhenMessage {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public Long getSiteId() { return siteId; }
+    public void setSiteId(Long siteId) { this.siteId = siteId; }
     public String getEnvelopeLabel() { return envelopeLabel; }
     public void setEnvelopeLabel(String envelopeLabel) { this.envelopeLabel = envelopeLabel; }
     public String getMessage() { return message; }
