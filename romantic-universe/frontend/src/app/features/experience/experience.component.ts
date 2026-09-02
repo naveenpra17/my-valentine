@@ -241,7 +241,7 @@ export class ExperienceComponent implements OnDestroy, AfterViewInit {
 
     effect(() => {
       if (this.config.loading() || this.config.error()) return;
-      const url = this.config.get('MUSIC_URL', '/assets/audio/background.mp3');
+      const url = this.config.get('MUSIC_URL');
       if (url) this.music.setBackgroundUrl(url);
     });
 

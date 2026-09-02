@@ -36,4 +36,4 @@ WHERE s.slug = '{{SITE_SLUG}}';
 --    frontend/src/assets/sites/{{SITE_SLUG}}/memories/memory-1.jpg
 --    frontend/src/assets/sites/{{SITE_SLUG}}/audio/background.mp3
 
--- 5) Visit https://your-domain/{{SITE_SLUG}}
+-- 5) Visit https://your-domain/site/{{SITE_SLUG}}

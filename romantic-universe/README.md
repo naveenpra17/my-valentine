@@ -4,7 +4,7 @@ A **cinematic interactive love experience** — explore a living universe, disco
 
 **Stack:** Angular 19 + Three.js frontend, Spring Boot REST API, PostgreSQL/H2.
 
-See **[ARCHITECTURE.md](./ARCHITECTURE.md)** for system design and **[HARDENING-REPORT.md](./HARDENING-REPORT.md)** for the production hardening pass.
+See **[ARCHITECTURE.md](./ARCHITECTURE.md)** for system design and **[MULTI-SITE-DEPLOY.md](./MULTI-SITE-DEPLOY.md)** for Render + Vercel + Neon deployment.
 
 ## Prerequisites
 

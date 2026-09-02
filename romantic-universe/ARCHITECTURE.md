@@ -2,15 +2,16 @@
 
 ## Overview
 
-One Angular + Three.js frontend and one Spring Boot API power **many** personalized romantic experiences. Each experience is a **site** identified by URL slug (`/kavi`, `/anu`, …).
+One Angular + Three.js frontend and one Spring Boot API power **many** personalized romantic experiences. Each experience is a **site** identified by URL slug.
 
 ## URL routing
 
 | URL | Behavior |
 |-----|----------|
 | `/` | Site selector (auto-redirects if only one active site) |
-| `/:siteSlug` | Full cinematic experience for that site |
-| `/not-found` | Polished missing-universe page |
+| `/site/:slug` | Full cinematic experience for that site |
+| `/:legacySlug` | Redirects to `/site/:legacySlug` |
+| `/not-found` | Missing-universe page |
 
 ## API
 
@@ -18,49 +19,39 @@ One Angular + Three.js frontend and one Spring Boot API power **many** personali
 |----------|---------|
 | `GET /api/sites` | List active sites (slug + name) |
 | `GET /api/sites/{slug}` | Full public site bundle |
-| `POST /api/sites/{slug}/unlock` | Entry-lock validation (`{ unlocked: boolean }`) |
+| `POST /api/sites/{slug}/unlock` | Entry-lock validation |
 | `GET /api/sites/{slug}/love-bombs/random` | Site-scoped love bomb |
 
-Legacy endpoints (`/api/config`, `/api/photos`, …) remain for backward compatibility and resolve to the **default site** (`kavi`).
+Legacy endpoints (`/api/config`, `/api/photos`, …) resolve to the **default site** (`kavi`).
 
 ### Secrets
 
-`ENTRY_LOCK_ANSWER` is stored in `site_config` but **never** returned by public APIs. Only `POST /api/sites/{slug}/unlock` validates answers server-side.
+`ENTRY_LOCK_ANSWER` is stored in `site_config` but **never** returned by public APIs.
 
 ## Database
 
 ```
 sites (id, slug, name, active, …)
   ├── site_config (site_id, config_key, config_value) UNIQUE(site_id, config_key)
-  ├── memories (site_id, …)
-  ├── photos (site_id, …)
-  ├── quotes (site_id, …)
-  ├── reasons (site_id, …)
-  ├── love_bombs (site_id, …)
-  ├── open_when_messages (site_id, …)
+  ├── memories, photos, quotes, reasons, love_bombs, open_when_messages
   └── love_bomb_history (site_id, session_id, …)
 ```
 
-Migrations: Flyway in `backend/src/main/resources/db/migration/`.
-
-### Existing Kavi data
-
-`V2__migrate_legacy_to_kavi.sql` assigns all pre-migration rows to the `kavi` site without deleting content.
+Migrations: Flyway `backend/src/main/resources/db/migration/` (`V1`–`V5`).
 
 ## Frontend services
 
 | Service | Role |
 |---------|------|
 | `SiteContextService` | Current slug + name |
-| `SiteDataService` | Loads/caches `GET /api/sites/{slug}` |
-| `SiteStorageService` | Namespaces `localStorage` / `sessionStorage` keys (`site:kavi:…`) |
-| `ConfigService` | Thin wrapper over `SiteDataService` for templates |
+| `SiteDataService` | Loads `GET /api/sites/{slug}` bundle |
+| `SiteStorageService` | Namespaced storage (`romantic-universe:{slug}:…`) |
+| `SiteMetadataService` | Dynamic title / OG tags |
+| `ConfigService` | Template helper over site bundle |
 
-Three.js scenes remain **site-agnostic** — they consume generic photo/memory/reason data from the loaded bundle.
+Three.js scenes are **site-agnostic** — they consume generic data from the loaded bundle.
 
 ## Assets
-
-Preferred layout for new sites:
 
 ```
 frontend/src/assets/sites/{slug}/
@@ -70,16 +61,18 @@ frontend/src/assets/sites/{slug}/
   audio/background.mp3
 ```
 
-Existing Kavi URLs (`/assets/images/...`) are preserved in migrated data.
+Neon stores paths like `/assets/sites/kavi/hero/hero.jpg`. Vercel serves them at deploy time.
+
+Legacy Kavi paths (`/assets/images/...`) still work if files exist and DB points there.
 
 ## Creating a new site
 
-1. Copy `backend/src/main/resources/db/seed-site.sql` and replace placeholders.
-2. Run the SQL against Neon (or add a Flyway seed migration).
-3. Add assets under `frontend/src/assets/sites/{slug}/`.
-4. Deploy frontend + backend.
-5. Open `https://your-domain/{slug}`.
+1. `.\scripts\new-site-assets.ps1 -Slug {slug}`
+2. Add images under `frontend/src/assets/sites/{slug}/`
+3. Run SQL from `backend/src/main/resources/db/seed-site.sql`
+4. Redeploy Vercel (for new assets)
+5. Open `https://your-domain/site/{slug}`
 
-## Rollback (Neon)
+## Deploy
 
-Before running migrations, back up the database. To roll back Flyway migrations, use `flyway undo` only if undo scripts exist; otherwise restore from Neon backup.
+See [MULTI-SITE-DEPLOY.md](./MULTI-SITE-DEPLOY.md).

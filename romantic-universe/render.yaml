@@ -16,6 +16,6 @@ services:
       - key: CORS_ALLOWED_ORIGINS
         sync: false
       - key: ENTRY_LOCK_ENABLED
-        value: "true"
+        value: "false"
       - key: ENTRY_LOCK_ANSWER
         sync: false

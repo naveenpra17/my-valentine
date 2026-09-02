@@ -1,69 +1,113 @@
-# Production Personalization Checklist
+# Production Personalization Checklist (Multi-Site)
 
-Replace placeholders and configure content **without changing application code**.
+Replace placeholders **in Neon** and **in asset folders** — no Angular code changes needed.
 
-## Database / `backend/src/main/resources/db/data.sql`
+## Per-site URLs
 
-| Content | Table / Key | Notes |
-|---------|-------------|-------|
-| Her name | `site_config` → `HER_NAME` | Used throughout experience |
-| Your name | `site_config` → `MY_NAME` | Letter & signature |
-| Hero text | `HERO_*`, `OPENING_VOID_*` | Opening & hero beat |
-| Final lines | `FINAL_LINE_1` … `FINAL_LINE_4` | Finale typography |
-| Final message | `FINAL_MESSAGE` | Personal letter text |
-| Finale personal line | `FINALE_PERSONAL_LINE` | Before final message |
-| Footer (optional) | `FOOTER_CREDIT` | Hidden in cinematic flow |
-| Entry lock | `ENTRY_LOCK_QUESTION` + env `ENTRY_LOCK_ANSWER` | Optional gate |
-| Music URL | `MUSIC_URL` | `/assets/audio/background.mp3` |
-| Hero image | `HERO_IMAGE_URL` | `/assets/images/hero/hero.jpg` |
-
-## Media files (`frontend/src/assets/`)
-
-| Asset | Path |
-|-------|------|
-| Hero portrait | `images/hero/hero.jpg` |
-| Gallery photos | `images/gallery/photo-1.jpg` … |
-| Memory images | `images/memories/memory-1.jpg` … |
-| Background music | `audio/background.mp3` |
-
-## Relational content
-
-| Link | How |
+| Site | URL |
 |------|-----|
-| Photo → memory | `photos.memory_id` in `data.sql` |
-| Memories | `memories` table + images |
-| Reasons | `reasons` table |
-| Quotes | `quotes` table |
-| Love bombs | `love_bombs` table |
-| Open When | `open_when_messages` table |
-| Flower message | `FLOWER_MESSAGE` in config |
-| Secret messages | `SECRET_MESSAGE`, `HIDDEN_STAR_MESSAGE`, etc. |
+| Kavi | `https://your-app.vercel.app/site/kavi` |
+| New person | `https://your-app.vercel.app/site/{slug}` |
 
-## Production API URL
+---
 
-Edit `frontend/src/assets/config.json`:
+## 1. Neon — `site_config` (per site)
 
-```json
-{ "apiUrl": "https://your-api.example.com/api" }
+| Key | Purpose |
+|-----|---------|
+| `HER_NAME` | Her name throughout experience |
+| `MY_NAME` | Your name (letter & signature) |
+| `HERO_*`, `OPENING_*`, `FINAL_*` | Copy & cinematic lines |
+| `HERO_IMAGE_URL` | `/assets/sites/{slug}/hero/hero.jpg` |
+| `MUSIC_URL` | `/assets/sites/{slug}/audio/background.mp3` |
+| `ENTRY_LOCK_ENABLED` | `true` / `false` |
+| `ENTRY_LOCK_QUESTION` | Shown on entry lock screen |
+| `ENTRY_LOCK_ANSWER` | **Secret** — server only, never in API bundle |
+
+Use `backend/src/main/resources/db/seed-site.sql` to create a new site.
+
+---
+
+## 2. Neon — content tables (per `site_id`)
+
+| Table | Notes |
+|-------|-------|
+| `memories` | Timeline + linked photos |
+| `photos` | Gallery + 3D universe; `memory_id` links photo → memory |
+| `quotes` | Constellation stars |
+| `reasons` | Floating whispers |
+| `love_bombs` | Catch game messages |
+| `open_when_messages` | Envelope letters |
+
+All `image_url` values must match files you deploy to Vercel **or** external CDN URLs.
+
+---
+
+## 3. Media files — `frontend/src/assets/sites/{slug}/`
+
+### Standard layout (recommended)
+
+```
+sites/kavi/
+  hero/hero.jpg
+  gallery/photo-1.jpg … photo-6.jpg
+  memories/memory-1.jpg … memory-4.jpg
+  audio/background.mp3
 ```
 
-## Environment (backend)
+### Legacy layout (migrated old DB)
 
-| Variable | Purpose |
+If Neon still has `/assets/images/...` paths:
+
+```
+images/hero/hero.jpg
+images/gallery/photo-1.jpg …
+images/memories/memory-1.jpg …
+audio/background.mp3
+```
+
+Or run `backend/src/main/resources/db/neon-update-multisite-paths.sql`.
+
+---
+
+## 4. Deploy environment
+
+### Vercel
+
+| Variable | Example |
 |----------|---------|
-| `SPRING_PROFILES_ACTIVE=prod` | PostgreSQL profile |
-| `DATABASE_URL` | JDBC connection |
-| `CORS_ALLOWED_ORIGINS` | Frontend URL |
-| `ENTRY_LOCK_ANSWER` | Optional gate answer |
+| `API_URL` | `https://your-api.onrender.com/api` |
 
-## Before sharing with her
+### Render
 
-- [ ] Replace all placeholder 1×1 images
-- [ ] Add real `background.mp3` or disable music
-- [ ] Verify `HER_NAME` and `FINAL_MESSAGE`
-- [ ] Test photo → memory links
-- [ ] Build heart with discoveries and test **Share** preview
-- [ ] Test on mobile Safari + Chrome
-- [ ] Clear session: `sessionStorage.clear(); localStorage.removeItem('romantic_universe_entered')`
+| Variable | Example |
+|----------|---------|
+| `DATABASE_URL` | Neon pooled URL |
+| `CORS_ALLOWED_ORIGINS` | `https://your-app.vercel.app` |
+| `SPRING_PROFILES_ACTIVE` | `prod` |
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for hosting steps.
+---
+
+## 5. Before sharing
+
+- [ ] Replace placeholder images in `sites/kavi/` (or CDN URLs in Neon)
+- [ ] Set real `HER_NAME`, `MY_NAME`, `FINAL_MESSAGE` in Neon
+- [ ] Add `background.mp3` or leave music disabled
+- [ ] Test photo click → memory card for each photo
+- [ ] Test entry lock for this site only
+- [ ] Test `/site/test-site` does not show Kavi content
+- [ ] Mobile Safari + Chrome
+- [ ] Heart builder + share preview
+
+---
+
+## 6. Clear visitor state (per site)
+
+Storage keys are namespaced: `romantic-universe:kavi:...`
+
+To reset Kavi progress in browser console:
+
+```javascript
+Object.keys(localStorage).filter(k => k.includes('kavi')).forEach(k => localStorage.removeItem(k));
+Object.keys(sessionStorage).filter(k => k.includes('kavi')).forEach(k => sessionStorage.removeItem(k));
+```

@@ -1,184 +1,121 @@
-# Deployment Guide — Romantic Universe
+# Deployment Guide — Romantic Universe (Multi-Site)
 
-> Verify free-tier availability on each provider before deploying — offerings change frequently.
+> One frontend · one backend · one Neon database · many sites at `/site/:slug`
+
+See **[MULTI-SITE-DEPLOY.md](./MULTI-SITE-DEPLOY.md)** for the step-by-step checklist.
 
 ## Architecture
 
 ```
-[Netlify / Cloudflare Pages]  →  Static Angular app
-         ↓ API calls
-[Render / Railway]            →  Spring Boot JAR
-         ↓
-[Neon / Supabase / Render DB] →  PostgreSQL
+[Vercel]  Angular SPA  →  /site/kavi, /site/anu, …
+    ↓  API_URL → /api/sites/{slug}
+[Render]  Spring Boot + Flyway
+    ↓
+[Neon]  PostgreSQL (sites, site_config, memories, photos, …)
 ```
+
+Static images/audio are served from **Vercel** (`/assets/sites/{slug}/...`), not the API.
 
 ---
 
-## 1. Database Setup — Neon (recommended)
+## 1. Database — Neon
 
-1. Create a free project at [neon.tech](https://neon.tech)
-2. **Connect** → copy the **pooled** connection string (`postgresql://...?sslmode=require`)
-3. In the Neon **SQL Editor**, run in order:
-   - `backend/src/main/resources/db/schema.sql`
-   - `backend/src/main/resources/db/data.sql`
-4. Paste the connection string into Render as `DATABASE_URL` when deploying the API
+1. Create project at [neon.tech](https://neon.tech)
+2. Copy pooled `DATABASE_URL`
+3. **Do not** run `schema.sql` / `data.sql` manually — Flyway handles migrations on backend startup
 
-The backend accepts Neon URLs automatically (`postgres://` or `postgresql://`).
-
-### Option B: Render PostgreSQL (legacy)
-
-Only if you use the old `render.yaml` with a `databases:` block. Neon is preferred.
+Migrations: `backend/src/main/resources/db/migration/V1`–`V5`
 
 ---
 
-## 2. Backend Deployment (Render)
+## 2. Backend — Render
 
-### Using render.yaml (Blueprint)
+Use `render.yaml` blueprint or manual Docker deploy from `backend/Dockerfile`.
 
-1. Push the repo to GitHub
-2. In Render Dashboard → **New** → **Blueprint** → connect repo
-3. Set environment variables:
-   - `DATABASE_URL` = your Neon connection string
-   - `CORS_ALLOWED_ORIGINS` = `https://your-site.netlify.app`
-   - `ENTRY_LOCK_ANSWER` = your nickname (if using entry lock)
-4. Deploy — Render builds the Docker image from `backend/Dockerfile`
-
-### Manual deploy
-
-```bash
-cd backend
-./mvnw -DskipTests package
-java -jar target/romantic-universe-api-1.0.0.jar
-```
-
-Set env vars:
-
-| Variable | Example |
+| Variable | Purpose |
 |----------|---------|
 | `SPRING_PROFILES_ACTIVE` | `prod` |
-| `DATABASE_URL` | `postgres://user:pass@host/db` or `jdbc:postgresql://...` |
-| `CORS_ALLOWED_ORIGINS` | `https://your-frontend.netlify.app` |
-| `PORT` | `8080` (Render sets this automatically) |
+| `DATABASE_URL` | Neon connection string |
+| `CORS_ALLOWED_ORIGINS` | Vercel URL(s), comma-separated, no trailing slash |
+| `ENTRY_LOCK_ENABLED` | `false` — use per-site `site_config` instead |
 
-Verify: `https://your-api.onrender.com/api/health` → `{"status":"UP"}`
+Health: `GET /api/health`  
+Sites: `GET /api/sites`, `GET /api/sites/{slug}`
 
 ---
 
-## 3. Frontend Deployment (Vercel)
+## 3. Frontend — Vercel
 
-### Before building
+**Root directory:** `romantic-universe/frontend`
 
-Edit `frontend/src/assets/config.json`:
+| Vercel env var | Example |
+|----------------|---------|
+| `API_URL` | `https://your-api.onrender.com/api` |
 
-```json
-{
-  "apiUrl": "https://your-api.onrender.com/api"
-}
+Build command (from `vercel.json`): `npm run build`  
+Runs `scripts/write-config.mjs` → writes `src/assets/config.json` from `API_URL`.
+
+Local dev: copy `.env.example` or edit `config.json` to `http://localhost:8080/api`.
+
+---
+
+## 4. CORS
+
+```
+CORS_ALLOWED_ORIGINS=https://your-app.vercel.app,https://www.yourdomain.com
 ```
 
-Commit and push to GitHub.
+---
 
-### Deploy via Vercel UI
+## 5. Entry lock (per site)
 
-1. Go to [vercel.com](https://vercel.com) → **Add New Project**
-2. Import GitHub repo
-3. Set **Root Directory** to `romantic-universe/frontend`
-4. Build settings (from `frontend/vercel.json`):
-   - **Build command:** `npm run build`
-   - **Output directory:** `dist/frontend/browser`
-   - **Install command:** `npm ci`
-5. Deploy
+Set in Neon `site_config` for each site:
 
-### Deploy via CLI
+- `ENTRY_LOCK_ENABLED` = `true`
+- `ENTRY_LOCK_QUESTION` = question text
+- `ENTRY_LOCK_ANSWER` = secret (never exposed to frontend)
+
+Unlock: `POST /api/sites/{slug}/unlock` with `{ "answer": "..." }`
+
+---
+
+## 6. Local production test
 
 ```bash
-cd romantic-universe/frontend
-npm ci
-npm run build
-npx vercel --prod
-```
-
-### Netlify alternative
-
-See `netlify.toml` at repo root — base directory `romantic-universe/frontend`.
-
----
-
-## 4. CORS Configuration
-
-Set backend `CORS_ALLOWED_ORIGINS` to your exact frontend URL(s), comma-separated:
-
-```
-https://your-site.vercel.app,https://www.yourdomain.com
-```
-
-No trailing slashes.
-
----
-
-## 5. Custom Domain
-
-### Frontend (Netlify)
-
-1. Domain settings → Add custom domain
-2. Update DNS per Netlify instructions
-
-### Backend (Render)
-
-1. Add custom domain in Render service settings
-2. Update `config.json` apiUrl to match
-3. Update `CORS_ALLOWED_ORIGINS`
-
----
-
-## 6. Entry Lock in Production
-
-```
-ENTRY_LOCK_ENABLED=true
-ENTRY_LOCK_ANSWER=her-nickname
-```
-
-Answer comparison is case-insensitive. This is light protection only — not strong security.
-
----
-
-## 7. Local Production Testing
-
-```bash
-# Terminal 1 — Backend with prod profile + local Postgres
+# Backend
 export SPRING_PROFILES_ACTIVE=prod
-export DATABASE_URL=jdbc:postgresql://localhost:5432/romantic_universe
+export DATABASE_URL=postgresql://...
 export CORS_ALLOWED_ORIGINS=http://localhost:4200
 cd backend && ./mvnw spring-boot:run
 
-# Terminal 2 — Frontend production build
+# Frontend
 cd frontend
-# Set config.json apiUrl to http://localhost:8080/api
-npm run build
-npx serve dist/frontend/browser
+export API_URL=http://localhost:8080/api
+npm run build && npx serve dist/frontend/browser
+# Open http://localhost:3000/site/kavi
 ```
 
 ---
 
-## 8. Troubleshooting
+## 7. Troubleshooting
 
 | Issue | Fix |
 |-------|-----|
-| CORS error | Match `CORS_ALLOWED_ORIGINS` exactly to frontend URL |
-| API 404 on Netlify | `config.json` apiUrl must point to backend, not Netlify |
-| Blank page after deploy | Check `_redirects` / SPA fallback is configured |
-| Database connection failed | Verify `DATABASE_URL` format; Render uses `postgres://` |
-| Hibernate validate fails | Run `schema.sql` on the database first |
-| 3D scene laggy on mobile | Expected on low-end devices; animations auto-reduce with `prefers-reduced-motion` |
+| CORS error | Match `CORS_ALLOWED_ORIGINS` to frontend URL exactly |
+| API 404 on Vercel | `API_URL` must point to Render backend |
+| SPA 404 on refresh | `vercel.json` rewrites to `index.html` (already configured) |
+| Hibernate validate fails | Let Flyway run first; check migration logs |
+| Images missing | Add under `src/assets/sites/{slug}/` and redeploy Vercel |
+| Site not found | Check `sites` table — slug must exist and `active=true` |
 
 ---
 
-## 9. Post-Deploy Checklist
+## 8. Post-deploy checklist
 
-- [ ] `/api/health` returns UP
-- [ ] `/api/config` returns JSON with your names/messages
-- [ ] Frontend loads opening screen
-- [ ] Photos display (files in `assets/images/`)
-- [ ] Music plays after user taps play
-- [ ] CORS works (no browser console errors)
-- [ ] Entry lock works (if enabled)
+- [ ] `/api/health` → UP
+- [ ] `/api/sites/kavi` → JSON bundle
+- [ ] `/site/kavi` → experience loads
+- [ ] Photos + hero image display
+- [ ] Music plays after user interaction
+- [ ] `/site/test-site` isolated from Kavi
+- [ ] Entry lock works per site (if enabled)
